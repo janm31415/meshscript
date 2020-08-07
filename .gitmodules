@@ -1,0 +1,6 @@
+[submodule "skiwi"]
+	path = skiwi
+	url = https://github.com/janm31415/skiwi
+[submodule "jtk"]
+	path = jtk
+	url = https://github.com/janm31415/jtk
