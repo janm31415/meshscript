@@ -118,7 +118,7 @@ void view::prepare_window()
   {
   if (_window)
     return;
-  _window = SDL_CreateWindow("3dplot", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _w, _h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+  _window = SDL_CreateWindow("meshscript", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _w, _h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
   SDL_GLContext gl_context = SDL_GL_CreateContext(_window);
   SDL_GL_SetSwapInterval(1); // Enable vsync
 

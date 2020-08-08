@@ -408,7 +408,7 @@ uint64_t scm_get_position(skiwi::scm_type x, skiwi::scm_type y)
 void* register_functions(void*)
   {
   using namespace skiwi;
-  register_external_primitive("exit", &scm_exit, skiwi_void, "(exit) can be used in the input script to end 3dplot");
+  register_external_primitive("exit", &scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript");
   register_external_primitive("hide-view", &scm_hide_view, skiwi_void, "(hide-view) hides the 3d view");
   register_external_primitive("show-view", &scm_show_view, skiwi_void, "(show-view) shows the 3d view");  
   register_external_primitive("load-mesh", &load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and return the id.");  
@@ -447,6 +447,7 @@ int main(int argc, char** argv)
 
   skiwi::skiwi_parameters pars;
   pars.heap_size = 64 * 1024 * 1024;
+  skiwi::set_prompt("ms> ");
   skiwi::scheme_with_skiwi(&register_functions, nullptr, pars);
 
   for (int i = 1; i < argc; ++i)
