@@ -917,7 +917,7 @@ void canvas::render_pointclouds_on_image(const scene* s, const jtk::image<pixel>
       const pixel* p_pix = pix.data() + y * pix.stride();
       for (int x = 0; x < w; ++x)
         {
-        *p_z = (p_pix->triangle_id != (uint32_t)-1) ? p_pix->depth : 0.f;
+        *p_z = (p_pix->triangle_id != (uint32_t)-1) ? 1.f/p_pix->depth : 0.f;
         ++p_z;
         ++p_pix;
         }
@@ -930,14 +930,16 @@ void canvas::render_pointclouds_on_image(const scene* s, const jtk::image<pixel>
     float camera_position[16], object_system[16], projection_mat[16];
     for (int i = 0; i < 16; ++i)
       {
-      object_system[i] = 0.f;
       projection_mat[i] = projection_matrix[i];
       camera_position[i] = s->coordinate_system_inv[i];
-      }
-    object_system[0] = object_system[5] = object_system[10] = object_system[15] = 1.f;
-    bind(_rd, camera_position, object_system, projection_mat);
+      }        
     for (const auto& pc : s->pointclouds)
       {
+      for (int i = 0; i < 16; ++i)
+        {
+        object_system[i] = pc.cs[i];
+        }
+      bind(_rd, camera_position, object_system, projection_mat);
       uint32_t ob_id;
       object_buffer ob;
       ob.number_of_vertices = pc.p_vertices->size();
