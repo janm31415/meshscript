@@ -218,15 +218,26 @@ void view::set_coordinate_system(uint32_t id, const float4x4& cs)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh(id);
-  if (!m)
-    return;
-  m->cs = cs;
-  remove_object(id, _scene);
-  if (m->visible)
-    add_object(id, _scene, _db);
-
-  prepare_scene(_scene);
-  _refresh = true;
+  if (m)
+    {
+    m->cs = cs;
+    remove_object(id, _scene);
+    if (m->visible)
+      add_object(id, _scene, _db);
+    }
+  pc* p = _db.get_pc(id);
+  if (p)
+    {
+    p->cs = cs;
+    remove_object(id, _scene);
+    if (p->visible)
+      add_object(id, _scene, _db);
+    }
+  if (m || p)
+    {
+    prepare_scene(_scene);
+    _refresh = true;
+    }
   }
 
 void view::render_scene()
@@ -254,9 +265,12 @@ jtk::float4x4 view::get_coordinate_system(uint32_t id)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh(id);
-  if (!m)
-    return jtk::get_identity();
-  return m->cs;
+  if (m)
+    return m->cs;
+  pc* p = _db.get_pc(id);
+  if (p)
+    return p->cs;
+  return jtk::get_identity();  
   }
 
 void view::set_bg_color(uint8_t r, uint8_t g, uint8_t b)
@@ -270,41 +284,73 @@ void view::premultiply_coordinate_system(uint32_t id, const jtk::float4x4& cs)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh(id);
-  if (!m)
-    return;
-  m->cs = jtk::matrix_matrix_multiply(cs, m->cs);
-  remove_object(id, _scene);
-  if (m->visible)
-    add_object(id, _scene, _db);
-
-  prepare_scene(_scene);
-  _refresh = true;
+  if (m)
+    {
+    m->cs = jtk::matrix_matrix_multiply(cs, m->cs);
+    remove_object(id, _scene);
+    if (m->visible)
+      add_object(id, _scene, _db);
+    }
+  pc* p = _db.get_pc(id);
+  if (p)
+    {
+    p->cs = jtk::matrix_matrix_multiply(cs, p->cs);
+    remove_object(id, _scene);
+    if (p->visible)
+      add_object(id, _scene, _db);
+    }
+  if (m || p)
+    {
+    prepare_scene(_scene);
+    _refresh = true;
+    }
   }
 
 void view::set_vertex_colors(uint32_t id, const std::vector<jtk::vec3<uint8_t>>& colors)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh(id);
-  if (!m)
-    return;
-  m->vertex_colors.clear();
-  m->vertex_colors.reserve(colors.size());
-  for (auto& clr : colors)
-    m->vertex_colors.emplace_back(clr[0] / 255.f, clr[1] / 255.f, clr[2] / 255.f);
-  remove_object(id, _scene);
-  if (m->visible)
-    add_object(id, _scene, _db);
-  _refresh = true;
+  if (m)
+    {
+    m->vertex_colors.clear();
+    m->vertex_colors.reserve(colors.size());
+    for (auto& clr : colors)
+      m->vertex_colors.emplace_back(clr[0] / 255.f, clr[1] / 255.f, clr[2] / 255.f);
+    remove_object(id, _scene);
+    if (m->visible)
+      add_object(id, _scene, _db);
+    _refresh = true;
+    }
+  pc* p = _db.get_pc(id);
+  if (p)
+    {
+    p->vertex_colors.clear();
+    p->vertex_colors.reserve(colors.size());
+    for (auto& clr : colors)
+      p->vertex_colors.emplace_back(make_color(clr[0], clr[1], clr[2]));
+    remove_object(id, _scene);
+    if (p->visible)
+      add_object(id, _scene, _db);
+    _refresh = true;
+    }
   }
 
 bool view::vertices_to_csv(int64_t id, const char* filename)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh((uint32_t)id);
-  if (!m)
-    return false;
-  std::string fn(filename);
-  return ::vertices_to_csv(*m, fn);
+  if (m)
+    {
+    std::string fn(filename);
+    return ::vertices_to_csv(*m, fn);
+    }
+  pc* p = _db.get_pc((uint32_t)id);
+  if (p)
+    {
+    std::string fn(filename);
+    return ::vertices_to_csv(*p, fn);
+    }
+  return false;
   }
 
 bool view::triangles_to_csv(int64_t id, const char* filename)
