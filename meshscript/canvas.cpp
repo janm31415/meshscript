@@ -940,15 +940,13 @@ void canvas::render_pointclouds_on_image(const scene* s, const jtk::image<pixel>
         object_system[i] = pc.cs[i];
         }
       bind(_rd, camera_position, object_system, projection_mat);
-      uint32_t ob_id;
       object_buffer ob;
       ob.number_of_vertices = pc.p_vertices->size();
-      ob.vertices = (const float*)pc.p_vertices->data();
-      ob.normals = (const float*)pc.p_normals->data();
-      ob.colors = (const uint32_t*)pc.p_vertex_colors->data();
-      generate_object_buffer(ob_id, _rd);
-      bind(ob_id, _rd, ob);
-      }
-    present(_rd, 0x00ff00);
+      ob.vertices = (const float*)pc.p_vertices->data();      
+      ob.normals = _settings.shading ? (const float*)pc.p_normals->data() : nullptr;
+      ob.colors = _settings.one_bit ? nullptr : (const uint32_t*)pc.p_vertex_colors->data();
+      bind(_rd, ob);
+      present(_rd, 0xffffff);
+      }   
     }
   }

@@ -321,9 +321,13 @@ void view::hide(int64_t id)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh((uint32_t)id);
-  if (!m)
+  pc* p = _db.get_pc((uint32_t)id);
+  if (m)
+    m->visible = false;
+  else if (p)
+    p->visible = false;
+  else
     return;
-  m->visible = false;
   remove_object((uint32_t)id, _scene);
   prepare_scene(_scene);
   _refresh = true;
@@ -355,9 +359,13 @@ void view::show(int64_t id)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh((uint32_t)id);
-  if (!m)
+  pc* p = _db.get_pc((uint32_t)id);
+  if (m)
+    m->visible = true;
+  else if (p)
+    p->visible = true;
+  else
     return;
-  m->visible = true;
   remove_object((uint32_t)id, _scene);
   add_object((uint32_t)id, _scene, _db);
   prepare_scene(_scene);
