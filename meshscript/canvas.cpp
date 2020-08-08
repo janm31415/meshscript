@@ -39,7 +39,7 @@ namespace
     rot[15] = 1.f;
     return rot;
     }
-
+  /*
   inline uint32_t make_color(unsigned char alpha, unsigned char red, unsigned char green, unsigned char blue)
     {
     return (uint32_t(alpha) << 24) | (uint32_t(blue) << 16) | (uint32_t(green) << 8) | uint32_t(red);
@@ -49,7 +49,7 @@ namespace
     {
     return 0xff000000 | (uint32_t(blue) << 16) | (uint32_t(green) << 8) | uint32_t(red);
     }
-
+    */
   void fill_background(jtk::image<uint32_t>& bg)
     {
     const uint32_t h = bg.height();
@@ -898,5 +898,55 @@ void canvas::blit_onto(jtk::image<uint32_t>& screen, int32_t pos_x, int32_t pos_
       _mm_store_ps((float*)p_screen, buf);
       }
 
+    }
+  }
+
+void canvas::render_pointclouds_on_image(const scene* s, const jtk::image<pixel>& pix)
+  {
+  using namespace jtk;
+
+  if (!s->pointclouds.empty())
+    {
+    if (_zbuffer.width() != pix.width() || _zbuffer.height() != pix.height())
+      _zbuffer = jtk::image<float>(pix.width(), pix.height());
+    int w = (int)pix.width();
+    int h = (int)pix.height();
+    for (int y = 0; y < h; ++y)
+      {
+      float* p_z = _zbuffer.data() + y * _zbuffer.stride();
+      const pixel* p_pix = pix.data() + y * pix.stride();
+      for (int x = 0; x < w; ++x)
+        {
+        *p_z = (p_pix->triangle_id != (uint32_t)-1) ? p_pix->depth : 0.f;
+        ++p_z;
+        ++p_pix;
+        }
+      }
+    _fb.h = h;
+    _fb.w = w;
+    _fb.pixels = im.data(); // todo: check stride an alignment
+    _fb.zbuffer = _zbuffer.data();
+    bind(_rd, _fb);
+    float camera_position[16], object_system[16], projection_mat[16];
+    for (int i = 0; i < 16; ++i)
+      {
+      object_system[i] = 0.f;
+      projection_mat[i] = projection_matrix[i];
+      camera_position[i] = s->coordinate_system_inv[i];
+      }
+    object_system[0] = object_system[5] = object_system[10] = object_system[15] = 1.f;
+    bind(_rd, camera_position, object_system, projection_mat);
+    for (const auto& pc : s->pointclouds)
+      {
+      uint32_t ob_id;
+      object_buffer ob;
+      ob.number_of_vertices = pc.p_vertices->size();
+      ob.vertices = (const float*)pc.p_vertices->data();
+      ob.normals = (const float*)pc.p_normals->data();
+      ob.colors = (const uint32_t*)pc.p_vertex_colors->data();
+      generate_object_buffer(ob_id, _rd);
+      bind(ob_id, _rd, ob);
+      }
+    present(_rd, 0x00ff00);
     }
   }

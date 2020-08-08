@@ -236,6 +236,7 @@ void view::render_scene()
   _canvas.render_scene(&_scene);
   _pixels = _canvas.get_pixels();
   _canvas.canvas_to_image(_pixels, _matcap);
+  _canvas.render_pointclouds_on_image(&_scene, _pixels);
   _refresh = false;
   }
 

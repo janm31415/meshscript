@@ -2,6 +2,7 @@
 
 #include "camera.h"
 #include <jtk/image.h>
+#include <jtk/render.h>
 #include "pixel.h"
 #include "scene.h"
 #include "mouse.h"
@@ -39,6 +40,8 @@ class canvas
     void render_scene(jtk::image<pixel>& out, const scene* s);
 
     void render_scene(const scene* s);
+
+    void render_pointclouds_on_image(const scene* s, const jtk::image<pixel>& pix);
 
     void set_background_color(uint8_t r, uint8_t g, uint8_t b);
 
@@ -85,4 +88,8 @@ class canvas
     jtk::image<pixel> _canvas;
     jtk::image<float> _u, _v;
     canvas_settings _settings;
+
+    jtk::render_data _rd;
+    jtk::frame_buffer _fb;
+    jtk::image<float> _zbuffer;
   };
