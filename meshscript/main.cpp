@@ -101,6 +101,12 @@ int64_t load_mesh(const char* filename)
   return id;
   }
 
+int64_t load_pc(const char* filename)
+  {
+  int64_t id = g_view.v->load_pc_from_file(filename);
+  return id;
+  }
+
 /*
 Input can be a vector of size 16 in column major format,
 or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
@@ -412,6 +418,7 @@ void* register_functions(void*)
   register_external_primitive("hide-view", &scm_hide_view, skiwi_void, "(hide-view) hides the 3d view");
   register_external_primitive("show-view", &scm_show_view, skiwi_void, "(show-view) shows the 3d view");  
   register_external_primitive("load-mesh", &load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and return the id.");  
+  register_external_primitive("load-pc", &load_pc, skiwi_int64, skiwi_char_pointer, "(load-pc \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");
   register_external_primitive("set-cs", &scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(set-cs id cs) sets a new coordinate system for mesh id. The coordinate system cs can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("get-cs", &scm_get_coordinate_system, skiwi_scm, skiwi_int64, "(get-cs id) returns the coordinate system for mesh id.");
   register_external_primitive("make-mesh", &make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of list of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");

@@ -2,7 +2,6 @@
 
 #include <jtk/geometry.h>
 
-#include <tbb/parallel_for.h>
 #include <algorithm>
 
 #include <jtk/file_utils.h>
@@ -43,17 +42,37 @@ bool read_from_file(mesh& m, const std::string& filename)
     if (!read_stl(m.vertices, m.triangles, filename.c_str()))
       return false;
     }
+  else if (ext == "off")
+    {
+    if (!read_off(m.vertices, m.triangles, filename.c_str()))
+      return false;
+    }
   else if (ext == "obj")
     {
-    std::string texture_filename;
-    if (!read_obj(texture_filename, m.vertices, m.triangles, m.uv_coordinates, filename.c_str()))
+    std::string mtl_filename;
+    if (!read_obj(mtl_filename, m.vertices, m.triangles, m.uv_coordinates, filename.c_str()))
       return false;
-    if (!texture_filename.empty())
-      {
-      int w, h, nr_of_channels;
-      unsigned char* im = stbi_load(texture_filename.c_str(), &w, &h, &nr_of_channels, 4);
-      m.texture = jtk::span_to_image(w, h, w, (const uint32_t*)im);
-      stbi_image_free(im);
+    if (!mtl_filename.empty())
+      {      
+      if (!file_exists(mtl_filename))
+        {
+        mtl_filename = get_folder(filename) + "/" + mtl_filename;
+        }
+      std::string texture_filename;
+      if (read_texture_filename_from_mtl(texture_filename, mtl_filename.c_str()))
+        {
+        if (!file_exists(texture_filename))
+          {
+          texture_filename = get_folder(mtl_filename) + "/" + texture_filename;
+          }
+        int w, h, nr_of_channels;
+        unsigned char* im = stbi_load(texture_filename.c_str(), &w, &h, &nr_of_channels, 4);
+        if (im)
+          {
+          m.texture = jtk::span_to_image(w, h, w, (const uint32_t*)im);
+          stbi_image_free(im);
+          }
+        }
       }
     }
   else

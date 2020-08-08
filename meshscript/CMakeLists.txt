@@ -20,14 +20,21 @@ set(STB
 ../stb/stb_image_write.h
 )
 
+set(PLY
+../ply/ply.h
+../ply/plyfile.c
+)
+
 set(HDRS
 camera.h
 canvas.h
 db.h
+io.h
 jet.h
 matcap.h
 mesh.h
 mouse.h
+pc.h
 pixel.h
 scene.h
 trackball.h
@@ -39,10 +46,12 @@ meshscript.rc
 camera.cpp
 canvas.cpp
 db.cpp
+io.cpp
 jet.cpp
 main.cpp
 matcap.cpp
 mesh.cpp
+pc.cpp
 pixel.cpp
 scene.cpp
 trackball.c
@@ -66,10 +75,11 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-D_ENABLE_TBB)
 #add_definitions(-D_ENABLE_PPL)
 
-add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB})
+add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB} ${PLY})
 source_group("Header Files" FILES ${HDRS})
 source_group("Source Files" FILES ${SRCS})
 source_group("stb" FILES ${STB})
+source_group("ply" FILES ${PLY})
 
 target_include_directories(meshscript
     PRIVATE
@@ -77,6 +87,7 @@ target_include_directories(meshscript
     ${CMAKE_CURRENT_SOURCE_DIR}/../jtk/
     ${CMAKE_CURRENT_SOURCE_DIR}/../skiwi/
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ply/
     )	
 	
 target_link_libraries(meshscript

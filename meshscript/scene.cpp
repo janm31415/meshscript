@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "mesh.h"
+#include "pc.h"
 #include <jtk/geometry.h>
 
 using namespace jtk;
@@ -22,6 +23,18 @@ void add_object(uint32_t id, scene& s, db& d)
     obj.bvh = std::unique_ptr<qbvh>(new qbvh(*obj.p_triangles, obj.p_vertices->data()));
     s.objects.emplace_back(std::move(obj));
     }
+  if (d.is_pc(id))
+    {
+    pc* p_pc = d.get_pc(id);
+    scene_pointcloud obj;
+    obj.db_id = id;
+    obj.p_vertices = &p_pc->vertices;
+    obj.p_vertex_colors = &p_pc->vertex_colors;
+    obj.p_normals = &p_pc->normals;   
+    obj.cs = p_pc->cs;
+    compute_bb(obj.min_bb, obj.max_bb, (uint32_t)obj.p_vertices->size(), obj.p_vertices->data());   
+    s.pointclouds.emplace_back(std::move(obj));
+    }
   }
 
 void remove_object(uint32_t id, scene& s)
@@ -29,6 +42,9 @@ void remove_object(uint32_t id, scene& s)
   auto it = std::find_if(s.objects.begin(), s.objects.end(), [&](const scene_object& so) { return so.db_id == id; });
   if (it != s.objects.end())
     s.objects.erase(it);
+  auto it2 = std::find_if(s.pointclouds.begin(), s.pointclouds.end(), [&](const scene_pointcloud& so) { return so.db_id == id; });
+  if (it2 != s.pointclouds.end())
+    s.pointclouds.erase(it2);
   }
 
 void prepare_scene(scene& s)
@@ -37,6 +53,11 @@ void prepare_scene(scene& s)
     {
     s.min_bb = transform(s.objects.front().cs, s.objects.front().min_bb);
     s.max_bb = transform(s.objects.front().cs, s.objects.front().max_bb);
+    }
+  else if (!s.pointclouds.empty())
+    {
+    s.min_bb = transform(s.pointclouds.front().cs, s.pointclouds.front().min_bb);
+    s.max_bb = transform(s.pointclouds.front().cs, s.pointclouds.front().max_bb);
     }
   else
     {
@@ -50,11 +71,17 @@ void prepare_scene(scene& s)
     s.min_bb = min(s.min_bb, local_min_bb);
     s.max_bb = max(s.max_bb, local_max_bb);
     }
+  for (const auto& obj : s.pointclouds)
+    {
+    auto local_min_bb = transform(obj.cs, obj.min_bb);
+    auto local_max_bb = transform(obj.cs, obj.max_bb);
+    s.min_bb = min(s.min_bb, local_min_bb);
+    s.max_bb = max(s.max_bb, local_max_bb);
+    }
 
   s.diagonal = s.max_bb[0] - s.min_bb[0];
   s.diagonal = std::max<float>(s.diagonal, s.max_bb[1] - s.min_bb[1]);
   s.diagonal = std::max<float>(s.diagonal, s.max_bb[2] - s.min_bb[2]);
-
   }
 
 void unzoom(scene& s)

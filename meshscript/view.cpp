@@ -1,5 +1,6 @@
 #include "view.h"
 #include "mesh.h"
+#include "pc.h"
 
 #include <iostream>
 
@@ -170,6 +171,31 @@ int64_t view::load_mesh_from_file(const char* filename)
   return (int64_t)id;
   }
 
+int64_t view::load_pc_from_file(const char* filename)
+  {
+  std::scoped_lock lock(_mut);
+  pc point_cloud;
+  std::string f(filename);
+  bool res = read_from_file(point_cloud, f);
+  if (!res)
+    return -1;
+  pc* db_pc;
+  uint32_t id;
+  _db.create_pc(db_pc, id);
+  db_pc->vertices.swap(point_cloud.vertices);
+  db_pc->normals.swap(point_cloud.normals);
+  db_pc->vertex_colors.swap(point_cloud.vertex_colors);
+  db_pc->cs = point_cloud.cs;
+  db_pc->visible = point_cloud.visible;
+  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  if (db_pc->visible)
+    add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return (int64_t)id;
+  }
+
 int64_t view::load_mesh(const std::vector<vec3<float>>& vertices, const std::vector<vec3<uint32_t>>& triangles)
   {
   std::scoped_lock lock(_mut);
@@ -203,16 +229,22 @@ void view::set_coordinate_system(uint32_t id, const float4x4& cs)
   _refresh = true;
   }
 
+void view::render_scene()
+  {
+  // assumes a lock has been set already
+  _canvas.update_settings(_settings);
+  _canvas.render_scene(&_scene);
+  _pixels = _canvas.get_pixels();
+  _canvas.canvas_to_image(_pixels, _matcap);
+  _refresh = false;
+  }
+
 jtk::image<uint32_t> view::get_image()
   {
   std::scoped_lock lock(_mut);
   if (_refresh)
     {
-    _canvas.update_settings(_settings);
-    _canvas.render_scene(&_scene);
-    _pixels = _canvas.get_pixels();
-    _canvas.canvas_to_image(_pixels, _matcap);
-    _refresh = false;
+    render_scene();
     }
   return _canvas.get_image();
   }
@@ -729,11 +761,7 @@ void view::loop()
       {
           {
           std::scoped_lock lock(_mut);
-          _canvas.update_settings(_settings);
-          _canvas.render_scene(&_scene);
-          _refresh = false;
-          _pixels = _canvas.get_pixels();
-          _canvas.canvas_to_image(_pixels, _matcap);
+          render_scene();
           }
       }
 

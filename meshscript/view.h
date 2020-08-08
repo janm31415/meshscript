@@ -22,6 +22,8 @@ class view
 
     int64_t load_mesh_from_file(const char* filename);
 
+    int64_t load_pc_from_file(const char* filename);
+
     int64_t load_mesh(const std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles);
 
     void set_coordinate_system(uint32_t id, const jtk::float4x4& cs);
@@ -89,6 +91,8 @@ class view
     void delete_window();
 
     void render_mouse();
+
+    void render_scene();
 
   private:
 

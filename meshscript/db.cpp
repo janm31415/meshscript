@@ -1,5 +1,6 @@
 #include "db.h"
 #include "mesh.h"
+#include "pc.h"
 
 #include <cassert>
 
@@ -47,6 +48,31 @@ bool db::is_mesh(uint32_t id) const
   return get_db_key(id) == MESH_KEY;
   }
 
+void db::create_pc(pc*& new_pointcloud, uint32_t& id)
+  {
+  pc* m = new pc();
+  id = make_db_id(PC_KEY, (uint32_t)pcs.size());
+  new_pointcloud = m;
+  pcs.push_back(std::make_pair(id, m));
+  pcs_deleted.push_back(std::make_pair(id, nullptr));
+  }
+
+pc* db::get_pc(uint32_t id) const
+  {
+  auto key = get_db_key(id);
+  auto vector_index = get_db_vector_index(id);
+  if (key != PC_KEY)
+    return nullptr;
+  if (vector_index >= pcs.size())
+    return nullptr;
+  assert(pcs[vector_index].first == id);
+  return pcs[vector_index].second;
+  }
+
+bool db::is_pc(uint32_t id) const
+  {
+  return get_db_key(id) == PC_KEY;
+  }
 
 void db::delete_object(uint32_t id)
   {
