@@ -4,6 +4,9 @@ Visualize 3d meshes via scripting in scheme
 Introduction
 ------------
 
+Meshscript is a scriptable interface for visualizing and editing 3d meshes and point clouds.
+![](images/meshscript.gif)
+
 Building
 --------
 
