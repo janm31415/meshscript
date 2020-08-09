@@ -34,56 +34,56 @@ As soon as SKIWI_MODULE_PATH is correctly initialised you are ready to go.
 Glossary
 --------
 
-`(hide-view)` hides the 3d view
+`(view-hide)` hides the 3d view
 
-`(show-view)` shows the 3d view
+`(view-show)` shows the 3d view
 
 `(load-mesh "stlfile.stl")` loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and return the id.
 
-`(load-pc "pointcloud.ply")` loads the ply file as point cloud and returns an id.
+`(load-pointcloud "pointcloud.ply")` loads the ply file as point cloud and returns an id.
 
-`(set-cs id cs)` sets a new coordinate system for mesh id. The coordinate system cs can be given as a vector of size 16 in column major format or as a list of lists in row major format.
+`(cs-set! id cs)` sets a new coordinate system for mesh id. The coordinate system cs can be given as a vector of size 16 in column major format or as a list of lists in row major format.
 
-`(get-cs id)` returns the coordinate system for mesh id.
+`(cs-ref id)` returns the coordinate system for mesh id.
 
 `(make-mesh vertices triangles)` plots the mesh with given vertices and triangles, and returns the id of the plotted object. vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of list of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.
 
-`(vertices-to-csv id "file.csv")` exports the vertices of mesh id to a csv file
+`(vertices->csv id "file.csv")` exports the vertices of mesh id to a csv file
 
-`(triangles-to-csv id "file.csv")` exports the triangles of mesh id to a csv file
+`(triangles->csv id "file.csv")` exports the triangles of mesh id to a csv file
 
 `(show id)` shows mesh id
 
 `(hide id)` hides mesh id
 
-`(set-color id matcap-id)` changes the matcap of mesh id. The matcap is given by its id matcap-id.
+`(color-set! id matcap-id)` changes the matcap of mesh id. The matcap is given by its id matcap-id.
 
 `(jet lst)` takes a list of values between 0 and 1 and returns a list of lists with (r g b) values
 
 `(set-vertex-colors id clrlst)` sets vertex colors for mesh id. The vertex colors are given as a list of lists with (r g b) values.
 
-`(rotate id x y z)` rotates mesh id by x degrees over the x-axis, by y degrees over the y-axis, and by z degrees over the z_axis
+`(cs-rotate! id x y z)` rotates mesh id by x degrees over the x-axis, by y degrees over the y-axis, and by z degrees over the z_axis
 
-`(translate id x y z)` translates mesh id by vector (x y z)
+`(cs-translate! id x y z)` translates mesh id by vector (x y z)
 
-`(set-edges #t/#f)` turns on/off rendering of edges
+`(view-edges-set! #t/#f)` turns on/off rendering of edges
 
-`(set-shading #t/#f)` turns on/off lighting
+`(view-shading-set! #t/#f)` turns on/off lighting
 
-`(set-textured #t/#f)` turns on/off rendering of texture
+`(view-textured-set! #t/#f)` turns on/off rendering of texture
 
-`(set-shadow #t/#f)` turns on/off rendering of shadow
+`(view-shadow-set! #t/#f)` turns on/off rendering of shadow
 
-`(set-wireframe #t/#f)` turns on/off rendering of wireframe
+`(view-wireframe-set! #t/#f)` turns on/off rendering of wireframe
 
-`(set-one-bit #t/#f)` turns on/off one-bit rendering
+`(view-onebit-set! #t/#f)` turns on/off one-bit rendering
 
-`(set-image-size w h)` resizes the plotted image to size (w, h)
+`(view-size-set! w h)` resizes the plotted image to size (w, h)
 
-`(unzoom)` sets the camera to its initial position
+`(view-unzoom)` sets the camera to its initial position
 
-`(export-image "image-file.png")` exports the current view to a png image
+`(view-export "image-file.png")` exports the current view to a png image
 
-`(set-bg-color r g b)` changes the background color to (r g b).
+`(view-bg-set! r g b)` changes the background color to (r g b).
 
-`(get-position x y)` returns the 3D position of coordinate (x,y).
+`(view-ref x y)` returns the 3D position of coordinate (x,y).
