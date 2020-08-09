@@ -34,9 +34,9 @@ As soon as SKIWI_MODULE_PATH is correctly initialised you are ready to go.
 Glossary
 --------
 
-`(view-hide)` hides the 3d view
+`(view-hide!)` hides the 3d view
 
-`(view-show)` shows the 3d view
+`(view-show!)` shows the 3d view
 
 `(load-mesh "stlfile.stl")` loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and return the id.
 
@@ -52,9 +52,9 @@ Glossary
 
 `(triangles->csv id "file.csv")` exports the triangles of mesh id to a csv file
 
-`(show id)` shows mesh id
+`(show! id)` shows mesh id
 
-`(hide id)` hides mesh id
+`(hide! id)` hides mesh id
 
 `(color-set! id matcap-id)` changes the matcap of mesh id. The matcap is given by its id matcap-id.
 
