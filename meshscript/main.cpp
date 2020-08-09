@@ -119,8 +119,8 @@ void scm_set_coordinate_system(int64_t id, skiwi::scm_type scheme_variable)
     auto v = scheme_variable.get_vector();
     if (v.size() != 16)
       {
-      std::cout << "error: set-cs: second input parameter should be a vector of size 16\n";
-      std::cout << "               current size of vector is " << v.size() << "\n";
+      std::cout << "error: cs-set!: second input parameter should be a vector of size 16\n";
+      std::cout << "                current size of vector is " << v.size() << "\n";
       return;
       }
     float4x4 m;
@@ -168,7 +168,72 @@ void scm_set_coordinate_system(int64_t id, skiwi::scm_type scheme_variable)
     }
   else
     {
-    std::cout << "error: set-cs: invalid input type\n";
+    std::cout << "error: cs-set!: invalid input type\n";
+    }
+  }
+
+/*
+Input can be a vector of size 16 in column major format,
+or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
+which can be read from a csv file.
+*/
+void scm_set_view_coordinate_system(skiwi::scm_type scheme_variable)
+  {
+  if (scheme_variable.is_vector())
+    {
+    auto v = scheme_variable.get_vector();
+    if (v.size() != 16)
+      {
+      std::cout << "error: view-cs-set!: second input parameter should be a vector of size 16\n";
+      std::cout << "                     current size of vector is " << v.size() << "\n";
+      return;
+      }
+    float4x4 m;
+    try
+      {
+      for (int i = 0; i < 16; ++i)
+        {
+        m[i] = (float)v[i].get_number();
+        }
+      g_view.v->set_coordinate_system(m);
+      }
+    catch (std::runtime_error e)
+      {
+      std::cout << e.what() << "\n";
+      }
+    }
+  else if (scheme_variable.is_pair())
+    {
+    try
+      {
+      std::vector<skiwi::scm_type> rows(4);
+      rows[0] = scheme_variable.get_pair().first;
+      rows[1] = scheme_variable.get_pair().second.get_pair().first;
+      rows[2] = scheme_variable.get_pair().second.get_pair().second.get_pair().first;
+      rows[3] = scheme_variable.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+      float4x4 m;
+      for (int i = 0; i < 4; ++i)
+        {
+        const auto& r = rows[i];
+        auto v0 = r.get_pair().first;
+        auto v1 = r.get_pair().second.get_pair().first;
+        auto v2 = r.get_pair().second.get_pair().second.get_pair().first;
+        auto v3 = r.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+        m[i] = (float)v0.get_number();
+        m[i + 4] = (float)v1.get_number();
+        m[i + 8] = (float)v2.get_number();
+        m[i + 12] = (float)v3.get_number();
+        }
+      g_view.v->set_coordinate_system(m);
+      }
+    catch (std::runtime_error e)
+      {
+      std::cout << e.what() << "\n";
+      }
+    }
+  else
+    {
+    std::cout << "error: view-cs-set!: invalid input type\n";
     }
   }
 
@@ -183,6 +248,23 @@ uint64_t scm_get_coordinate_system(int64_t id)
     for (int c = 0; c < 4; ++c)
       {
       row.push_back(make_flonum(cs[r + 4*c]));
+      }
+    lst.push_back(make_list(row));
+    }
+  return make_list(lst);
+  }
+
+uint64_t scm_get_view_coordinate_system()
+  {
+  using namespace skiwi;
+  auto cs = g_view.v->get_coordinate_system();
+  std::vector<scm_type> lst;
+  for (int r = 0; r < 4; ++r)
+    {
+    std::vector<scm_type> row;
+    for (int c = 0; c < 4; ++c)
+      {
+      row.push_back(make_flonum(cs[r + 4 * c]));
       }
     lst.push_back(make_list(row));
     }
@@ -251,9 +333,9 @@ void hide(int64_t id)
   g_view.v->hide(id);
   }
 
-void set_color(int64_t id, int64_t clr_id)
+void set_matcap(int64_t id, int64_t clr_id)
   {
-  g_view.v->set_color(id, clr_id);
+  g_view.v->set_matcap(id, clr_id);
   }
 
 void scm_unzoom()
@@ -414,34 +496,37 @@ uint64_t scm_get_position(skiwi::scm_type x, skiwi::scm_type y)
 void* register_functions(void*)
   {
   using namespace skiwi;
-  register_external_primitive("exit", &scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript");
-  register_external_primitive("view-hide!", &scm_hide_view, skiwi_void, "(view-hide!) hides the 3d view");
-  register_external_primitive("view-show!", &scm_show_view, skiwi_void, "(view-show!) shows the 3d view");  
-  register_external_primitive("load-mesh", &load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and return the id.");  
-  register_external_primitive("load-pointcloud", &load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");
-  register_external_primitive("cs-set!", &scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for mesh id. The coordinate system cs can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-ref", &scm_get_coordinate_system, skiwi_scm, skiwi_int64, "(cs-ref id) returns the coordinate system for mesh id.");
-  register_external_primitive("make-mesh", &make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of list of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
-  register_external_primitive("vertices->csv", &vertices_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(vertices->csv id \"file.csv\") exports the vertices of mesh id to a csv file");
-  register_external_primitive("triangles->csv", &triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of mesh id to a csv file");
-  register_external_primitive("show!", &show, skiwi_void, skiwi_int64, "(show! id) shows mesh id");
-  register_external_primitive("hide!", &hide, skiwi_void, skiwi_int64, "(hide! id) hides mesh id");
-  register_external_primitive("color-set!", &set_color, skiwi_void, skiwi_int64, skiwi_int64, "(color-set! id matcap-id) changes the matcap of mesh id. The matcap is given by its id matcap-id.");
-  register_external_primitive("jet", &scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list of values between 0 and 1 and returns a list of lists with (r g b) values");
-  register_external_primitive("set-vertex-colors", &scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(set-vertex-colors id clrlst) sets vertex colors for mesh id. The vertex colors are given as a list of lists with (r g b) values.");
   register_external_primitive("cs-rotate!", &scm_rotate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-rotate! id x y z) rotates mesh id by x degrees over the x-axis, by y degrees over the y-axis, and by z degrees over the z_axis");
+  register_external_primitive("cs-set!", &scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for mesh id. The coordinate system cs can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-translate!", &scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates mesh id by vector (x y z)");
-  register_external_primitive("view-edges-set!", &scm_set_edges, skiwi_void, skiwi_bool, "(view-edges-set! #t/#f) turns on/off rendering of edges");
-  register_external_primitive("view-shading-set!", &scm_set_shading, skiwi_void, skiwi_bool, "(view-shading-set! #t/#f) turns on/off lighting");
-  register_external_primitive("view-textured-set!", &scm_set_textured, skiwi_void, skiwi_bool, "(view-textured-set! #t/#f) turns on/off rendering of texture");
-  register_external_primitive("view-shadow-set!", &scm_set_shadow, skiwi_void, skiwi_bool, "(view-shadow-set! #t/#f) turns on/off rendering of shadow");
-  register_external_primitive("view-wireframe-set!", &scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe");
-  register_external_primitive("view-onebit-set!", &scm_set_one_bit, skiwi_void, skiwi_bool, "(view-onebit-set! #t/#f) turns on/off one-bit rendering");
-  register_external_primitive("view-size-set!", &scm_set_image_size, skiwi_void, skiwi_scm, skiwi_scm, "(view-size-set! w h) resizes the plotted image to size (w, h)");
-  register_external_primitive("view-unzoom", &scm_unzoom, skiwi_void, "(view-unzoom) sets the camera to its initial position");
-  register_external_primitive("view-export", &scm_export_image, skiwi_void, skiwi_char_pointer, "(view-export \"image-file.png\") exports the current view to a png image");
+  register_external_primitive("hide!", &hide, skiwi_void, skiwi_int64, "(hide! id) hides mesh id");
+  register_external_primitive("jet", &scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list of values between 0 and 1 and returns a list of lists with (r g b) values");
+  register_external_primitive("load-mesh", &load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and return the id.");
+  register_external_primitive("load-pointcloud", &load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");
+  register_external_primitive("make-mesh", &make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of list of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
+  register_external_primitive("matcap-set!", &set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of mesh id. The matcap is given by its id matcap-id.");
+  register_external_primitive("set-vertex-colors", &scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(set-vertex-colors id clrlst) sets vertex colors for mesh id. The vertex colors are given as a list of lists with (r g b) values.");
+  register_external_primitive("show!", &show, skiwi_void, skiwi_int64, "(show! id) shows mesh id");
+  register_external_primitive("triangles->csv", &triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of mesh id to a csv file");
+  register_external_primitive("vertices->csv", &vertices_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(vertices->csv id \"file.csv\") exports the vertices of mesh id to a csv file");
   register_external_primitive("view-bg-set!", &scm_set_bg_color, skiwi_void, skiwi_int64, skiwi_int64, skiwi_int64, "(view-bg-set! r g b) changes the background color to (r g b).");
+  register_external_primitive("view-cs", &scm_get_view_coordinate_system, skiwi_scm, "(view-cs) returns the coordinate system of the view camera.");
+  register_external_primitive("view-cs-set!", &scm_set_view_coordinate_system, skiwi_void, skiwi_scm, "(view-cs-set! cs) sets the coordinate system of the view camera.");
+  register_external_primitive("view-edges-set!", &scm_set_edges, skiwi_void, skiwi_bool, "(view-edges-set! #t/#f) turns on/off rendering of edges");
+  register_external_primitive("view-export", &scm_export_image, skiwi_void, skiwi_char_pointer, "(view-export \"image-file.png\") exports the current view to a png image");
+  register_external_primitive("view-hide!", &scm_hide_view, skiwi_void, "(view-hide!) hides the 3d view");
+  register_external_primitive("view-onebit-set!", &scm_set_one_bit, skiwi_void, skiwi_bool, "(view-onebit-set! #t/#f) turns on/off one-bit rendering");
   register_external_primitive("view-ref", &scm_get_position, skiwi_scm, skiwi_scm, skiwi_scm, "(view-ref x y) returns the 3D position of coordinate (x,y).");
+  register_external_primitive("view-shading-set!", &scm_set_shading, skiwi_void, skiwi_bool, "(view-shading-set! #t/#f) turns on/off lighting");
+  register_external_primitive("view-shadow-set!", &scm_set_shadow, skiwi_void, skiwi_bool, "(view-shadow-set! #t/#f) turns on/off rendering of shadow");
+  register_external_primitive("view-show!", &scm_show_view, skiwi_void, "(view-show!) shows the 3d view");  
+  register_external_primitive("view-size-set!", &scm_set_image_size, skiwi_void, skiwi_scm, skiwi_scm, "(view-size-set! w h) resizes the plotted image to size (w, h)");  
+  register_external_primitive("view-textured-set!", &scm_set_textured, skiwi_void, skiwi_bool, "(view-textured-set! #t/#f) turns on/off rendering of texture");
+  register_external_primitive("view-unzoom", &scm_unzoom, skiwi_void, "(view-unzoom) sets the camera to its initial position");
+  register_external_primitive("view-wireframe-set!", &scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe");
+ 
+  register_external_primitive("exit", &scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript");
   return nullptr;
   }
 

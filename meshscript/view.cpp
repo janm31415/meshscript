@@ -240,6 +240,14 @@ void view::set_coordinate_system(uint32_t id, const float4x4& cs)
     }
   }
 
+
+void view::set_coordinate_system(const float4x4& cs)
+  {
+  std::scoped_lock lock(_mut);
+  _scene.coordinate_system = cs;
+  _scene.coordinate_system_inv = jtk::invert_orthonormal(cs);
+  }
+
 void view::render_scene()
   {
   // assumes a lock has been set already
@@ -271,6 +279,12 @@ jtk::float4x4 view::get_coordinate_system(uint32_t id)
   if (p)
     return p->cs;
   return jtk::get_identity();  
+  }
+
+jtk::float4x4 view::get_coordinate_system()
+  {
+  std::scoped_lock lock(_mut);
+  return _scene.coordinate_system;  
   }
 
 void view::set_bg_color(uint8_t r, uint8_t g, uint8_t b)
@@ -391,7 +405,7 @@ void view::show()
   _resume = true;
   }
 
-void view::set_color(int64_t id, int64_t clr_id)
+void view::set_matcap(int64_t id, int64_t clr_id)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh((uint32_t)id);

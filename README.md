@@ -34,56 +34,60 @@ As soon as SKIWI_MODULE_PATH is correctly initialised you are ready to go.
 Glossary
 --------
 
-`(view-hide!)` hides the 3d view
+`(cs-ref id)` returns the coordinate system for mesh id.
 
-`(view-show!)` shows the 3d view
+`(cs-rotate! id x y z)` rotates mesh id by x degrees over the x-axis, by y degrees over the y-axis, and by z degrees over the z_axis
+
+`(cs-set! id cs)` sets a new coordinate system for mesh id. The coordinate system cs can be given as a vector of size 16 in column major format or as a list of lists in row major format.
+
+`(cs-translate! id x y z)` translates mesh id by vector (x y z)
+
+`(hide! id)` hides mesh id
+
+`(jet lst)` takes a list of values between 0 and 1 and returns a list of lists with (r g b) values
 
 `(load-mesh "stlfile.stl")` loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and return the id.
 
 `(load-pointcloud "pointcloud.ply")` loads the ply file as point cloud and returns an id.
 
-`(cs-set! id cs)` sets a new coordinate system for mesh id. The coordinate system cs can be given as a vector of size 16 in column major format or as a list of lists in row major format.
-
-`(cs-ref id)` returns the coordinate system for mesh id.
-
 `(make-mesh vertices triangles)` plots the mesh with given vertices and triangles, and returns the id of the plotted object. vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of list of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.
 
-`(vertices->csv id "file.csv")` exports the vertices of mesh id to a csv file
-
-`(triangles->csv id "file.csv")` exports the triangles of mesh id to a csv file
-
-`(show! id)` shows mesh id
-
-`(hide! id)` hides mesh id
-
-`(color-set! id matcap-id)` changes the matcap of mesh id. The matcap is given by its id matcap-id.
-
-`(jet lst)` takes a list of values between 0 and 1 and returns a list of lists with (r g b) values
+`(matcap-set! id matcap-id)` changes the matcap of mesh id. The matcap is given by its id matcap-id.
 
 `(set-vertex-colors id clrlst)` sets vertex colors for mesh id. The vertex colors are given as a list of lists with (r g b) values.
 
-`(cs-rotate! id x y z)` rotates mesh id by x degrees over the x-axis, by y degrees over the y-axis, and by z degrees over the z_axis
+`(show! id)` shows mesh id
 
-`(cs-translate! id x y z)` translates mesh id by vector (x y z)
+`(triangles->csv id "file.csv")` exports the triangles of mesh id to a csv file
 
-`(view-edges-set! #t/#f)` turns on/off rendering of edges
-
-`(view-shading-set! #t/#f)` turns on/off lighting
-
-`(view-textured-set! #t/#f)` turns on/off rendering of texture
-
-`(view-shadow-set! #t/#f)` turns on/off rendering of shadow
-
-`(view-wireframe-set! #t/#f)` turns on/off rendering of wireframe
-
-`(view-onebit-set! #t/#f)` turns on/off one-bit rendering
-
-`(view-size-set! w h)` resizes the plotted image to size (w, h)
-
-`(view-unzoom)` sets the camera to its initial position
-
-`(view-export "image-file.png")` exports the current view to a png image
+`(vertices->csv id "file.csv")` exports the vertices of mesh id to a csv file
 
 `(view-bg-set! r g b)` changes the background color to (r g b).
 
+`(view-cs)` returns the coordinate system of the view camera.
+
+`(view-cs-set! cs)` sets the coordinate system of the view camera.
+
+`(view-edges-set! #t/#f)` turns on/off rendering of edges
+
+`(view-export "image-file.png")` exports the current view to a png image
+
+`(view-hide!)` hides the 3d view
+
+`(view-onebit-set! #t/#f)` turns on/off one-bit rendering
+
 `(view-ref x y)` returns the 3D position of coordinate (x,y).
+
+`(view-shading-set! #t/#f)` turns on/off lighting
+
+`(view-shadow-set! #t/#f)` turns on/off rendering of shadow
+
+`(view-show!)` shows the 3d view
+
+`(view-size-set! w h)` resizes the plotted image to size (w, h)
+
+`(view-textured-set! #t/#f)` turns on/off rendering of texture
+
+`(view-unzoom)` sets the camera to its initial position
+
+`(view-wireframe-set! #t/#f)` turns on/off rendering of wireframe

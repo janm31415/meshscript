@@ -28,9 +28,13 @@ class view
 
     void set_coordinate_system(uint32_t id, const jtk::float4x4& cs);
 
+    void set_coordinate_system(const jtk::float4x4& cs);
+
     void premultiply_coordinate_system(uint32_t id, const jtk::float4x4& cs);
 
     jtk::float4x4 get_coordinate_system(uint32_t id);
+
+    jtk::float4x4 get_coordinate_system();
 
     void set_vertex_colors(uint32_t id, const std::vector<jtk::vec3<uint8_t>>& colors);
 
@@ -46,7 +50,7 @@ class view
 
     void show();
 
-    void set_color(int64_t id, int64_t clr_id);
+    void set_matcap(int64_t id, int64_t clr_id);
 
     void set_shading(bool b);
 
