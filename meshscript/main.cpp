@@ -523,7 +523,7 @@ void* register_functions(void*)
   register_external_primitive("view-show!", &scm_show_view, skiwi_void, "(view-show!) shows the 3d view.");  
   register_external_primitive("view-size-set!", &scm_set_image_size, skiwi_void, skiwi_scm, skiwi_scm, "(view-size-set! w h) resizes the plotted image to size (w, h).");  
   register_external_primitive("view-textured-set!", &scm_set_textured, skiwi_void, skiwi_bool, "(view-textured-set! #t/#f) turns on/off rendering of texture.");
-  register_external_primitive("view-unzoom", &scm_unzoom, skiwi_void, "(view-unzoom) sets the camera to its initial position.");
+  register_external_primitive("view-unzoom!", &scm_unzoom, skiwi_void, "(view-unzoom!) sets the camera to its initial position.");
   register_external_primitive("view-wireframe-set!", &scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
  
   register_external_primitive("exit", &scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript.");

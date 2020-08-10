@@ -88,6 +88,6 @@ Glossary
 
 `(view-textured-set! #t/#f)` turns on/off rendering of texture.
 
-`(view-unzoom)` sets the camera to its initial position.
+`(view-unzoom!)` sets the camera to its initial position.
 
 `(view-wireframe-set! #t/#f)` turns on/off rendering of wireframe.
