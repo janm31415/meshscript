@@ -87,6 +87,13 @@ void db::delete_object(uint32_t id)
         meshes[vector_index].second = nullptr;
         }          
       break;
+    case PC_KEY:
+      if (pcs[vector_index].second)
+        {
+        pcs_deleted[vector_index].second = pcs[vector_index].second;
+        pcs[vector_index].second = nullptr;
+        }
+      break;
     }
   }
 
@@ -103,6 +110,13 @@ void db::restore_object(uint32_t id)
         meshes_deleted[vector_index].second = nullptr;
         }
       break;    
+    case PC_KEY:
+      if (!pcs[vector_index].second)
+        {
+        pcs[vector_index].second = pcs_deleted[vector_index].second;
+        pcs_deleted[vector_index].second = nullptr;
+        }
+      break;
     }
   }
 
@@ -134,6 +148,9 @@ std::vector<vec3<float>>* get_vertices(const db& _db, uint32_t id)
     case MESH_KEY:
       return &_db.get_mesh(id)->vertices;
       break;
+    case PC_KEY:
+      return &_db.get_pc(id)->vertices;
+      break;
     }
   return nullptr;
   }
@@ -157,6 +174,9 @@ float4x4* get_cs(const db& _db, uint32_t id)
     {
     case MESH_KEY:
       return &_db.get_mesh(id)->cs;
+      break;
+    case PC_KEY:
+      return &_db.get_pc(id)->cs;
       break;
     }
   return nullptr;

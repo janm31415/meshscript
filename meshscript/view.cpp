@@ -490,14 +490,15 @@ jtk::vec3<float> view::get_world_position(int x, int y)
   if (x < 0 || y < 0 || x >= (int)_pixels.width() || y >= (int)_pixels.height())
     return invalid_vertex;
   const auto& p = _pixels(x, y);
-  if (p.triangle_id == (uint32_t)-1)
+  //if (p.object_id == (uint32_t)-1)
+  if (p.db_id == 0)
     return invalid_vertex;
   mesh* m = _db.get_mesh((uint32_t)p.db_id);
   if (!m)
     return invalid_vertex;
-  const uint32_t v0 = m->triangles[p.triangle_id][0];
-  const uint32_t v1 = m->triangles[p.triangle_id][1];
-  const uint32_t v2 = m->triangles[p.triangle_id][2];
+  const uint32_t v0 = m->triangles[p.object_id][0];
+  const uint32_t v1 = m->triangles[p.object_id][1];
+  const uint32_t v2 = m->triangles[p.object_id][2];
   const float4 V0(m->vertices[v0][0], m->vertices[v0][1], m->vertices[v0][2], 1.f);
   const float4 V1(m->vertices[v1][0], m->vertices[v1][1], m->vertices[v1][2], 1.f);
   const float4 V2(m->vertices[v2][0], m->vertices[v2][1], m->vertices[v2][2], 1.f);
@@ -642,9 +643,10 @@ void view::poll_for_events()
           {
           pixel p_actual;
           _canvas.get_pixel(p_actual, _m, (float)_canvas_pos_x, (float)_canvas_pos_y);
-          if (p_actual.triangle_id != (uint32_t)(-1))
+          //if (p_actual.object_id != (uint32_t)(-1))
+          if (p_actual.db_id)
             {
-            uint32_t closest_v = get_closest_vertex(p_actual, get_vertices(_db, p_actual.db_id)->data(), get_triangles(_db, p_actual.db_id)->data());
+            uint32_t closest_v = get_closest_vertex(p_actual, get_vertices(_db, p_actual.db_id), get_triangles(_db, p_actual.db_id));
             auto V = (*get_vertices(_db, p_actual.db_id))[closest_v];
             std::cout << std::endl;
             std::cout << "---------------------------------------" << std::endl;
@@ -794,9 +796,10 @@ void view::render_mouse()
   const float pos_y = _m.mouse_y;
   _canvas.get_pixel(p_actual, _m, (float)_canvas_pos_x, (float)_canvas_pos_y);
   const uint32_t clr = 0xff0000d0;
-  if (p_actual.triangle_id != (uint32_t)(-1))
+  //if (p_actual.object_id != (uint32_t)(-1))
+  if (p_actual.db_id)
     {
-    uint32_t closest_v = get_closest_vertex(p_actual, get_vertices(_db, p_actual.db_id)->data(), get_triangles(_db, p_actual.db_id)->data());
+    uint32_t closest_v = get_closest_vertex(p_actual, get_vertices(_db, p_actual.db_id), get_triangles(_db, p_actual.db_id));
     auto V = (*get_vertices(_db, p_actual.db_id))[closest_v];
     jtk::float4 V4(V[0], V[1], V[2], 1.f);
     V4 = jtk::matrix_vector_multiply(*get_cs(_db, p_actual.db_id), V4);

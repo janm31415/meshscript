@@ -80,6 +80,9 @@ class canvas
 
 
   private:
+    jtk::render_data _rd;
+    jtk::frame_buffer _fb;
+    jtk::image<float> _zbuffer;
 
     jtk::image<uint32_t> im, background;
     jtk::image<jtk::float4> buffer;
@@ -89,7 +92,6 @@ class canvas
     jtk::image<float> _u, _v;
     canvas_settings _settings;
 
-    jtk::render_data _rd;
-    jtk::frame_buffer _fb;
-    jtk::image<float> _zbuffer;
+    
+    
   };

@@ -1,5 +1,5 @@
 # meshscript
-Visualize 3d meshes via scripting in scheme
+Visualize 3d meshes via scripting in scheme.
 
 Introduction
 ------------

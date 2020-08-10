@@ -90,7 +90,10 @@ canvas::canvas()
 canvas::canvas(uint32_t w, uint32_t h) : im(w, h), background(w, h), _canvas(w, h), _u(w, h), _v(w, h), buffer(w, h)
   {
   for (auto& p : _canvas)
-    p.triangle_id = (uint32_t)-1;
+    {
+    p.db_id = 0;
+    p.object_id = (uint32_t)-1;
+    }
   _camera = make_default_camera();
   projection_matrix = make_projection_matrix(_camera, w, h);
   projection_matrix_inv = invert_projection_matrix(projection_matrix);
@@ -130,7 +133,8 @@ void canvas::do_mouse(bool& refresh, mouse_data& data, scene& s, float mouse_off
     uint32_t X = (uint32_t)(data.mouse_x - mouse_offset_x);
     uint32_t Y = (uint32_t)(data.mouse_y - mouse_offset_y);
     auto f = _canvas(X, Y);
-    if (f.triangle_id != (uint32_t)-1)
+    //if (f.object_id != (uint32_t)-1)
+    if (f.db_id)
       {
       const uint32_t w = im.width();
       const uint32_t h = im.height();
@@ -254,35 +258,35 @@ void canvas::do_mouse(bool& refresh, mouse_data& data, scene& s, float mouse_off
     }
   }
 
-  float canvas::compute_convex_cos_angle(float x1, float y1, float u1, float v1, float depth1, float x2, float y2, float u2, float v2, float depth2)
+float canvas::compute_convex_cos_angle(float x1, float y1, float u1, float v1, float depth1, float x2, float y2, float u2, float v2, float depth2)
+  {
+  float4 screen_pos1((2.f * ((x1 + 0.5f) / _canvas.width()) - 1.f), (2.f * ((y1 + 0.5f) / _canvas.height()) - 1.f), _camera.nearClippingPlane, 1.f);
+  float4 dir1 = matrix_vector_multiply(projection_matrix_inv, screen_pos1);
+  dir1[3] = 0.f;
+
+  float4 pt1 = depth1 * dir1;
+
+  float4 screen_pos2((2.f * ((x2 + 0.5f) / _canvas.width()) - 1.f), (2.f * ((y2 + 0.5f) / _canvas.height()) - 1.f), _camera.nearClippingPlane, 1.f);
+  float4 dir2 = matrix_vector_multiply(projection_matrix_inv, screen_pos2);
+  dir2[3] = 0.f;
+
+  float4 pt2 = depth2 * dir2;
+
+  float4 n1(u1, v1, std::sqrt(1.f - u1 * u1 - v1 * v1), 0.f);
+  float4 n2(u2, v2, std::sqrt(1.f - u2 * u2 - v2 * v2), 0.f);
+
+  float angle;
+
+  if (std::abs(dot(n1, n2) - 1.f) > 0.0001)
     {
-    float4 screen_pos1((2.f * ((x1 + 0.5f) / _canvas.width()) - 1.f), (2.f * ((y1 + 0.5f) / _canvas.height()) - 1.f), _camera.nearClippingPlane, 1.f);
-    float4 dir1 = matrix_vector_multiply(projection_matrix_inv, screen_pos1);
-    dir1[3] = 0.f;
-
-    float4 pt1 = depth1 * dir1;
-
-    float4 screen_pos2((2.f * ((x2 + 0.5f) / _canvas.width()) - 1.f), (2.f * ((y2 + 0.5f) / _canvas.height()) - 1.f), _camera.nearClippingPlane, 1.f);
-    float4 dir2 = matrix_vector_multiply(projection_matrix_inv, screen_pos2);
-    dir2[3] = 0.f;
-
-    float4 pt2 = depth2 * dir2;
-
-    float4 n1(u1, v1, std::sqrt(1.f - u1 * u1 - v1 * v1), 0.f);
-    float4 n2(u2, v2, std::sqrt(1.f - u2 * u2 - v2 * v2), 0.f);
-
-    float angle;
-
-    if (std::abs(dot(n1, n2) - 1.f) > 0.0001)
-      {
-      auto pt = pt2 - pt1;
-      pt = pt / std::sqrt(dot(pt, pt));
-      angle = dot(pt, n1);
-      }
-    else
-      angle = 0.f;
-    return angle;
+    auto pt = pt2 - pt1;
+    pt = pt / std::sqrt(dot(pt, pt));
+    angle = dot(pt, n1);
     }
+  else
+    angle = 0.f;
+  return angle;
+  }
 
 namespace
   {
@@ -431,16 +435,16 @@ void canvas::_render_wireframe(const jtk::image<pixel>& canvas, const matcapmap&
 
     for (uint32_t x = 0; x < w - 1; ++x)
       {
-      if (p_canvas->triangle_id != (uint32_t)(-1))
+      if (p_canvas->object_id != (uint32_t)(-1))
         {
 
-        if ((p_right_canvas->triangle_id != (uint32_t)(-1)) && (p_right_canvas->triangle_id != p_canvas->triangle_id))
+        if ((p_right_canvas->object_id != (uint32_t)(-1)) && (p_right_canvas->object_id != p_canvas->object_id))
           {
           const float scale = (p_canvas->u*p_canvas->u + p_canvas->v*p_canvas->v)*0.5f;
           const auto wire_color = make_color((unsigned char)(255 * scale), (unsigned char)(255 * scale), (unsigned char)(255 * scale));
           *p_im_line = wire_color;
           }
-        else if ((p_up_canvas->triangle_id != (uint32_t)(-1)) && (p_up_canvas->triangle_id != p_canvas->triangle_id))
+        else if ((p_up_canvas->object_id != (uint32_t)(-1)) && (p_up_canvas->object_id != p_canvas->object_id))
           {
           const float scale = (p_canvas->u*p_canvas->u + p_canvas->v*p_canvas->v)*0.5f;
           const auto wire_color = make_color((unsigned char)(255 * scale), (unsigned char)(255 * scale), (unsigned char)(255 * scale));
@@ -457,7 +461,7 @@ void canvas::_render_wireframe(const jtk::image<pixel>& canvas, const matcapmap&
       ++p_up_canvas;
       ++p_right_canvas;
       }
-    if (p_canvas->triangle_id != (uint32_t)(-1))
+    if (p_canvas->object_id != (uint32_t)(-1))
       {
       *p_im_line = _get_color(p_canvas, _matcap);
       }
@@ -484,10 +488,10 @@ void canvas::_canvas_to_one_bit_image(const jtk::image<pixel>& _combined_canvas,
 
     for (uint32_t x = 0; x < w - 1; ++x)
       {
-      if (p_combined_canvas->triangle_id != (uint32_t)(-1))
+      if (p_combined_canvas->object_id != (uint32_t)(-1))
         {
         float angle = 1.f;
-        if ((p_right_combined_canvas->triangle_id != (uint32_t)(-1)) && ((fabs(p_combined_canvas->u - p_right_combined_canvas->u) > threshold) || (fabs(p_combined_canvas->v - p_right_combined_canvas->v) > threshold)))
+        if ((p_right_combined_canvas->object_id != (uint32_t)(-1)) && ((fabs(p_combined_canvas->u - p_right_combined_canvas->u) > threshold) || (fabs(p_combined_canvas->v - p_right_combined_canvas->v) > threshold)))
           {
           float u1 = p_combined_canvas->u;
           float v1 = p_combined_canvas->v;
@@ -499,7 +503,7 @@ void canvas::_canvas_to_one_bit_image(const jtk::image<pixel>& _combined_canvas,
 
           angle = u1 * u2 + v1 * v2 + w1 * w2;
           }
-        else if ((p_up_combined_canvas->triangle_id != (uint32_t)(-1)) && ((fabs(p_combined_canvas->u - p_up_combined_canvas->u) > threshold) || (fabs(p_combined_canvas->v - p_up_combined_canvas->v) > threshold)))
+        else if ((p_up_combined_canvas->object_id != (uint32_t)(-1)) && ((fabs(p_combined_canvas->u - p_up_combined_canvas->u) > threshold) || (fabs(p_combined_canvas->v - p_up_combined_canvas->v) > threshold)))
           {
           float u1 = p_combined_canvas->u;
           float v1 = p_combined_canvas->v;
@@ -531,7 +535,7 @@ void canvas::_canvas_to_one_bit_image(const jtk::image<pixel>& _combined_canvas,
       ++p_up_combined_canvas;
       ++p_right_combined_canvas;
       }
-    if (p_combined_canvas->triangle_id != (uint32_t)(-1))
+    if (p_combined_canvas->object_id != (uint32_t)(-1))
       {
       int U = get_U(p_combined_canvas->u, _matcap.get_matcap(p_combined_canvas->db_id));
       int V = get_V(p_combined_canvas->v, _matcap.get_matcap(p_combined_canvas->db_id));
@@ -573,10 +577,10 @@ void canvas::canvas_to_image(const jtk::image<pixel>& _combined_canvas, const ma
 
       for (uint32_t x = 0; x < w - 1; ++x)
         {
-        if (p_combined_canvas->triangle_id != (uint32_t)(-1))
+        if (p_combined_canvas->object_id != (uint32_t)(-1))
           {
 
-          if ((p_right_combined_canvas->triangle_id != (uint32_t)(-1)) && ((fabs(p_combined_canvas->u - p_right_combined_canvas->u) > threshold) || (fabs(p_combined_canvas->v - p_right_combined_canvas->v) > threshold)))
+          if ((p_right_combined_canvas->object_id != (uint32_t)(-1)) && ((fabs(p_combined_canvas->u - p_right_combined_canvas->u) > threshold) || (fabs(p_combined_canvas->v - p_right_combined_canvas->v) > threshold)))
             {
             float u1 = p_combined_canvas->u;
             float v1 = p_combined_canvas->v;
@@ -588,7 +592,7 @@ void canvas::canvas_to_image(const jtk::image<pixel>& _combined_canvas, const ma
             auto clr = get_angle_color(angle, _matcap.get_matcap(p_combined_canvas->db_id), u1, v1, p_combined_canvas->mark);
             *p_im_line = clr;
             }
-          else if ((p_up_combined_canvas->triangle_id != (uint32_t)(-1)) && ((fabs(p_combined_canvas->u - p_up_combined_canvas->u) > threshold) || (fabs(p_combined_canvas->v - p_up_combined_canvas->v) > threshold)))
+          else if ((p_up_combined_canvas->object_id != (uint32_t)(-1)) && ((fabs(p_combined_canvas->u - p_up_combined_canvas->u) > threshold) || (fabs(p_combined_canvas->v - p_up_combined_canvas->v) > threshold)))
             {
             float u1 = p_combined_canvas->u;
             float v1 = p_combined_canvas->v;
@@ -610,7 +614,7 @@ void canvas::canvas_to_image(const jtk::image<pixel>& _combined_canvas, const ma
         ++p_up_combined_canvas;
         ++p_right_combined_canvas;
         }
-      if (p_combined_canvas->triangle_id != (uint32_t)(-1))
+      if (p_combined_canvas->object_id != (uint32_t)(-1))
         {
         *p_im_line = _get_color(p_combined_canvas, _matcap);
         }
@@ -628,7 +632,7 @@ void canvas::canvas_to_image(const jtk::image<pixel>& _combined_canvas, const ma
       const pixel* p_combined_canvas = _combined_canvas.row(y);
       for (uint32_t x = 0; x < w; ++x)
         {
-        if (p_combined_canvas->triangle_id != (uint32_t)(-1))
+        if (p_combined_canvas->object_id != (uint32_t)(-1))
           {
           *p_im_line = _get_color(p_combined_canvas, _matcap);
           }
@@ -672,7 +676,7 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
 
   float4 light(s.pivot[0] + s.diagonal*3.f, s.pivot[1] + s.diagonal*3.f, s.pivot[2] + s.diagonal*3.f, 1.f);
 
-  light = matrix_vector_multiply(s.coordinate_system, light);  
+  light = matrix_vector_multiply(s.coordinate_system, light);
 
   std::vector<const qbvh*> bvhs;
   aligned_vector<float4x4> object_cs;
@@ -718,7 +722,8 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
       pixel* p_canvas_line = out.row(y) + x0;
       for (int x = x0; x <= x1; ++x)
         {
-        p_canvas_line->triangle_id = (uint32_t)-1;
+        p_canvas_line->db_id = 0;
+        p_canvas_line->object_id = (uint32_t)-1;
         p_canvas_line->u = 0.f;
         p_canvas_line->v = 0.f;
         p_canvas_line->depth = std::numeric_limits<float>::max();
@@ -748,29 +753,29 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
       r.t_far = std::numeric_limits<float>::max();
 
 
-      uint32_t triangle_id, two_level_index;
-      auto hit = bvh.find_closest_triangle(triangle_id, two_level_index, r, bvhs.data(), inverted_object_cs.data(), triangles.data(), vertices.data());
+      uint32_t object_id, two_level_index;
+      auto hit = bvh.find_closest_triangle(object_id, two_level_index, r, bvhs.data(), inverted_object_cs.data(), triangles.data(), vertices.data());
 
       if (hit.found)
         {
-        float4 n = float4(triangle_normals[two_level_index][triangle_id][0], triangle_normals[two_level_index][triangle_id][1], triangle_normals[two_level_index][triangle_id][2], 0.f);
+        float4 n = float4(triangle_normals[two_level_index][object_id][0], triangle_normals[two_level_index][object_id][1], triangle_normals[two_level_index][object_id][2], 0.f);
         n = matrix_vector_multiply(s.coordinate_system_inv, n);
         n = matrix_vector_multiply(object_cs[two_level_index], n);
         r.t_far = hit.distance;
         p_canvas_line->u = n[0];
         p_canvas_line->v = n[1];
         p_canvas_line->depth = hit.distance;
-        p_canvas_line->triangle_id = triangle_id;
+        p_canvas_line->object_id = object_id;
         p_canvas_line->barycentric_u = hit.u;
         p_canvas_line->barycentric_v = hit.v;
         p_canvas_line->db_id = db_ids[two_level_index];
-        p_canvas_line->mark = 0;      
-        
+        p_canvas_line->mark = 0;
+
         if (vertex_colors[two_level_index] != nullptr)
           {
-          const uint32_t v0 = triangles[two_level_index][triangle_id][0];
-          const uint32_t v1 = triangles[two_level_index][triangle_id][1];
-          const uint32_t v2 = triangles[two_level_index][triangle_id][2];
+          const uint32_t v0 = triangles[two_level_index][object_id][0];
+          const uint32_t v1 = triangles[two_level_index][object_id][1];
+          const uint32_t v2 = triangles[two_level_index][object_id][2];
           const auto& c0 = vertex_colors[two_level_index][v0];
           const auto& c1 = vertex_colors[two_level_index][v1];
           const auto& c2 = vertex_colors[two_level_index][v2];
@@ -782,7 +787,7 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
           }
         else if (_settings.textured && uv_coordinates[two_level_index] != nullptr)
           {
-          const auto& uvcoords = uv_coordinates[two_level_index][triangle_id];
+          const auto& uvcoords = uv_coordinates[two_level_index][object_id];
           auto coord = (1.f - hit.u - hit.v)*uvcoords[0] + hit.u*uvcoords[1] + hit.v*uvcoords[2];
           coord[0] = std::max(std::min(coord[0], 1.f), 0.f);
           coord[1] = std::max(std::min(coord[1], 1.f), 0.f);
@@ -797,9 +802,9 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
 
         if (_settings.shadow)
           {
-          const uint32_t v0 = triangles[two_level_index][triangle_id][0];
-          const uint32_t v1 = triangles[two_level_index][triangle_id][1];
-          const uint32_t v2 = triangles[two_level_index][triangle_id][2];
+          const uint32_t v0 = triangles[two_level_index][object_id][0];
+          const uint32_t v1 = triangles[two_level_index][object_id][1];
+          const uint32_t v2 = triangles[two_level_index][object_id][2];
           const float4 V0(vertices[two_level_index][v0][0], vertices[two_level_index][v0][1], vertices[two_level_index][v0][2], 1.f);
           const float4 V1(vertices[two_level_index][v1][0], vertices[two_level_index][v1][1], vertices[two_level_index][v1][2], 1.f);
           const float4 V2(vertices[two_level_index][v2][0], vertices[two_level_index][v2][1], vertices[two_level_index][v2][2], 1.f);
@@ -809,15 +814,16 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
           r.orig = pos;
           r.dir = light_dir;
           r.t_near = 1e-3f;
-          r.t_far = std::numeric_limits<float>::max();          
-          auto hit2 = bvh.find_closest_triangle(triangle_id, two_level_index, r, bvhs.data(), inverted_object_cs.data(), triangles.data(), vertices.data());
+          r.t_far = std::numeric_limits<float>::max();
+          auto hit2 = bvh.find_closest_triangle(object_id, two_level_index, r, bvhs.data(), inverted_object_cs.data(), triangles.data(), vertices.data());
           if (hit2.found)
             p_canvas_line->mark |= 1;
-          }          
+          }
         }
       else
         {
-        p_canvas_line->triangle_id = (uint32_t)-1;
+        p_canvas_line->db_id = 0;
+        p_canvas_line->object_id = (uint32_t)-1;
         p_canvas_line->u = 0.f;
         p_canvas_line->v = 0.f;
         p_canvas_line->depth = std::numeric_limits<float>::max();
@@ -838,7 +844,10 @@ void canvas::render_scene(jtk::image<pixel>& out, const scene* s)
   else
     {
     for (auto& p : out)
-      p.triangle_id = (uint32_t)-1;
+      {
+      p.db_id = 0;
+      p.object_id = (uint32_t)-1;
+      }
     }
   }
 
@@ -917,7 +926,7 @@ void canvas::render_pointclouds_on_image(const scene* s, const jtk::image<pixel>
       const pixel* p_pix = pix.data() + y * pix.stride();
       for (int x = 0; x < w; ++x)
         {
-        *p_z = (p_pix->triangle_id != (uint32_t)-1) ? 1.f/p_pix->depth : 0.f;
+        *p_z = (p_pix->db_id != 0) ? 1.f / p_pix->depth : 0.f;
         ++p_z;
         ++p_pix;
         }
@@ -932,7 +941,7 @@ void canvas::render_pointclouds_on_image(const scene* s, const jtk::image<pixel>
       {
       projection_mat[i] = projection_matrix[i];
       camera_position[i] = s->coordinate_system_inv[i];
-      }        
+      }
     for (const auto& pc : s->pointclouds)
       {
       for (int i = 0; i < 16; ++i)
@@ -942,11 +951,41 @@ void canvas::render_pointclouds_on_image(const scene* s, const jtk::image<pixel>
       bind(_rd, camera_position, object_system, projection_mat);
       object_buffer ob;
       ob.number_of_vertices = (uint32_t)pc.p_vertices->size();
-      ob.vertices = (const float*)pc.p_vertices->data();      
+      ob.vertices = (const float*)pc.p_vertices->data();
       ob.normals = _settings.shading ? (const float*)pc.p_normals->data() : nullptr;
       ob.colors = _settings.one_bit ? nullptr : (const uint32_t*)pc.p_vertex_colors->data();
       bind(_rd, ob);
-      present(_rd, 0xffffff);
-      }   
+      present(_rd, 0xffffff, [&](uint32_t vertex_id, const __m128i& index, const __m128i& mask)
+        {
+        if (_mm_extract_epi32(mask, 0) != 0)
+          {
+          const uint32_t idx = _mm_extract_epi32(index, 0);   
+          _canvas[idx].object_id = vertex_id;
+          _canvas[idx].depth = 1.f / _fb.zbuffer[idx];
+          _canvas[idx].db_id = pc.db_id;
+          }
+        if (_mm_extract_epi32(mask, 1) != 0)
+          {
+          const uint32_t idx = _mm_extract_epi32(index, 1);
+          _canvas[idx].object_id = vertex_id+1;
+          _canvas[idx].depth = 1.f / _fb.zbuffer[idx];
+          _canvas[idx].db_id = pc.db_id;
+          }
+        if (_mm_extract_epi32(mask, 2) != 0)
+          {
+          const uint32_t idx = _mm_extract_epi32(index, 2);
+          _canvas[idx].object_id = vertex_id+2;
+          _canvas[idx].depth = 1.f / _fb.zbuffer[idx];
+          _canvas[idx].db_id = pc.db_id;
+          }
+        if (_mm_extract_epi32(mask, 3) != 0)
+          {
+          const uint32_t idx = _mm_extract_epi32(index, 3);
+          _canvas[idx].object_id = vertex_id+3;
+          _canvas[idx].depth = 1.f / _fb.zbuffer[idx];
+          _canvas[idx].db_id = pc.db_id;
+          }
+        });
+      }
     }
   }

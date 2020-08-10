@@ -2,11 +2,12 @@
 
 
 using namespace jtk;
+
 uint32_t get_closest_vertex(const pixel& p, const vec3<float>* vertices, const vec3<uint32_t>* triangles)
   {
-  const uint32_t v0 = triangles[p.triangle_id][0];
-  const uint32_t v1 = triangles[p.triangle_id][1];
-  const uint32_t v2 = triangles[p.triangle_id][2];
+  const uint32_t v0 = triangles[p.object_id][0];
+  const uint32_t v1 = triangles[p.object_id][1];
+  const uint32_t v2 = triangles[p.object_id][2];
   const vec3<float> V0 = vertices[v0];
   const vec3<float> V1 = vertices[v1];
   const vec3<float> V2 = vertices[v2];
@@ -24,3 +25,9 @@ uint32_t get_closest_vertex(const pixel& p, const vec3<float>* vertices, const v
   }
 
 
+uint32_t get_closest_vertex(const pixel& p, const std::vector<jtk::vec3<float>>* vertices, const std::vector<jtk::vec3<uint32_t>>* triangles)
+  {
+  if (triangles != nullptr)
+    return get_closest_vertex(p, vertices->data(), triangles->data());
+  return p.object_id;
+  }
