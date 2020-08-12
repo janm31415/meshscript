@@ -6,6 +6,8 @@
 
 #include <SDL_syswm.h>
 
+#include <jtk/geometry.h>
+
 #include <sstream>
 
 using namespace jtk;
@@ -512,6 +514,26 @@ void view::unzoom()
   std::scoped_lock lock(_mut);
   ::unzoom(_scene);
   _refresh = true;
+  }
+
+int64_t view::marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width, uint64_t height, uint64_t depth, float isovalue, double(*fun_ptr)(double, double, double))
+  {
+  std::scoped_lock lock(_mut);
+  mesh* db_mesh;
+  uint32_t id;
+  _db.create_mesh(db_mesh, id);
+  jtk::marching_cubes(db_mesh->vertices, db_mesh->triangles, bb, width, height, depth, isovalue, [&](double x, double y, double z)
+    {
+    return fun_ptr(x, y, z);
+    }, [](float) {return true; });
+  db_mesh->cs = get_identity();
+  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  db_mesh->visible = true;
+  add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return (int64_t)id;
   }
 
 void view::poll_for_events()

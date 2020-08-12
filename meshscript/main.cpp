@@ -10,6 +10,8 @@
 
 #include <libskiwi/runtime.h>
 
+#include <libskiwi/types.h>
+
 #include "view.h"
 #include "jet.h"
 #include <thread>
@@ -17,6 +19,8 @@
 #include <mutex>
 #include <sstream>
 #include <iostream>
+
+#include <jtk/geometry.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -271,6 +275,81 @@ uint64_t scm_get_view_coordinate_system()
   return make_list(lst);
   }
 
+namespace
+  {
+
+  skiwi::skiwi_compiled_function_ptr marching_cubes_fun = nullptr;
+
+  double marching_cubes_distance_fun(double x, double y, double z)
+    {
+    skiwi::scm_type res = skiwi::skiwi_run_raw(marching_cubes_fun, x, y, z);
+    return res.get_number();
+    }
+
+  }
+
+int64_t scm_marching_cubes(skiwi::scm_type bb, skiwi::scm_type dim, skiwi::scm_type iso, skiwi::scm_type fun)
+  {
+  skiwi::save_compiler_data();
+
+  jtk::boundingbox3d<float> bounding;
+  int64_t width, height, depth;
+  double isovalue;
+  if (bb.is_pair() && dim.is_pair() && (iso.is_fixnum() || iso.is_flonum()) && fun.is_closure())
+    {
+    try
+      {
+      std::vector<skiwi::scm_type> bb_(3);
+      bb_[0] = bb.get_pair().first;
+      bb_[1] = bb.get_pair().second.get_pair().first;
+      bb_[2] = bb.get_pair().second.get_pair().second.get_pair().first;
+      
+      for (int i = 0; i < 3; ++i)
+        {
+        const auto& minmax = bb_[i];
+        auto mi = minmax.get_pair().first;
+        auto ma = minmax.get_pair().second.get_pair().first;
+        bounding.min[i] = (float)mi.get_number();
+        bounding.max[i] = (float)ma.get_number();
+        }
+      
+      width = dim.get_pair().first.get_fixnum();
+      height = dim.get_pair().second.get_pair().first.get_fixnum();
+      depth = dim.get_pair().second.get_pair().second.get_pair().first.get_fixnum();
+      isovalue = iso.get_number();
+
+      std::cout << "closure name: " << fun.get_closure_name() << "\n";
+
+
+      std::string script = std::string("(c-input \"(double mc_x, double mc_y, double mc_z)\") (") + fun.get_closure_name() + std::string(" mc_x mc_y mc_z)");
+
+      marching_cubes_fun = skiwi::skiwi_compile(script);
+    
+      int64_t id = g_view.v->marching_cubes(bounding, width, height, depth, isovalue, &marching_cubes_distance_fun);
+      /*
+      for (int i = 0; i < 10; ++i)
+        {
+        skiwi::scm_type res = skiwi::skiwi_run_raw(f_ptr, 1.0, 2.0, 3.0);
+
+        std::cout << res.get_number() << "\n";
+        }
+      */
+      skiwi::restore_compiler_data();
+      return id;
+      }
+    catch (std::runtime_error e)
+      {
+      std::cout << e.what() << "\n";
+      }
+    }
+  else
+    {
+    std::cout << "error: marching-cubes: invalid input type\n";
+    }
+  skiwi::restore_compiler_data();
+  return -1;
+  }
+
 int64_t make_mesh(skiwi::scm_type scm_vertices, skiwi::scm_type scm_triangles)
   {
   try
@@ -505,6 +584,7 @@ void* register_functions(void*)
   register_external_primitive("load-mesh", &load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
   register_external_primitive("load-pointcloud", &load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");
   register_external_primitive("make-mesh", &make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. Vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
+  register_external_primitive("marching-cubes", &scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with bb of the form ((min_x max_x) (min_y max_y) (min_z max_z)), dim of the form (width height depth), isovalue a flonum, fun a lambda function accepting (x y z) values and returning a distance.");
   register_external_primitive("matcap-set!", &set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id.");  
   register_external_primitive("show!", &show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
   register_external_primitive("triangles->csv", &triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of the object with tag `id` to a csv file.");
