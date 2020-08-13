@@ -28,6 +28,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
+#include <tbb/enumerable_thread_specific.h>
+
 using namespace jtk;
 
 constexpr double pi = 3.141592653589793238462643383279;
@@ -277,12 +279,16 @@ uint64_t scm_get_view_coordinate_system()
 
 namespace
   {
+  tbb::enumerable_thread_specific< void* > thread_specific_scheme_context(nullptr);
 
   skiwi::skiwi_compiled_function_ptr marching_cubes_fun = nullptr;
 
   double marching_cubes_distance_fun(double x, double y, double z)
     {
-    skiwi::scm_type res = skiwi::skiwi_run_raw(marching_cubes_fun, x, y, z);
+    void*& local_context = thread_specific_scheme_context.local();
+    if (!local_context)
+      local_context = skiwi::skiwi_clone_context(skiwi::skiwi_get_context());
+    skiwi::scm_type res = skiwi::skiwi_run_raw(marching_cubes_fun, local_context, x, y, z);
     return res.get_number();
     }
 
@@ -318,22 +324,12 @@ int64_t scm_marching_cubes(skiwi::scm_type bb, skiwi::scm_type dim, skiwi::scm_t
       depth = dim.get_pair().second.get_pair().second.get_pair().first.get_fixnum();
       isovalue = iso.get_number();
 
-      std::cout << "closure name: " << fun.get_closure_name() << "\n";
-
-
       std::string script = std::string("(c-input \"(double mc_x, double mc_y, double mc_z)\") (") + fun.get_closure_name() + std::string(" mc_x mc_y mc_z)");
 
       marching_cubes_fun = skiwi::skiwi_compile(script);
     
       int64_t id = g_view.v->marching_cubes(bounding, width, height, depth, isovalue, &marching_cubes_distance_fun);
-      /*
-      for (int i = 0; i < 10; ++i)
-        {
-        skiwi::scm_type res = skiwi::skiwi_run_raw(f_ptr, 1.0, 2.0, 3.0);
 
-        std::cout << res.get_number() << "\n";
-        }
-      */
       skiwi::restore_compiler_data();
       return id;
       }
