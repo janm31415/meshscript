@@ -20,6 +20,7 @@
 #include <sstream>
 #include <iostream>
 
+#include <jtk/concurrency.h>
 #include <jtk/geometry.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -28,7 +29,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
-#include <tbb/enumerable_thread_specific.h>
+//#include <tbb/enumerable_thread_specific.h>
 
 using namespace jtk;
 
@@ -279,15 +280,26 @@ uint64_t scm_get_view_coordinate_system()
 
 namespace
   {
+#if defined(_ENABLE_TBB)
   tbb::enumerable_thread_specific< void* > thread_specific_scheme_context(nullptr);
+#elif defined(_ENABLE_PPL)
+  Concurrency::combinable<void* > thread_specific_scheme_context;
+#endif  
 
   skiwi::skiwi_compiled_function_ptr marching_cubes_fun = nullptr;
 
   double marching_cubes_distance_fun(double x, double y, double z)
     {
+#if defined(_ENABLE_TBB)
     void*& local_context = thread_specific_scheme_context.local();
     if (!local_context)
       local_context = skiwi::skiwi_clone_context(skiwi::skiwi_get_context());
+#elif defined(_ENABLE_PPL)
+    bool exists;
+    void*& local_context = thread_specific_scheme_context.local(exists);
+    if (!exists)
+      local_context = skiwi::skiwi_clone_context(skiwi::skiwi_get_context());
+#endif  
     skiwi::scm_type res = skiwi::skiwi_run_raw(marching_cubes_fun, local_context, x, y, z);
     return res.get_number();
     }
