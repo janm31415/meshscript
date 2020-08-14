@@ -522,7 +522,7 @@ int64_t view::marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width
   mesh* db_mesh;
   uint32_t id;
   _db.create_mesh(db_mesh, id);
-  jtk::marching_cubes(db_mesh->vertices, db_mesh->triangles, bb, width, height, depth, isovalue, [&](double x, double y, double z)
+  jtk::marching_cubes(db_mesh->vertices, db_mesh->triangles, bb, (uint32_t)width, (uint32_t)height, (uint32_t)depth, isovalue, [&](double x, double y, double z)
     {
     return fun_ptr(x, y, z);
     }, [](float) {return true; });
