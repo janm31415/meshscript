@@ -68,6 +68,13 @@ set(CMAKE_C_FLAGS_RELEASE "/W4 /MP /GF /O2 /Ob2 /Oi /Ot /MD /Zi /DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "/W4 /MP /GF /O2 /Ob2 /Oi /Ot /MD /Zi /DNDEBUG")
 endif (WIN32)
 
+if (UNIX)
+set(CMAKE_C_FLAGS_DEBUG "-msse4.1")
+set(CMAKE_CXX_FLAGS_DEBUG "-msse4.1")
+set(CMAKE_C_FLAGS_RELEASE "-msse4.1")
+set(CMAKE_CXX_FLAGS_RELEASE "-msse4.1")
+endif (UNIX)
+
 # general build definitions
 add_definitions(-D_SCL_SECURE_NO_WARNINGS)
 add_definitions(-DMEMORY_LEAK_TRACKING)
