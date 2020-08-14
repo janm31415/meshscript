@@ -1,4 +1,5 @@
 #include "io.h"
+#include <string.h>
 
 extern "C"
   {
