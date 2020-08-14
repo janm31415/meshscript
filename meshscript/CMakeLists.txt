@@ -1,19 +1,18 @@
+if (WIN32)
+  set(SDL_INCLUDE_DIR "C:/Program Files/SDL2/include/SDL2/")
+  set(SDL_LIBRARIES "C:/Program Files/SDL2/lib/SDL2.lib" "C:/Program Files/SDL2/lib/SDL2main.lib")
+  set(TBB_INCLUDE_DIR "C:/Program Files/TBB/include")
+  set(TBB_LIBRARIES "C:/Program Files/TBB/lib/intel64/vc14/tbb.lib" "C:/Program Files/TBB/lib/intel64/vc14/tbb_debug.lib")
+  set(OPENGL_LIBRARIES opengl32.lib)
+endif (WIN32)
 
-set(TBB_INCLUDE_DIR "C:/Program Files/TBB/include")
-set(TBB_LIBRARY "C:/Program Files/TBB/lib/intel64/vc14")
-set(TBB_DIR "C:/Program Files/TBB")
-
-find_package(TBB REQUIRED)
-
-set(SDL_INCLUDE_DIR "C:/Program Files/SDL2/include")
-set(SDL_LIBRARY "C:/Program Files/SDL2/lib")
-find_package(SDL REQUIRED)
-
-include_directories(${SDL_INCLUDE_DIR}/sdl2)
-link_directories(${SDL_LIBRARY})
-
-include_directories(${TBB_INCLUDE_DIR})
-link_directories(${TBB_LIBRARY})
+if (UNIX)
+  set(SDL_INCLUDE_DIR "/usr/include/SDL2/")
+  set(SDL_LIBRARIES "/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so" "/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0")
+  set(TBB_INCLUDE_DIR "/usr/local/include" "/usr/include")
+  set(TBB_LIBRARIES "/usr/lib/x86_64-linux-gnu/libtbb.so" "/usr/lib/x86_64-linux-gnu/libtbb.so.2")
+  set(OPENGL_LIBRARIES "/usr/lib/x86_64-linux-gnu/libOpenGL.so.0.0.0")
+endif (UNIX)
 
 set(STB
 ../stb/stb_image.h
@@ -62,10 +61,12 @@ set(RESOURCES
 meshscript.ico
 )
 
+if (WIN32)
 set(CMAKE_C_FLAGS_DEBUG "/W4 /MP /GF /RTCu /Od /MDd /Zi")
 set(CMAKE_CXX_FLAGS_DEBUG "/W4 /MP /GF /RTCu /Od /MDd /Zi")
 set(CMAKE_C_FLAGS_RELEASE "/W4 /MP /GF /O2 /Ob2 /Oi /Ot /MD /Zi /DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "/W4 /MP /GF /O2 /Ob2 /Oi /Ot /MD /Zi /DNDEBUG")
+endif (WIN32)
 
 # general build definitions
 add_definitions(-D_SCL_SECURE_NO_WARNINGS)
@@ -77,6 +78,7 @@ add_definitions(-D_ENABLE_TBB)
 #add_definitions(-D_ENABLE_THREADS)
 
 add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB} ${PLY})
+
 source_group("Header Files" FILES ${HDRS})
 source_group("Source Files" FILES ${SRCS})
 source_group("stb" FILES ${STB})
@@ -89,14 +91,15 @@ target_include_directories(meshscript
     ${CMAKE_CURRENT_SOURCE_DIR}/../skiwi/
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/
     ${CMAKE_CURRENT_SOURCE_DIR}/../ply/
+    ${SDL_INCLUDE_DIR}
+    ${TBB_INCLUDE_DIR}
     )	
 	
 target_link_libraries(meshscript
     PRIVATE
-    tbb.lib
-    SDL2.lib
-    SDL2main.lib
-    opengl32.lib
+    ${OPENGL_LIBRARIES}
+    ${SDL_LIBRARIES}
+    ${TBB_LIBRARIES}   
     asm
     libskiwi	
     )	
