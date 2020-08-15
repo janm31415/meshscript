@@ -32,6 +32,7 @@ io.h
 jet.h
 matcap.h
 mesh.h
+morphable_model.h
 mouse.h
 pc.h
 pixel.h
