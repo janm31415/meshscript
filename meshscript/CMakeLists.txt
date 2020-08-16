@@ -32,6 +32,7 @@ io.h
 jet.h
 matcap.h
 mesh.h
+mm.h
 morphable_model.h
 mouse.h
 pc.h
@@ -51,6 +52,7 @@ jet.cpp
 main.cpp
 matcap.cpp
 mesh.cpp
+mm.cpp
 pc.cpp
 pixel.cpp
 scene.cpp

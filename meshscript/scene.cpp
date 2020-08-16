@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "mesh.h"
+#include "mm.h"
 #include "pc.h"
 #include <jtk/geometry.h>
 
@@ -20,6 +21,22 @@ void add_object(uint32_t id, scene& s, db& d)
     compute_triangle_normals(obj.triangle_normals, obj.p_vertices->data(), obj.p_triangles->data(), (uint32_t)obj.p_triangles->size());
     obj.cs = p_mesh->cs;
     compute_bb(obj.min_bb, obj.max_bb, (uint32_t)obj.p_vertices->size(), obj.p_vertices->data());    
+    obj.bvh = std::unique_ptr<qbvh>(new qbvh(*obj.p_triangles, obj.p_vertices->data()));
+    s.objects.emplace_back(std::move(obj));
+    }
+  if (d.is_mm(id))
+    {
+    mm* p_mm = d.get_mm(id);
+    scene_object obj;
+    obj.db_id = id;
+    obj.p_triangles = &p_mm->m.triangles;
+    obj.p_vertices = &p_mm->vertices;
+    obj.p_vertex_colors = nullptr;
+    obj.p_uv_coordinates = nullptr;
+    obj.p_texture = nullptr;
+    compute_triangle_normals(obj.triangle_normals, obj.p_vertices->data(), obj.p_triangles->data(), (uint32_t)obj.p_triangles->size());
+    obj.cs = p_mm->cs;
+    compute_bb(obj.min_bb, obj.max_bb, (uint32_t)obj.p_vertices->size(), obj.p_vertices->data());
     obj.bvh = std::unique_ptr<qbvh>(new qbvh(*obj.p_triangles, obj.p_vertices->data()));
     s.objects.emplace_back(std::move(obj));
     }
