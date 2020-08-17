@@ -1,5 +1,6 @@
 #include "view.h"
 #include "mesh.h"
+#include "mm.h"
 #include "pc.h"
 
 #include <iostream>
@@ -166,6 +167,31 @@ int64_t view::load_mesh_from_file(const char* filename)
   db_mesh->visible = m.visible;
   _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
   if (db_mesh->visible)
+    add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return (int64_t)id;
+  }
+
+int64_t view::load_morphable_model_from_file(const char* filename)
+  {
+  std::scoped_lock lock(_mut);
+  mm m;
+  std::string f(filename);
+  bool res = read_from_file(m, f);
+  if (!res)
+    return -1;
+  mm* db_mm;
+  uint32_t id;
+  _db.create_mm(db_mm, id);
+  swap(db_mm->m, m.m);
+  db_mm->vertices.swap(m.vertices);
+  db_mm->coefficients.swap(m.coefficients);
+  db_mm->cs = m.cs;
+  db_mm->visible = m.visible;
+  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  if (db_mm->visible)
     add_object(id, _scene, _db);
   prepare_scene(_scene);
   ::unzoom(_scene);
@@ -534,6 +560,64 @@ int64_t view::marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width
   ::unzoom(_scene);
   _refresh = true;
   return (int64_t)id;
+  }
+
+int64_t view::mm_coeff_size(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return -1;
+  return (int64_t)m->m.U.cols();
+  }
+
+int64_t view::mm_shape_size(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return -1;
+  return (int64_t)m->m.U.rows();
+  }
+
+double view::mm_sigma(uint32_t id, int64_t idx)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return std::numeric_limits<double>::quiet_NaN();
+  return jtk::sigma(m->m, idx);
+  }
+
+std::vector<float> view::mm_coeff(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return std::vector<float>();
+  return m->coefficients;
+  }
+
+std::vector<float> view::mm_basic_shape_coeff(uint32_t id, int64_t shape_id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return std::vector<float>();
+  return jtk::get_basic_shape(m->m, shape_id);
+  }
+
+void view::mm_coeff_set(uint32_t id, const std::vector<float>& coeff)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return;
+  m->coefficients = coeff;
+  m->vertices = jtk::get_vertices(m->m, m->coefficients);
+  remove_object(id, _scene);
+  if (m->visible)
+    add_object(id, _scene, _db);
   }
 
 void view::poll_for_events()

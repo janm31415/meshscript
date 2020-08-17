@@ -709,8 +709,8 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
     triangles.push_back(obj.p_triangles->data());
     vertices.push_back(obj.p_vertices->data());
     triangle_normals.push_back(obj.triangle_normals.data());
-    vertex_colors.push_back(obj.p_vertex_colors->data());
-    uv_coordinates.push_back(obj.p_uv_coordinates->data());
+    vertex_colors.push_back(obj.p_vertex_colors ? obj.p_vertex_colors->data() : nullptr);
+    uv_coordinates.push_back(obj.p_uv_coordinates ? obj.p_uv_coordinates->data() : nullptr);
     textures.push_back(obj.p_texture);
     db_ids.push_back(obj.db_id);
     }

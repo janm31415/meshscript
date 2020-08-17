@@ -22,6 +22,8 @@ class view
 
     int64_t load_mesh_from_file(const char* filename);
 
+    int64_t load_morphable_model_from_file(const char* filename);
+
     int64_t load_pc_from_file(const char* filename);
 
     int64_t load_mesh(const std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles);
@@ -35,6 +37,13 @@ class view
     jtk::float4x4 get_coordinate_system(uint32_t id);
 
     jtk::float4x4 get_coordinate_system();
+
+    int64_t mm_coeff_size(uint32_t id);
+    int64_t mm_shape_size(uint32_t id);
+    double mm_sigma(uint32_t id, int64_t idx);
+    std::vector<float> mm_coeff(uint32_t id);
+    std::vector<float> mm_basic_shape_coeff(uint32_t id, int64_t shape_id);
+    void mm_coeff_set(uint32_t id, const std::vector<float>& coeff);
 
     void set_vertex_colors(uint32_t id, const std::vector<jtk::vec3<uint8_t>>& colors);
 

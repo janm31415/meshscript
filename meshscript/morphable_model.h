@@ -18,9 +18,20 @@ namespace jtk
     std::vector<vec3<uint32_t>> triangles;
     };
 
+  void swap(morphable_model& left, morphable_model& right);
   std::vector<vec3<float>> get_vertices(const morphable_model& mm, const std::vector<float>& coefficients);
   std::vector<float> get_basic_shape(const morphable_model& mm, uint32_t index);
   bool read_morphable_model_binary(morphable_model& mm, const char* filename);
+  float sigma(const morphable_model& mm, uint64_t index);
+
+  inline void swap(morphable_model& left, morphable_model& right)
+    {
+    left.average.swap(right.average);
+    left.U.swap(right.U);
+    left.V.swap(right.V);
+    left.S.swap(right.S);
+    std::swap(left.triangles, right.triangles);
+    }
 
   inline std::vector<vec3<float>> get_vertices(const morphable_model& mm, const std::vector<float>& coefficients)
     {
@@ -35,8 +46,8 @@ namespace jtk
       for (uint64_t j = 0; j < dim2; ++j)
         {
         pt[0] += coefficients[j] * mm.U(i * 3, j);
-        pt[1] += coefficients[j] * mm.U(i * 3, j);
-        pt[2] += coefficients[j] * mm.U(i * 3, j);
+        pt[1] += coefficients[j] * mm.U(i * 3 + 1, j);
+        pt[2] += coefficients[j] * mm.U(i * 3 + 2, j);
         }
       vertices[i] = pt;
       }
@@ -73,14 +84,16 @@ namespace jtk
     uint32_t d1, d2;
     fread(&d1, sizeof(uint32_t), 1, inputfile);
     fread(&d2, sizeof(uint32_t), 1, inputfile);
-    mm.U.resize(d1, d2);
+    mm.U.resize(d2, d1);
     fread((void*)mm.U.data(), sizeof(float), d1*d2, inputfile);
+    mm.U = transpose(mm.U);
 
     // read V matrix
     fread(&d1, sizeof(uint32_t), 1, inputfile);
     fread(&d2, sizeof(uint32_t), 1, inputfile);
-    mm.V.resize(d1, d2);
+    mm.V.resize(d2, d1);
     fread((void*)mm.V.data(), sizeof(float), d1*d2, inputfile);
+    mm.V = transpose(mm.V);
 
     // read S vector
     fread(&sz, sizeof(uint32_t), 1, inputfile);
@@ -95,6 +108,14 @@ namespace jtk
 
     fclose(inputfile);
     return true;
+    }
+
+  inline float sigma(const morphable_model& mm, uint64_t index)
+    {
+    float denom = float(mm.S.rows());
+    if (denom > 1)
+      denom -= 1.f;
+    return mm.S(index) / std::sqrt(denom);
     }
 
   } // namespace jtk

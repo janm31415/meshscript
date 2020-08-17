@@ -109,6 +109,12 @@ int64_t load_mesh(const char* filename)
   return id;
   }
 
+int64_t load_morphable_model(const char* filename)
+  {
+  int64_t id = g_view.v->load_morphable_model_from_file(filename);
+  return id;
+  }
+
 int64_t load_pc(const char* filename)
   {
   int64_t id = g_view.v->load_pc_from_file(filename);
@@ -577,6 +583,65 @@ uint64_t scm_get_position(skiwi::scm_type x, skiwi::scm_type y)
   return make_list(coord);
   }
 
+int64_t mm_coeff_size(int64_t id)
+  {
+  return g_view.v->mm_coeff_size((uint32_t)id);
+  }
+
+int64_t mm_shape_size(int64_t id)
+  {
+  return g_view.v->mm_shape_size((uint32_t)id);
+  }
+
+double mm_sigma(int64_t id, int64_t idx)
+  {
+  return g_view.v->mm_sigma((uint32_t)id, idx);
+  }
+
+uint64_t mm_coeff(int64_t id)
+  {
+  using namespace skiwi;
+  std::vector<float> coeff = g_view.v->mm_coeff((uint32_t)id);
+  std::vector<scm_type> coefflist;
+  for (const auto& v : coeff)
+    {
+    coefflist.push_back(make_flonum((double)v));
+    }
+  return make_list(coefflist);
+  }
+
+uint64_t mm_basic_shape_coeff(int64_t id, int64_t shape_id)
+  {
+  using namespace skiwi;
+  std::vector<float> coeff = g_view.v->mm_basic_shape_coeff((uint32_t)id, shape_id);
+  std::vector<scm_type> coefflist;
+  for (const auto& v : coeff)
+    {
+    coefflist.push_back(make_flonum((double)v));
+    }
+  return make_list(coefflist);
+  }
+
+void mm_coeff_set(int64_t id, skiwi::scm_type scm_coeff)
+  {
+  std::vector<float> coeff;
+  try
+    {
+    auto clrlst = scm_coeff.get_list();
+    coeff.reserve(clrlst.size());
+    for (auto& clr : clrlst)
+      {
+      double c = clr.get_number();
+      coeff.push_back((float)c);
+      }
+    g_view.v->mm_coeff_set((uint32_t)id, coeff);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: morphable-model-coeff-set!: " << e.what() << "\n";
+    }
+  }
+
 void* register_functions(void*)
   {
   using namespace skiwi;
@@ -587,10 +652,19 @@ void* register_functions(void*)
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list of values between 0 and 1 and returns a list of lists with (r g b) values.");
   register_external_primitive("load-mesh", (void*)&load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
+  register_external_primitive("load-morphable-model", (void*)&load_morphable_model, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
   register_external_primitive("load-pointcloud", (void*)&load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. Vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
   register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with bb of the form ((min_x max_x) (min_y max_y) (min_z max_z)), dim of the form (width height depth), isovalue a flonum, fun a lambda function accepting (x y z) values and returning a distance.");
   register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id.");  
+
+  register_external_primitive("morphable-model-coeff-size", (void*)&mm_coeff_size, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-shape-size", (void*)&mm_shape_size, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-sigma", (void*)&mm_sigma, skiwi_double, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-coeff", (void*)&mm_coeff, skiwi_scm, skiwi_int64, "");
+  register_external_primitive("morphable-model-basic-shape-coeff", (void*)&mm_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-coeff-set!", (void*)&mm_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
+
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
   register_external_primitive("triangles->csv", (void*)&triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of the object with tag `id` to a csv file.");
   register_external_primitive("vertexcolors-set!", (void*)&scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(vertexcolors-set! id clrlst) sets vertex colors for the object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
