@@ -730,7 +730,7 @@ void* register_functions(void*)
   register_external_primitive("view-unzoom!", (void*)&scm_unzoom, skiwi_void, "(view-unzoom!) sets the camera to its initial position.");
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
  
-  register_external_primitive("write", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(write id \"file.ext\")");
+  register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
 
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript.");
   return nullptr;
@@ -746,7 +746,7 @@ int main(int argc, char** argv)
   skiwi::skiwi_parameters pars;
   pars.heap_size = 64 * 1024 * 1024;
   skiwi::set_prompt("ms> ");
-  skiwi::scheme_with_skiwi(&register_functions, nullptr, pars);
+  skiwi::scheme_with_skiwi(&register_functions, nullptr, pars);  
 
   for (int i = 1; i < argc; ++i)
     {
