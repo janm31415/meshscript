@@ -261,7 +261,15 @@ void view::set_coordinate_system(uint32_t id, const float4x4& cs)
     if (p->visible)
       add_object(id, _scene, _db);
     }
-  if (m || p)
+  mm* mo = _db.get_mm((uint32_t)id);
+  if (mo)
+    {
+    mo->cs = cs;
+    remove_object(id, _scene);
+    if (mo->visible)
+      add_object(id, _scene, _db);
+    }
+  if (m || p || mo)
     {
     prepare_scene(_scene);
     _refresh = true;
@@ -306,13 +314,16 @@ jtk::float4x4 view::get_coordinate_system(uint32_t id)
   pc* p = _db.get_pc(id);
   if (p)
     return p->cs;
-  return jtk::get_identity();  
+  mm* mo = _db.get_mm((uint32_t)id);
+  if (mo)
+    return mo->cs;
+  return jtk::get_identity();
   }
 
 jtk::float4x4 view::get_coordinate_system()
   {
   std::scoped_lock lock(_mut);
-  return _scene.coordinate_system;  
+  return _scene.coordinate_system;
   }
 
 void view::set_bg_color(uint8_t r, uint8_t g, uint8_t b)
@@ -341,7 +352,15 @@ void view::premultiply_coordinate_system(uint32_t id, const jtk::float4x4& cs)
     if (p->visible)
       add_object(id, _scene, _db);
     }
-  if (m || p)
+  mm* mo = _db.get_mm(id);
+  if (mo)
+    {
+    mo->cs = jtk::matrix_matrix_multiply(cs, mo->cs);
+    remove_object(id, _scene);
+    if (mo->visible)
+      add_object(id, _scene, _db);
+    }
+  if (m || p || mo)
     {
     prepare_scene(_scene);
     _refresh = true;
@@ -392,6 +411,12 @@ bool view::vertices_to_csv(int64_t id, const char* filename)
     std::string fn(filename);
     return ::vertices_to_csv(*p, fn);
     }
+  mm* mo = _db.get_mm((uint32_t)id);
+  if (mo)
+    {
+    std::string fn(filename);
+    return ::vertices_to_csv(*mo, fn);
+    }
   return false;
   }
 
@@ -399,10 +424,18 @@ bool view::triangles_to_csv(int64_t id, const char* filename)
   {
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh((uint32_t)id);
-  if (!m)
-    return false;
-  std::string fn(filename);
-  return ::triangles_to_csv(*m, fn);
+  if (m)
+    {
+    std::string fn(filename);
+    return ::triangles_to_csv(*m, fn);
+    }
+  mm* mo = _db.get_mm((uint32_t)id);
+  if (mo)
+    {
+    std::string fn(filename);
+    return ::triangles_to_csv(*mo, fn);
+    }
+  return false;
   }
 
 void view::hide(int64_t id)
@@ -410,10 +443,13 @@ void view::hide(int64_t id)
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh((uint32_t)id);
   pc* p = _db.get_pc((uint32_t)id);
+  mm* mo = _db.get_mm((uint32_t)id);
   if (m)
     m->visible = false;
   else if (p)
     p->visible = false;
+  else if (mo)
+    mo->visible = false;
   else
     return;
   remove_object((uint32_t)id, _scene);
@@ -436,9 +472,6 @@ void view::show()
 void view::set_matcap(int64_t id, int64_t clr_id)
   {
   std::scoped_lock lock(_mut);
-  mesh* m = _db.get_mesh((uint32_t)id);
-  if (!m)
-    return;
   _matcap.map_db_id_to_matcap[(uint32_t)id] = (uint32_t)(clr_id % _matcap.matcaps.size());
   _refresh = true;
   }
@@ -448,16 +481,22 @@ void view::show(int64_t id)
   std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh((uint32_t)id);
   pc* p = _db.get_pc((uint32_t)id);
+  mm* mo = _db.get_mm((uint32_t)id);
   if (m)
     m->visible = true;
   else if (p)
     p->visible = true;
+  else if (mo)
+    mo->visible = true;
   else
     return;
-  remove_object((uint32_t)id, _scene);
-  add_object((uint32_t)id, _scene, _db);
-  prepare_scene(_scene);
-  _refresh = true;
+  if (m || p || mo)
+    {
+    remove_object((uint32_t)id, _scene);
+    add_object((uint32_t)id, _scene, _db);
+    prepare_scene(_scene);
+    _refresh = true;
+    }
   }
 
 void view::set_shading(bool b)
@@ -522,17 +561,32 @@ jtk::vec3<float> view::get_world_position(int x, int y)
   if (p.db_id == 0)
     return invalid_vertex;
   mesh* m = _db.get_mesh((uint32_t)p.db_id);
-  if (!m)
-    return invalid_vertex;
-  const uint32_t v0 = m->triangles[p.object_id][0];
-  const uint32_t v1 = m->triangles[p.object_id][1];
-  const uint32_t v2 = m->triangles[p.object_id][2];
-  const float4 V0(m->vertices[v0][0], m->vertices[v0][1], m->vertices[v0][2], 1.f);
-  const float4 V1(m->vertices[v1][0], m->vertices[v1][1], m->vertices[v1][2], 1.f);
-  const float4 V2(m->vertices[v2][0], m->vertices[v2][1], m->vertices[v2][2], 1.f);
-  const float4 pos = V0 * (1.f - p.barycentric_u - p.barycentric_v) + p.barycentric_u*V1 + p.barycentric_v*V2;
-  auto world_pos = matrix_vector_multiply(m->cs, pos);
-  return jtk::vec3<float>(world_pos[0], world_pos[1], world_pos[2]);
+  if (m)
+    {
+    const uint32_t v0 = m->triangles[p.object_id][0];
+    const uint32_t v1 = m->triangles[p.object_id][1];
+    const uint32_t v2 = m->triangles[p.object_id][2];
+    const float4 V0(m->vertices[v0][0], m->vertices[v0][1], m->vertices[v0][2], 1.f);
+    const float4 V1(m->vertices[v1][0], m->vertices[v1][1], m->vertices[v1][2], 1.f);
+    const float4 V2(m->vertices[v2][0], m->vertices[v2][1], m->vertices[v2][2], 1.f);
+    const float4 pos = V0 * (1.f - p.barycentric_u - p.barycentric_v) + p.barycentric_u*V1 + p.barycentric_v*V2;
+    auto world_pos = matrix_vector_multiply(m->cs, pos);
+    return jtk::vec3<float>(world_pos[0], world_pos[1], world_pos[2]);
+    }
+  mm* mo = _db.get_mm((uint32_t)p.db_id);
+  if (mo)
+    {
+    const uint32_t v0 = mo->m.triangles[p.object_id][0];
+    const uint32_t v1 = mo->m.triangles[p.object_id][1];
+    const uint32_t v2 = mo->m.triangles[p.object_id][2];
+    const float4 V0(mo->vertices[v0][0], mo->vertices[v0][1], mo->vertices[v0][2], 1.f);
+    const float4 V1(mo->vertices[v1][0], mo->vertices[v1][1], mo->vertices[v1][2], 1.f);
+    const float4 V2(mo->vertices[v2][0], mo->vertices[v2][1], mo->vertices[v2][2], 1.f);
+    const float4 pos = V0 * (1.f - p.barycentric_u - p.barycentric_v) + p.barycentric_u*V1 + p.barycentric_v*V2;
+    auto world_pos = matrix_vector_multiply(mo->cs, pos);
+    return jtk::vec3<float>(world_pos[0], world_pos[1], world_pos[2]);
+    }
+  return invalid_vertex;
   }
 
 void view::unzoom()
@@ -560,6 +614,54 @@ int64_t view::marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width
   ::unzoom(_scene);
   _refresh = true;
   return (int64_t)id;
+  }
+
+bool view::write(uint32_t id, const char* filename)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh((uint32_t)id);
+  if (m)
+    {
+    return write_to_file(*m, filename);
+    }
+  pc* p = _db.get_pc((uint32_t)id);
+  if (p)
+    {
+    return write_to_file(*p, filename);
+    }
+  mm* mo = _db.get_mm((uint32_t)id);
+  if (mo)
+    {
+    return write_to_file(*mo, filename);
+    }
+  return false;
+  }
+
+std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh((uint32_t)id);
+  if (m)
+    return m->triangles;
+  mm* mo = _db.get_mm((uint32_t)id);
+  if (mo)
+    return mo->m.triangles;
+  return std::vector<jtk::vec3<uint32_t>>();
+  }
+
+std::vector<jtk::vec3<float>> view::vertices(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh((uint32_t)id);
+  if (m)
+    return m->vertices;
+  pc* p = _db.get_pc((uint32_t)id);
+  if (p)
+    return p->vertices;
+  mm* mo = _db.get_mm((uint32_t)id);
+  if (mo)
+    return mo->vertices;
+  return std::vector<jtk::vec3<float>>();
   }
 
 int64_t view::mm_coeff_size(uint32_t id)
@@ -604,7 +706,7 @@ std::vector<float> view::mm_basic_shape_coeff(uint32_t id, int64_t shape_id)
   mm* m = _db.get_mm((uint32_t)id);
   if (!m)
     return std::vector<float>();
-  return jtk::get_basic_shape(m->m, shape_id);
+  return jtk::get_basic_shape(m->m, (uint32_t)shape_id);
   }
 
 void view::mm_coeff_set(uint32_t id, const std::vector<float>& coeff)
@@ -618,6 +720,28 @@ void view::mm_coeff_set(uint32_t id, const std::vector<float>& coeff)
   remove_object(id, _scene);
   if (m->visible)
     add_object(id, _scene, _db);
+  }
+
+int64_t view::mm_to_mesh(int32_t mm_id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)mm_id);
+  if (!m)
+    return -1;
+  mesh* db_mesh;
+  uint32_t id;
+  _db.create_mesh(db_mesh, id);
+  db_mesh->vertices = m->vertices;
+  db_mesh->triangles = m->m.triangles;
+  db_mesh->cs = m->cs;
+  db_mesh->visible = true;
+  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  if (db_mesh->visible)
+    add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return (int64_t)id;
   }
 
 void view::poll_for_events()

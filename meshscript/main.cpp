@@ -642,6 +642,48 @@ void mm_coeff_set(int64_t id, skiwi::scm_type scm_coeff)
     }
   }
 
+int64_t mm_to_mesh(int64_t id)
+  {
+  return g_view.v->mm_to_mesh((uint32_t)id);
+  }
+
+uint64_t scm_triangles(int64_t id)
+  {
+  using namespace skiwi;
+  auto trias = g_view.v->triangles((uint32_t)id);
+  std::vector<scm_type> trialist;
+  for (const auto& tria : trias)
+    {
+    std::vector<scm_type> t;
+    t.push_back(make_fixnum(tria[0]));
+    t.push_back(make_fixnum(tria[1]));
+    t.push_back(make_fixnum(tria[2]));
+    trialist.push_back(make_list(t));
+    }
+  return make_list(trialist);
+  }
+
+uint64_t scm_vertices(int64_t id)
+  {
+  using namespace skiwi;
+  auto verts = g_view.v->vertices((uint32_t)id);
+  std::vector<scm_type> vertlist;
+  for (const auto& vert : verts)
+    {
+    std::vector<scm_type> v;
+    v.push_back(make_flonum(vert[0]));
+    v.push_back(make_flonum(vert[1]));
+    v.push_back(make_flonum(vert[2]));
+    vertlist.push_back(make_list(v));
+    }
+  return make_list(vertlist);
+  }
+
+bool scm_write(int64_t id, const char* filename)
+  {
+  return g_view.v->write((uint32_t)id, filename);
+  }
+
 void* register_functions(void*)
   {
   using namespace skiwi;
@@ -664,10 +706,13 @@ void* register_functions(void*)
   register_external_primitive("morphable-model-coeff", (void*)&mm_coeff, skiwi_scm, skiwi_int64, "");
   register_external_primitive("morphable-model-basic-shape-coeff", (void*)&mm_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-coeff-set!", (void*)&mm_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
+  register_external_primitive("morphable-model->mesh", (void*)&mm_to_mesh, skiwi_int64, skiwi_int64, "");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
+  register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id)");
   register_external_primitive("triangles->csv", (void*)&triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of the object with tag `id` to a csv file.");
   register_external_primitive("vertexcolors-set!", (void*)&scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(vertexcolors-set! id clrlst) sets vertex colors for the object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
+  register_external_primitive("vertices", (void*)&scm_vertices, skiwi_scm, skiwi_int64, "(vertices id)");
   register_external_primitive("vertices->csv", (void*)&vertices_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(vertices->csv id \"file.csv\") exports the vertices of the object with tag `id` to a csv file.");
   register_external_primitive("view-bg-set!", (void*)&scm_set_bg_color, skiwi_void, skiwi_int64, skiwi_int64, skiwi_int64, "(view-bg-set! r g b) changes the background color to (r g b).");
   register_external_primitive("view-cs", (void*)&scm_get_view_coordinate_system, skiwi_scm, "(view-cs) returns the coordinate system of the view camera.");
@@ -685,6 +730,8 @@ void* register_functions(void*)
   register_external_primitive("view-unzoom!", (void*)&scm_unzoom, skiwi_void, "(view-unzoom!) sets the camera to its initial position.");
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
  
+  register_external_primitive("write", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(write id \"file.ext\")");
+
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript.");
   return nullptr;
   }

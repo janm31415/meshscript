@@ -20,3 +20,5 @@ struct pc
 bool read_from_file(pc& point_cloud, const std::string& filename);
 
 bool vertices_to_csv(const pc& m, const std::string& filename);
+
+bool write_to_file(const pc& p, const std::string& filename);

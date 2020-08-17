@@ -13,3 +13,8 @@ struct mm
   };
 
 bool read_from_file(mm& morph, const std::string& filename);
+
+bool vertices_to_csv(const mm& m, const std::string& filename);
+bool triangles_to_csv(const mm& m, const std::string& filename);
+
+bool write_to_file(const mm& morph, const std::string& filename);

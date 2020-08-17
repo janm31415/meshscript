@@ -109,3 +109,17 @@ bool triangles_to_csv(const mesh& m, const std::string& filename)
     }
   return csv_write(data, filename.c_str(), ",");
   }
+
+
+bool write_to_file(const mesh& m, const std::string& filename)
+  {
+  std::string ext = jtk::get_extension(filename);
+  if (ext.empty())
+    return false;
+  std::transform(ext.begin(), ext.end(), ext.begin(), [](char ch) {return (char)::tolower(ch); });
+  if (ext == "stl")
+    {
+    return jtk::write_stl(m.vertices.data(), (uint32_t)m.triangles.size(), m.triangles.data(), nullptr, nullptr, filename.c_str());
+    }
+  return false;
+  }

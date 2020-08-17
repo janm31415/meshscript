@@ -36,3 +36,8 @@ bool vertices_to_csv(const pc& m, const std::string& filename)
     }
   return csv_write(data, filename.c_str(), ",");
   }
+
+bool write_to_file(const pc& p, const std::string& filename)
+  {
+  return false;
+  }

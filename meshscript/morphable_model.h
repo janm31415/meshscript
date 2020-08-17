@@ -22,6 +22,7 @@ namespace jtk
   std::vector<vec3<float>> get_vertices(const morphable_model& mm, const std::vector<float>& coefficients);
   std::vector<float> get_basic_shape(const morphable_model& mm, uint32_t index);
   bool read_morphable_model_binary(morphable_model& mm, const char* filename);
+  bool write_morphable_model_binary(const morphable_model& mm, const char* filename);
   float sigma(const morphable_model& mm, uint64_t index);
 
   inline void swap(morphable_model& left, morphable_model& right)
@@ -80,20 +81,18 @@ namespace jtk
     mm.average.resize(sz, 1);
     fread((void*)mm.average.data(), sizeof(float), sz, inputfile);
 
-    // read U matrix
+    // read U matrix (stored row-major)
     uint32_t d1, d2;
     fread(&d1, sizeof(uint32_t), 1, inputfile);
     fread(&d2, sizeof(uint32_t), 1, inputfile);
-    mm.U.resize(d2, d1);
+    mm.U.resize(d1, d2);
     fread((void*)mm.U.data(), sizeof(float), d1*d2, inputfile);
-    mm.U = transpose(mm.U);
 
-    // read V matrix
+    // read V matrix (stored row-major)
     fread(&d1, sizeof(uint32_t), 1, inputfile);
     fread(&d2, sizeof(uint32_t), 1, inputfile);
-    mm.V.resize(d2, d1);
+    mm.V.resize(d1, d2);
     fread((void*)mm.V.data(), sizeof(float), d1*d2, inputfile);
-    mm.V = transpose(mm.V);
 
     // read S vector
     fread(&sz, sizeof(uint32_t), 1, inputfile);
@@ -107,6 +106,47 @@ namespace jtk
     fread((void*)mm.triangles.data(), sizeof(uint32_t), sz, inputfile);
 
     fclose(inputfile);
+    return true;
+    }
+
+  inline bool write_morphable_model_binary(const morphable_model& mm, const char* filename)
+    {
+    FILE* outputfile;
+    outputfile = fopen(filename, "wb");
+
+    if (!outputfile)
+      return false;
+
+    // write average vector
+    uint32_t sz = (uint32_t)mm.average.rows();
+    fwrite(&sz, sizeof(uint32_t), 1, outputfile);
+    fwrite((void*)mm.average.data(), sizeof(float), sz, outputfile);
+
+    // write U matrix (row-major)
+    uint32_t d1 = (uint32_t)mm.U.rows();
+    uint32_t d2 = (uint32_t)mm.U.cols();
+    fwrite(&d1, sizeof(uint32_t), 1, outputfile);
+    fwrite(&d2, sizeof(uint32_t), 1, outputfile);   
+    fwrite((void*)mm.U.data(), sizeof(float), d1*d2, outputfile);
+
+    // write V matrix (row-major)
+    d1 = (uint32_t)mm.V.rows();
+    d2 = (uint32_t)mm.V.cols();
+    fwrite(&d1, sizeof(uint32_t), 1, outputfile);
+    fwrite(&d2, sizeof(uint32_t), 1, outputfile);
+    fwrite((void*)mm.V.data(), sizeof(float), d1*d2, outputfile);
+
+    // write S vector
+    sz = (uint32_t)mm.S.rows();
+    fwrite(&sz, sizeof(uint32_t), 1, outputfile);
+    fwrite((void*)mm.S.data(), sizeof(float), sz, outputfile);
+
+    // read triangles vector
+    sz = (uint32_t)mm.triangles.size() * 3;
+    fwrite(&sz, sizeof(uint32_t), 1, outputfile);
+    fwrite((void*)mm.triangles.data(), sizeof(uint32_t), sz, outputfile);
+
+    fclose(outputfile);
     return true;
     }
 
