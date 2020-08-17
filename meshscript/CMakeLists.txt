@@ -28,6 +28,7 @@ set(HDRS
 camera.h
 canvas.h
 db.h
+hdf5aux.h
 io.h
 jet.h
 matcap.h
@@ -103,6 +104,7 @@ target_include_directories(meshscript
     ${CMAKE_CURRENT_SOURCE_DIR}/../ply/
     ${SDL_INCLUDE_DIR}
     ${TBB_INCLUDE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/../hdf5
     )	
 	
 target_link_libraries(meshscript
@@ -112,6 +114,7 @@ target_link_libraries(meshscript
     ${TBB_LIBRARIES}   
     asm
     libskiwi	
+    hdf5-shared
     )	
 
 if (WIN32)
