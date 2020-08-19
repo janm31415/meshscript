@@ -78,7 +78,7 @@ namespace
     status = H5Dread(variance_id, get_hdf5_type<float>::get_mem_type_id(), variance_space_id, H5S_ALL, H5P_DEFAULT, (void*)mm.S.data());
 
     for (auto& s : mm.S)
-      s = std::sqrt(s);
+      s = std::sqrt(s)*std::sqrt(mm.S.rows()-1);
 
     status = H5Dclose(variance_id);
     status = H5Sclose(variance_space_id);

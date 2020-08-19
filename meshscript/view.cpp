@@ -719,7 +719,10 @@ void view::mm_coeff_set(uint32_t id, const std::vector<float>& coeff)
   m->vertices = jtk::get_vertices(m->m, m->coefficients);
   remove_object(id, _scene);
   if (m->visible)
+    {
     add_object(id, _scene, _db);
+    _refresh = true;
+    }
   }
 
 int64_t view::mm_to_mesh(int32_t mm_id)
