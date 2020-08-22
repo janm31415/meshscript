@@ -2,6 +2,7 @@
 #include "mesh.h"
 #include "mm.h"
 #include "pc.h"
+#include "face_detector.h"
 
 #include <iostream>
 
@@ -296,6 +297,13 @@ void view::render_scene()
   _canvas.canvas_to_image(_pixels, _matcap);
   _canvas.render_pointclouds_on_image(&_scene, _pixels);
   _refresh = false;
+
+  if (p_face_detector.get())
+    {
+    auto points = p_face_detector->predict(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    p_face_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+    }
+
   }
 
 jtk::image<uint32_t> view::get_image()
@@ -842,6 +850,12 @@ std::vector<jtk::vec3<uint8_t>> view::mesh_texture_to_vertexcolors(uint32_t id)
       }
     }
   return colors;
+  }
+
+void view::load_face_detector(const char* filename)
+  {
+  std::string fn(filename);
+  p_face_detector.reset(new face_detector(fn));
   }
 
 void view::poll_for_events()

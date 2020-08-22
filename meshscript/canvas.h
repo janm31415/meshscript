@@ -67,6 +67,8 @@ class canvas
 
     const jtk::image<uint32_t>& get_image() const { return im; }
 
+    jtk::image<uint32_t>& get_image() { return im; }
+
   private:
     float compute_convex_cos_angle(float x1, float y1, float u1, float v1, float depth1, float x2, float y2, float u2, float v2, float depth2);
     

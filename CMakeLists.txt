@@ -14,11 +14,11 @@ set(HDF5_INSTALL_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(HDF5_INSTALL_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set(BUILD_TESTING OFF)
 
+add_subdirectory(dlib)
 add_subdirectory(hdf5)
 add_subdirectory(jtk)
 add_subdirectory(meshscript)
 add_subdirectory(skiwi)
-
 
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -31,6 +31,8 @@ set_target_properties (libskiwi.tests PROPERTIES FOLDER skiwi)
 set_target_properties (life PROPERTIES FOLDER skiwi)
 set_target_properties (s PROPERTIES FOLDER skiwi)
 set_target_properties (utils PROPERTIES FOLDER skiwi)
+
+set_target_properties (dlib PROPERTIES FOLDER dlib)
 
 set_target_properties (jtk PROPERTIES FOLDER jtk)
 set_target_properties (jtk.tests PROPERTIES FOLDER jtk)

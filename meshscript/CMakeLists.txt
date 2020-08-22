@@ -28,6 +28,7 @@ set(HDRS
 camera.h
 canvas.h
 db.h
+face_detector.h
 hdf5aux.h
 io.h
 jet.h
@@ -48,6 +49,7 @@ meshscript.rc
 camera.cpp
 canvas.cpp
 db.cpp
+face_detector.cpp
 io.cpp
 jet.cpp
 main.cpp
@@ -99,6 +101,7 @@ source_group("ply" FILES ${PLY})
 target_include_directories(meshscript
     PRIVATE
     .
+    ${CMAKE_CURRENT_SOURCE_DIR}/../
     ${CMAKE_CURRENT_SOURCE_DIR}/../jtk/
     ${CMAKE_CURRENT_SOURCE_DIR}/../skiwi/
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/
@@ -114,6 +117,7 @@ target_link_libraries(meshscript
     ${SDL_LIBRARIES}
     ${TBB_LIBRARIES}   
     asm
+    dlib
     libskiwi	
     hdf5-shared
     )	

@@ -13,6 +13,9 @@
 #include <jtk/qbvh.h>
 
 #include <mutex>
+#include <memory>
+
+class face_detector;
 
 class view
   {
@@ -100,6 +103,8 @@ class view
 
     bool write(uint32_t id, const char* filename);
 
+    void load_face_detector(const char* filename);
+
     void unzoom();
 
     void loop();
@@ -150,6 +155,7 @@ class view
 
     jtk::image<pixel> _pixels;
     matcapmap _matcap;
+    std::unique_ptr<face_detector> p_face_detector;
 
     std::mutex _mut;
   };
