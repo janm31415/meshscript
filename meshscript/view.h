@@ -44,6 +44,14 @@ class view
     std::vector<float> mm_coeff(uint32_t id);
     std::vector<float> mm_basic_shape_coeff(uint32_t id, int64_t shape_id);
     void mm_coeff_set(uint32_t id, const std::vector<float>& coeff);
+
+    int64_t mm_color_coeff_size(uint32_t id);
+    int64_t mm_color_shape_size(uint32_t id);
+    double mm_color_sigma(uint32_t id, int64_t idx);
+    std::vector<float> mm_color_coeff(uint32_t id);
+    std::vector<float> mm_color_basic_shape_coeff(uint32_t id, int64_t shape_id);
+    void mm_color_coeff_set(uint32_t id, const std::vector<float>& coeff);
+
     int64_t mm_to_mesh(int32_t id);
 
     void set_vertex_colors(uint32_t id, const std::vector<jtk::vec3<uint8_t>>& colors);

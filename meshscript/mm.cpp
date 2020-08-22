@@ -8,16 +8,12 @@
 
 namespace
   {
-  bool read_morphable_model_basel(jtk::morphable_model& mm, const char* filename)
+  bool read_morphable_model_basel(hid_t group_id, jtk::morphable_model& mm, const char* filename)
     {
-    using namespace jtk;
-
-    hid_t file_id;
+    using namespace jtk;   
     herr_t status;
-    file_id = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-    auto shape_id = H5Gopen(file_id, "shape", H5P_DEFAULT);
 
-    auto represented_id = H5Gopen(shape_id, "representer", H5P_DEFAULT);
+    auto represented_id = H5Gopen(group_id, "representer", H5P_DEFAULT);
 
     auto cells_id = H5Dopen2(represented_id, "cells", H5P_DEFAULT);
     auto cells_space_id = H5Dget_space(cells_id);
@@ -38,14 +34,14 @@ namespace
       {
       mm.triangles[t][0] = data[t];
       mm.triangles[t][1] = data[t + maxdims[1]];
-      mm.triangles[t][2] = data[t + 2*maxdims[1]];
+      mm.triangles[t][2] = data[t + 2 * maxdims[1]];
       }
 
     status = H5Dclose(cells_id);
     status = H5Sclose(cells_space_id);
     status = H5Gclose(represented_id);
 
-    auto model_id = H5Gopen(shape_id, "model", H5P_DEFAULT);
+    auto model_id = H5Gopen(group_id, "model", H5P_DEFAULT);
 
     auto mean_id = H5Dopen(model_id, "mean", H5P_DEFAULT);
     auto mean_space_id = H5Dget_space(mean_id);
@@ -78,7 +74,7 @@ namespace
     status = H5Dread(variance_id, get_hdf5_type<float>::get_mem_type_id(), variance_space_id, H5S_ALL, H5P_DEFAULT, (void*)mm.S.data());
 
     for (auto& s : mm.S)
-      s = std::sqrt(s)*std::sqrt(mm.S.rows()-1);
+      s = std::sqrt(s)*std::sqrt(mm.S.rows() - 1);
 
     status = H5Dclose(variance_id);
     status = H5Sclose(variance_space_id);
@@ -86,7 +82,25 @@ namespace
     mm.V.resize(0, 0);
 
     status = H5Gclose(model_id);
+    return true;
+    }
+
+  bool read_morphable_model_basel(jtk::morphable_model& shape, jtk::morphable_model& color, const char* filename)
+    {
+    using namespace jtk;
+
+    hid_t file_id;
+    herr_t status;
+    file_id = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+    
+    auto shape_id = H5Gopen(file_id, "shape", H5P_DEFAULT);
+    bool result = read_morphable_model_basel(shape_id, shape, filename);   
     status = H5Gclose(shape_id);
+
+    auto color_id = H5Gopen(file_id, "color", H5P_DEFAULT);
+    result &= read_morphable_model_basel(color_id, color, filename);
+    status = H5Gclose(color_id);
+   
     status = H5Fclose(file_id);
     return true;
     }
@@ -100,18 +114,21 @@ bool read_from_file(mm& morph, const std::string& filename)
   std::transform(ext.begin(), ext.end(), ext.begin(), [](char ch) {return (char)::tolower(ch); });
   if (ext == "ssm")
     {
-    if (!jtk::read_morphable_model_binary(morph.m, filename.c_str()))
+    if (!jtk::read_morphable_model_binary(morph.shape, filename.c_str()))
       return false;
     }
   else if (ext == "h5")
     {
-    if (!read_morphable_model_basel(morph.m, filename.c_str()))
+    if (!read_morphable_model_basel(morph.shape, morph.color, filename.c_str()))
       return false;
     }
   else
     return false;
-  morph.coefficients.resize(morph.m.S.rows(), 0.f);
-  morph.vertices = jtk::get_vertices(morph.m, morph.coefficients);  
+  morph.coefficients.resize(morph.shape.S.rows(), 0.f);
+  morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);  
+  morph.color_coefficients.resize(morph.color.S.rows(), 0.f);
+  morph.vertex_colors = jtk::get_vertices(morph.color, morph.color_coefficients);
+  clamp_vertex_colors(morph.vertex_colors);
   morph.cs = jtk::get_identity();
   morph.visible = true;
   return true;
@@ -137,7 +154,7 @@ bool triangles_to_csv(const mm& m, const std::string& filename)
   {
   using namespace jtk;
   std::vector<std::vector<std::string>> data;
-  for (const auto& tria : m.m.triangles)
+  for (const auto& tria : m.shape.triangles)
     {
     std::vector<std::string> line;
     line.push_back(std::to_string(tria[0]));
@@ -156,7 +173,16 @@ bool write_to_file(const mm& morph, const std::string& filename)
   std::transform(ext.begin(), ext.end(), ext.begin(), [](char ch) {return (char)::tolower(ch); });
   if (ext == "ssm")
     {
-    return jtk::write_morphable_model_binary(morph.m, filename.c_str());
+    return jtk::write_morphable_model_binary(morph.shape, filename.c_str());
     }  
   return false;
+  }
+
+void clamp_vertex_colors(std::vector<jtk::vec3<float>>& vertex_colors)
+  {
+  for (auto& v : vertex_colors)
+    {
+    for (int j = 0; j < 3; ++j)
+      v[j] = v[j] < 0.f ? 0.f : (v[j] > 1.f ? 1.f : v[j]);
+    }
   }

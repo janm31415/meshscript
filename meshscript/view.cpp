@@ -185,9 +185,12 @@ int64_t view::load_morphable_model_from_file(const char* filename)
   mm* db_mm;
   uint32_t id;
   _db.create_mm(db_mm, id);
-  swap(db_mm->m, m.m);
+  swap(db_mm->shape, m.shape);
+  swap(db_mm->color, m.color);
   db_mm->vertices.swap(m.vertices);
   db_mm->coefficients.swap(m.coefficients);
+  db_mm->color_coefficients.swap(m.color_coefficients);
+  db_mm->vertex_colors.swap(m.vertex_colors);
   db_mm->cs = m.cs;
   db_mm->visible = m.visible;
   _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
@@ -576,9 +579,9 @@ jtk::vec3<float> view::get_world_position(int x, int y)
   mm* mo = _db.get_mm((uint32_t)p.db_id);
   if (mo)
     {
-    const uint32_t v0 = mo->m.triangles[p.object_id][0];
-    const uint32_t v1 = mo->m.triangles[p.object_id][1];
-    const uint32_t v2 = mo->m.triangles[p.object_id][2];
+    const uint32_t v0 = mo->shape.triangles[p.object_id][0];
+    const uint32_t v1 = mo->shape.triangles[p.object_id][1];
+    const uint32_t v2 = mo->shape.triangles[p.object_id][2];
     const float4 V0(mo->vertices[v0][0], mo->vertices[v0][1], mo->vertices[v0][2], 1.f);
     const float4 V1(mo->vertices[v1][0], mo->vertices[v1][1], mo->vertices[v1][2], 1.f);
     const float4 V2(mo->vertices[v2][0], mo->vertices[v2][1], mo->vertices[v2][2], 1.f);
@@ -645,7 +648,7 @@ std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
     return m->triangles;
   mm* mo = _db.get_mm((uint32_t)id);
   if (mo)
-    return mo->m.triangles;
+    return mo->shape.triangles;
   return std::vector<jtk::vec3<uint32_t>>();
   }
 
@@ -670,7 +673,7 @@ int64_t view::mm_coeff_size(uint32_t id)
   mm* m = _db.get_mm((uint32_t)id);
   if (!m)
     return -1;
-  return (int64_t)m->m.U.cols();
+  return (int64_t)m->shape.U.cols();
   }
 
 int64_t view::mm_shape_size(uint32_t id)
@@ -679,7 +682,7 @@ int64_t view::mm_shape_size(uint32_t id)
   mm* m = _db.get_mm((uint32_t)id);
   if (!m)
     return -1;
-  return (int64_t)m->m.U.rows();
+  return (int64_t)m->shape.U.rows();
   }
 
 double view::mm_sigma(uint32_t id, int64_t idx)
@@ -688,7 +691,7 @@ double view::mm_sigma(uint32_t id, int64_t idx)
   mm* m = _db.get_mm((uint32_t)id);
   if (!m)
     return std::numeric_limits<double>::quiet_NaN();
-  return jtk::sigma(m->m, idx);
+  return jtk::sigma(m->shape, idx);
   }
 
 std::vector<float> view::mm_coeff(uint32_t id)
@@ -706,7 +709,7 @@ std::vector<float> view::mm_basic_shape_coeff(uint32_t id, int64_t shape_id)
   mm* m = _db.get_mm((uint32_t)id);
   if (!m)
     return std::vector<float>();
-  return jtk::get_basic_shape(m->m, (uint32_t)shape_id);
+  return jtk::get_basic_shape(m->shape, (uint32_t)shape_id);
   }
 
 void view::mm_coeff_set(uint32_t id, const std::vector<float>& coeff)
@@ -716,7 +719,69 @@ void view::mm_coeff_set(uint32_t id, const std::vector<float>& coeff)
   if (!m)
     return;
   m->coefficients = coeff;
-  m->vertices = jtk::get_vertices(m->m, m->coefficients);
+  m->vertices = jtk::get_vertices(m->shape, m->coefficients);
+  remove_object(id, _scene);
+  if (m->visible)
+    {
+    add_object(id, _scene, _db);
+    _refresh = true;
+    }
+  }
+
+int64_t view::mm_color_coeff_size(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return -1;
+  return (int64_t)m->color.U.cols();
+  }
+
+int64_t view::mm_color_shape_size(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return -1;
+  return (int64_t)m->color.U.rows();
+  }
+
+double view::mm_color_sigma(uint32_t id, int64_t idx)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return std::numeric_limits<double>::quiet_NaN();
+  return jtk::sigma(m->color, idx);
+  }
+
+std::vector<float> view::mm_color_coeff(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return std::vector<float>();
+  return m->color_coefficients;
+  }
+
+std::vector<float> view::mm_color_basic_shape_coeff(uint32_t id, int64_t shape_id)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return std::vector<float>();
+  return jtk::get_basic_shape(m->color, (uint32_t)shape_id);
+  }
+
+void view::mm_color_coeff_set(uint32_t id, const std::vector<float>& coeff)
+  {
+  std::scoped_lock lock(_mut);
+  mm* m = _db.get_mm((uint32_t)id);
+  if (!m)
+    return;
+  m->color_coefficients = coeff;
+  m->vertex_colors = jtk::get_vertices(m->color, m->color_coefficients);
+  clamp_vertex_colors(m->vertex_colors);
   remove_object(id, _scene);
   if (m->visible)
     {
@@ -735,7 +800,8 @@ int64_t view::mm_to_mesh(int32_t mm_id)
   uint32_t id;
   _db.create_mesh(db_mesh, id);
   db_mesh->vertices = m->vertices;
-  db_mesh->triangles = m->m.triangles;
+  db_mesh->triangles = m->shape.triangles;
+  db_mesh->vertex_colors = m->vertex_colors;
   db_mesh->cs = m->cs;
   db_mesh->visible = true;
   _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());

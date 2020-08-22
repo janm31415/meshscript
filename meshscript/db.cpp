@@ -216,7 +216,7 @@ std::vector<vec3<uint32_t>>* get_triangles(const db& _db, uint32_t id)
       return &_db.get_mesh(id)->triangles;
       break;
     case MM_KEY:
-      return &_db.get_mm(id)->m.triangles;
+      return &_db.get_mm(id)->shape.triangles;
       break;
     }
   return nullptr;

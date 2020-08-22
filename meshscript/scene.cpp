@@ -29,9 +29,9 @@ void add_object(uint32_t id, scene& s, db& d)
     mm* p_mm = d.get_mm(id);
     scene_object obj;
     obj.db_id = id;
-    obj.p_triangles = &p_mm->m.triangles;
+    obj.p_triangles = &p_mm->shape.triangles;
     obj.p_vertices = &p_mm->vertices;
-    obj.p_vertex_colors = nullptr;
+    obj.p_vertex_colors = &p_mm->vertex_colors;
     obj.p_uv_coordinates = nullptr;
     obj.p_texture = nullptr;
     compute_triangle_normals(obj.triangle_normals, obj.p_vertices->data(), obj.p_triangles->data(), (uint32_t)obj.p_triangles->size());
