@@ -743,6 +743,22 @@ bool scm_write(int64_t id, const char* filename)
   return g_view.v->write((uint32_t)id, filename);
   }
 
+uint64_t scm_mesh_texture_to_vertexcolors(uint64_t id)
+  {
+  using namespace skiwi;
+  std::vector<vec3<uint8_t>> colors = g_view.v->mesh_texture_to_vertexcolors((uint32_t)id);
+  std::vector<scm_type> vertclrlist;
+  for (const auto& clr : colors)
+    {
+    std::vector<scm_type> v;
+    v.push_back(make_fixnum(clr[0]));
+    v.push_back(make_fixnum(clr[1]));
+    v.push_back(make_fixnum(clr[2]));
+    vertclrlist.push_back(make_list(v));
+    }
+  return make_list(vertclrlist);
+  }
+
 void* register_functions(void*)
   {
   using namespace skiwi;
@@ -758,20 +774,23 @@ void* register_functions(void*)
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. Vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
   register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with bb of the form ((min_x max_x) (min_y max_y) (min_z max_z)), dim of the form (width height depth), isovalue a flonum, fun a lambda function accepting (x y z) values and returning a distance.");
   register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id.");  
+  
+  register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "");
 
-  register_external_primitive("morphable-model-coeff-size", (void*)&mm_coeff_size, skiwi_int64, skiwi_int64, "");
+
+  register_external_primitive("morphable-model-coefficient-size", (void*)&mm_coeff_size, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-shape-size", (void*)&mm_shape_size, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-sigma", (void*)&mm_sigma, skiwi_double, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-coeff", (void*)&mm_coeff, skiwi_scm, skiwi_int64, "");
-  register_external_primitive("morphable-model-basic-shape-coeff", (void*)&mm_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-coeff-set!", (void*)&mm_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
+  register_external_primitive("morphable-model-coefficient", (void*)&mm_coeff, skiwi_scm, skiwi_int64, "");
+  register_external_primitive("morphable-model-basic-shape-coefficient", (void*)&mm_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-coefficient-set!", (void*)&mm_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
   register_external_primitive("morphable-model->mesh", (void*)&mm_to_mesh, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coeff-size", (void*)&mm_color_coeff_size, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-color-coefficient-size", (void*)&mm_color_coeff_size, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-color-shape-size", (void*)&mm_color_shape_size, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-color-sigma", (void*)&mm_color_sigma, skiwi_double, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coeff", (void*)&mm_color_coeff, skiwi_scm, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-basic-shape-coeff", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coeff-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
+  register_external_primitive("morphable-model-color-coefficient", (void*)&mm_color_coeff, skiwi_scm, skiwi_int64, "");
+  register_external_primitive("morphable-model-color-basic-shape-coefficient", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-color-coefficient-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
 
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");

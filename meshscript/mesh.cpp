@@ -121,5 +121,26 @@ bool write_to_file(const mesh& m, const std::string& filename)
     {
     return jtk::write_stl(m.vertices.data(), (uint32_t)m.triangles.size(), m.triangles.data(), nullptr, nullptr, filename.c_str());
     }
+  else if (ext == "ply")
+    {
+    if (m.vertex_colors.empty())
+      jtk::write_ply(filename.c_str(), m.vertices, m.triangles);
+    else
+      {
+      std::vector<uint32_t> colors;
+      colors.reserve(m.vertex_colors.size());
+      for (auto& clr : m.vertex_colors)
+        {
+        uint32_t r = (uint32_t)(clr[0] * 255.f);
+        uint32_t g = (uint32_t)(clr[1] * 255.f);
+        uint32_t b = (uint32_t)(clr[2] * 255.f);
+        r = r > 255 ? 255 : r;
+        g = g > 255 ? 255 : g;
+        b = b > 255 ? 255 : b;
+        colors.push_back(0xff000000 | (b << 16) | (g << 8) | r);
+        }
+      return jtk::write_ply(filename.c_str(), m.vertices, colors, m.triangles);
+      }
+    }
   return false;
   }

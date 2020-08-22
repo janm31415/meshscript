@@ -52,6 +52,8 @@ class view
     std::vector<float> mm_color_basic_shape_coeff(uint32_t id, int64_t shape_id);
     void mm_color_coeff_set(uint32_t id, const std::vector<float>& coeff);
 
+    std::vector<jtk::vec3<uint8_t>> mesh_texture_to_vertexcolors(uint32_t id);
+
     int64_t mm_to_mesh(int32_t id);
 
     void set_vertex_colors(uint32_t id, const std::vector<jtk::vec3<uint8_t>>& colors);

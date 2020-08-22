@@ -813,6 +813,37 @@ int64_t view::mm_to_mesh(int32_t mm_id)
   return (int64_t)id;
   }
 
+std::vector<jtk::vec3<uint8_t>> view::mesh_texture_to_vertexcolors(uint32_t id)
+  {
+  std::vector<jtk::vec3<uint8_t>> colors;
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh((uint32_t)id);
+  if (m && !m->uv_coordinates.empty())
+    {
+    colors.resize(m->vertices.size());
+    for (uint32_t t = 0; t < (uint32_t)m->triangles.size(); ++t)
+      {
+      const auto& tria = m->triangles[t];
+      const auto& uv = m->uv_coordinates[t];
+      for (int j = 0; j < 3; ++j)
+        {
+        float u = uv[j][0];
+        float v = uv[j][1];
+        if (u >= 0.f && u <= 1.f && v >= 0.f && v <= 1.f)
+          {
+          int U = (int)((m->texture.width()-1)*u);
+          int V = (int)((m->texture.height() - 1)*v);
+          uint32_t clr = m->texture(U, V);
+          colors[tria[j]][0] = clr & 255;
+          colors[tria[j]][1] = (clr >> 8) & 255;
+          colors[tria[j]][2] = (clr >> 16) & 255;
+          }
+        }
+      }
+    }
+  return colors;
+  }
+
 void view::poll_for_events()
   {
   _m.right_button_down = false;
