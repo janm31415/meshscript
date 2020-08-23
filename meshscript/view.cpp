@@ -70,6 +70,7 @@ view::view() : _w(1600), _h(900), _window(nullptr)
 
   _quit = false;
   _refresh = true;
+  _show_face_detector = false;
 
   //prepare_window();
 
@@ -298,7 +299,7 @@ void view::render_scene()
   _canvas.render_pointclouds_on_image(&_scene, _pixels);
   _refresh = false;
 
-  if (p_face_detector.get())
+  if (_show_face_detector && p_face_detector.get())
     {
     auto points = p_face_detector->predict(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     p_face_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
@@ -854,8 +855,27 @@ std::vector<jtk::vec3<uint8_t>> view::mesh_texture_to_vertexcolors(uint32_t id)
 
 void view::load_face_detector(const char* filename)
   {
+  std::scoped_lock lock(_mut);
   std::string fn(filename);
   p_face_detector.reset(new face_detector(fn));
+  }
+
+void view::set_show_face_detector(bool b)
+  {
+  std::scoped_lock lock(_mut);
+  _show_face_detector = b;
+  _refresh = true;
+  }
+
+std::vector<std::pair<long, long>> view::face_detector_predict()
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<std::pair<long, long>> points;
+  if (p_face_detector.get())
+    {
+    points = p_face_detector->predict(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    }
+  return points;
   }
 
 void view::poll_for_events()

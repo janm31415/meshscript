@@ -105,6 +105,10 @@ class view
 
     void load_face_detector(const char* filename);
 
+    void set_show_face_detector(bool b);
+
+    std::vector<std::pair<long, long>> face_detector_predict();
+
     void unzoom();
 
     void loop();
@@ -158,4 +162,6 @@ class view
     std::unique_ptr<face_detector> p_face_detector;
 
     std::mutex _mut;
+
+    bool _show_face_detector;
   };

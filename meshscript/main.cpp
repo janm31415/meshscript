@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include <jtk/concurrency.h>
+#include <jtk/fitting.h>
 #include <jtk/geometry.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -261,7 +262,7 @@ uint64_t scm_get_coordinate_system(int64_t id)
     std::vector<scm_type> row;
     for (int c = 0; c < 4; ++c)
       {
-      row.push_back(make_flonum(cs[r + 4*c]));
+      row.push_back(make_flonum(cs[r + 4 * c]));
       }
     lst.push_back(make_list(row));
     }
@@ -319,7 +320,7 @@ int64_t scm_marching_cubes(skiwi::scm_type bb, skiwi::scm_type dim, skiwi::scm_t
       bb_[0] = bb.get_pair().first;
       bb_[1] = bb.get_pair().second.get_pair().first;
       bb_[2] = bb.get_pair().second.get_pair().second.get_pair().first;
-      
+
       for (int i = 0; i < 3; ++i)
         {
         const auto& minmax = bb_[i];
@@ -328,7 +329,7 @@ int64_t scm_marching_cubes(skiwi::scm_type bb, skiwi::scm_type dim, skiwi::scm_t
         bounding.min[i] = (float)mi.get_number();
         bounding.max[i] = (float)ma.get_number();
         }
-      
+
       width = dim.get_pair().first.get_fixnum();
       height = dim.get_pair().second.get_pair().first.get_fixnum();
       depth = dim.get_pair().second.get_pair().second.get_pair().first.get_fixnum();
@@ -337,7 +338,7 @@ int64_t scm_marching_cubes(skiwi::scm_type bb, skiwi::scm_type dim, skiwi::scm_t
       std::string script = std::string("(c-input \"(double mc_x, double mc_y, double mc_z)\") (") + fun.get_closure_name() + std::string(" mc_x mc_y mc_z)");
 
       marching_cubes_fun = skiwi::skiwi_compile(script);
-    
+
       int64_t id = g_view.v->marching_cubes(bounding, width, height, depth, (float)isovalue, &marching_cubes_distance_fun);
 
       thread_specific_scheme_context.combine_each([](void* ctxt)
@@ -480,18 +481,18 @@ void scm_set_vertex_colors(int64_t id, skiwi::scm_type scm_colors)
   {
   std::vector<vec3<uint8_t>> colors;
   try
-  {
-  auto clrlst = scm_colors.get_list();
-  colors.reserve(clrlst.size());
-  for (auto& clr : clrlst)
     {
-    auto c = clr.get_list();
-    if (c.size() != 3)
-      throw std::runtime_error("error: set-vertex-colors: invalid color size (should have 3 int values)");
-    colors.emplace_back((uint8_t)c[0].get_fixnum(), (uint8_t)c[1].get_fixnum(), (uint8_t)c[2].get_fixnum());
+    auto clrlst = scm_colors.get_list();
+    colors.reserve(clrlst.size());
+    for (auto& clr : clrlst)
+      {
+      auto c = clr.get_list();
+      if (c.size() != 3)
+        throw std::runtime_error("error: set-vertex-colors: invalid color size (should have 3 int values)");
+      colors.emplace_back((uint8_t)c[0].get_fixnum(), (uint8_t)c[1].get_fixnum(), (uint8_t)c[2].get_fixnum());
+      }
+    g_view.v->set_vertex_colors((uint32_t)id, colors);
     }
-  g_view.v->set_vertex_colors((uint32_t)id, colors);
-  }
   catch (std::runtime_error e)
     {
     std::cout << "error: set-vertex-colors: " << e.what() << "\n";
@@ -519,7 +520,7 @@ void scm_translate(int64_t id, skiwi::scm_type x_axis, skiwi::scm_type y_axis, s
   double x = x_axis.get_number();
   double y = y_axis.get_number();
   double z = z_axis.get_number();
-  
+
   auto t = jtk::make_translation((float)x, (float)y, (float)z);
   g_view.v->premultiply_coordinate_system((uint32_t)id, t);
   }
@@ -760,8 +761,74 @@ uint64_t scm_mesh_texture_to_vertexcolors(uint64_t id)
   }
 
 void scm_load_face_detector(const char* filename)
-  {  
+  {
   g_view.v->load_face_detector(filename);
+  }
+
+void scm_set_show_face_detector(bool b)
+  {
+  g_view.v->set_show_face_detector(b);
+  }
+
+uint64_t scm_face_detector_predict()
+  {
+  using namespace skiwi;
+  std::vector<std::pair<long, long>> landmarks = g_view.v->face_detector_predict();
+  std::vector<skiwi::scm_type> vec;
+  vec.reserve(landmarks.size());
+  for (const auto& pr : landmarks)
+    vec.push_back(make_pair(make_fixnum(pr.first), make_pair(make_fixnum(pr.second), make_nil())));
+  return make_list(vec);
+  }
+
+uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt)
+  {
+  using namespace skiwi;
+  try
+    {
+    auto src_list = src.get_list();
+    auto tgt_list = tgt.get_list();
+    jtk::mat source(src_list.size(), 3);
+    jtk::mat target(tgt_list.size(), 3);
+    if (source.rows() != target.rows())
+      {
+      std::cout << "error: npoint: source and target list have different length\n";
+      return make_undefined();
+      }
+    for (int i = 0; i < source.rows(); ++i)
+      {
+      auto src_row = src_list[i].get_list();
+      auto tgt_row = tgt_list[i].get_list();
+      if (src_row.size() != 3 || tgt_row.size() != 3)
+        {
+        std::cout << "error: npoint: source and target list should contain lists of size 3 as elements\n";
+        return make_undefined();
+        }
+      source(i, 0) = src_row[0].get_number();
+      source(i, 1) = src_row[1].get_number();
+      source(i, 2) = src_row[2].get_number();
+      target(i, 0) = tgt_row[0].get_number();
+      target(i, 1) = tgt_row[1].get_number();
+      target(i, 2) = tgt_row[2].get_number();
+      }
+    auto m = jtk::npoint(source, target, false, false);
+    std::vector<scm_type> m_row(4);
+    std::vector<scm_type> rows;
+    for (int j = 0; j < 4; ++j)
+      {
+      m_row[0] = make_flonum(m(j, 0));
+      m_row[1] = make_flonum(m(j, 1));
+      m_row[2] = make_flonum(m(j, 2));
+      m_row[3] = make_flonum(m(j, 3));
+      rows.push_back(make_list(m_row));
+      }
+    return make_list(rows);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: npoint: " << e.what() << "\n";
+    }
+  return make_undefined();
   }
 
 void* register_functions(void*)
@@ -771,6 +838,9 @@ void* register_functions(void*)
   register_external_primitive("cs-rotate!", (void*)&scm_rotate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-rotate! id x y z) rotates the object with tag `id` by `x` degrees over the x-axis, by `y` degrees over the y-axis, and by `z` degrees over the z_axis.");
   register_external_primitive("cs-set!", (void*)&scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for the object with tag `id`. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
+
+  register_external_primitive("face-detector-predict", (void*)&scm_face_detector_predict, skiwi_scm, "(face-detector-predict) runs the face predictor on the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-face-detector.");
+
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list of values between 0 and 1 and returns a list of lists with (r g b) values.");
 
@@ -778,12 +848,12 @@ void* register_functions(void*)
 
   register_external_primitive("load-mesh", (void*)&load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
   register_external_primitive("load-morphable-model", (void*)&load_morphable_model, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
-  register_external_primitive("load-pointcloud", (void*)&load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");  
+  register_external_primitive("load-pointcloud", (void*)&load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");
 
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. Vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
   register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with bb of the form ((min_x max_x) (min_y max_y) (min_z max_z)), dim of the form (width height depth), isovalue a flonum, fun a lambda function accepting (x y z) values and returning a distance.");
-  register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id.");  
-  
+  register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id.");
+
   register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "");
 
 
@@ -801,6 +871,7 @@ void* register_functions(void*)
   register_external_primitive("morphable-model-color-basic-shape-coefficient", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-color-coefficient-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
 
+  register_external_primitive("npoint", &npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "npoint");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id)");
@@ -813,17 +884,20 @@ void* register_functions(void*)
   register_external_primitive("view-cs-set!", (void*)&scm_set_view_coordinate_system, skiwi_void, skiwi_scm, "(view-cs-set! cs) sets the coordinate system of the view camera.");
   register_external_primitive("view-edges-set!", (void*)&scm_set_edges, skiwi_void, skiwi_bool, "(view-edges-set! #t/#f) turns on/off rendering of edges.");
   register_external_primitive("view-export", (void*)&scm_export_image, skiwi_void, skiwi_char_pointer, "(view-export \"image-file.png\") exports the current view to a png image.");
+
+  register_external_primitive("view-face-detector-set!", (void*)&scm_set_show_face_detector, skiwi_void, skiwi_bool, "(view-face-detector-set! #t/#f) turns on/off rendering of the face detector result.");
+
   register_external_primitive("view-hide!", (void*)&scm_hide_view, skiwi_void, "(view-hide!) hides the 3d view.");
   register_external_primitive("view-onebit-set!", (void*)&scm_set_one_bit, skiwi_void, skiwi_bool, "(view-onebit-set! #t/#f) turns on/off one-bit rendering.");
   register_external_primitive("view-ref", (void*)&scm_get_position, skiwi_scm, skiwi_scm, skiwi_scm, "(view-ref x y) returns the 3D position of coordinate (x,y).");
   register_external_primitive("view-shading-set!", (void*)&scm_set_shading, skiwi_void, skiwi_bool, "(view-shading-set! #t/#f) turns on/off lighting.");
   register_external_primitive("view-shadow-set!", (void*)&scm_set_shadow, skiwi_void, skiwi_bool, "(view-shadow-set! #t/#f) turns on/off rendering of shadow.");
-  register_external_primitive("view-show!", (void*)&scm_show_view, skiwi_void, "(view-show!) shows the 3d view.");  
-  register_external_primitive("view-size-set!", (void*)&scm_set_image_size, skiwi_void, skiwi_scm, skiwi_scm, "(view-size-set! w h) resizes the plotted image to size (w, h).");  
+  register_external_primitive("view-show!", (void*)&scm_show_view, skiwi_void, "(view-show!) shows the 3d view.");
+  register_external_primitive("view-size-set!", (void*)&scm_set_image_size, skiwi_void, skiwi_scm, skiwi_scm, "(view-size-set! w h) resizes the plotted image to size (w, h).");
   register_external_primitive("view-textured-set!", (void*)&scm_set_textured, skiwi_void, skiwi_bool, "(view-textured-set! #t/#f) turns on/off rendering of texture.");
   register_external_primitive("view-unzoom!", (void*)&scm_unzoom, skiwi_void, "(view-unzoom!) sets the camera to its initial position.");
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
- 
+
   register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
 
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript.");
@@ -840,7 +914,7 @@ int main(int argc, char** argv)
   skiwi::skiwi_parameters pars;
   pars.heap_size = 64 * 1024 * 1024;
   skiwi::set_prompt("ms> ");
-  skiwi::scheme_with_skiwi(&register_functions, nullptr, pars);  
+  skiwi::scheme_with_skiwi(&register_functions, nullptr, pars);
 
   for (int i = 1; i < argc; ++i)
     {
