@@ -584,6 +584,20 @@ uint64_t scm_get_position(skiwi::scm_type x, skiwi::scm_type y)
   return make_list(coord);
   }
 
+uint64_t scm_get_index(skiwi::scm_type x, skiwi::scm_type y)
+  {
+  using namespace skiwi;
+  auto idx = g_view.v->get_index((int)x.get_number(), (int)y.get_number());
+  return make_fixnum(idx);
+  }
+
+uint64_t scm_get_id(skiwi::scm_type x, skiwi::scm_type y)
+  {
+  using namespace skiwi;
+  auto id = g_view.v->get_id((int)x.get_number(), (int)y.get_number());
+  return make_fixnum(id);
+  }
+
 int64_t mm_coeff_size(int64_t id)
   {
   return g_view.v->mm_coeff_size((uint32_t)id);
@@ -889,7 +903,10 @@ void* register_functions(void*)
 
   register_external_primitive("view-hide!", (void*)&scm_hide_view, skiwi_void, "(view-hide!) hides the 3d view.");
   register_external_primitive("view-onebit-set!", (void*)&scm_set_one_bit, skiwi_void, skiwi_bool, "(view-onebit-set! #t/#f) turns on/off one-bit rendering.");
-  register_external_primitive("view-ref", (void*)&scm_get_position, skiwi_scm, skiwi_scm, skiwi_scm, "(view-ref x y) returns the 3D position of coordinate (x,y).");
+  register_external_primitive("view-position", (void*)&scm_get_position, skiwi_scm, skiwi_scm, skiwi_scm, "(view-position x y) returns the 3D position of coordinate (x,y).");
+  register_external_primitive("view-index", (void*)&scm_get_index, skiwi_scm, skiwi_scm, skiwi_scm, "(view-index x y) returns the vertex index of coordinate (x,y).");
+  register_external_primitive("view-id", (void*)&scm_get_id, skiwi_scm, skiwi_scm, skiwi_scm, "(view-id x y) returns the id of the object at coordinate (x,y).");
+
   register_external_primitive("view-shading-set!", (void*)&scm_set_shading, skiwi_void, skiwi_bool, "(view-shading-set! #t/#f) turns on/off lighting.");
   register_external_primitive("view-shadow-set!", (void*)&scm_set_shadow, skiwi_void, skiwi_bool, "(view-shadow-set! #t/#f) turns on/off rendering of shadow.");
   register_external_primitive("view-show!", (void*)&scm_show_view, skiwi_void, "(view-show!) shows the 3d view.");

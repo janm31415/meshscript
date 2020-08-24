@@ -95,6 +95,10 @@ class view
 
     jtk::vec3<float> get_world_position(int x, int y);
 
+    uint32_t get_index(int x, int y);
+
+    uint32_t get_id(int x, int y);
+
     int64_t marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width, uint64_t height, uint64_t depth, float isovalue, double(*fun_ptr)(double, double, double));
 
     std::vector<jtk::vec3<uint32_t>> triangles(uint32_t id);

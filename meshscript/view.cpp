@@ -569,7 +569,6 @@ jtk::vec3<float> view::get_world_position(int x, int y)
   if (x < 0 || y < 0 || x >= (int)_pixels.width() || y >= (int)_pixels.height())
     return invalid_vertex;
   const auto& p = _pixels(x, y);
-  //if (p.object_id == (uint32_t)-1)
   if (p.db_id == 0)
     return invalid_vertex;
   mesh* m = _db.get_mesh((uint32_t)p.db_id);
@@ -582,6 +581,13 @@ jtk::vec3<float> view::get_world_position(int x, int y)
     const float4 V1(m->vertices[v1][0], m->vertices[v1][1], m->vertices[v1][2], 1.f);
     const float4 V2(m->vertices[v2][0], m->vertices[v2][1], m->vertices[v2][2], 1.f);
     const float4 pos = V0 * (1.f - p.barycentric_u - p.barycentric_v) + p.barycentric_u*V1 + p.barycentric_v*V2;
+    auto world_pos = matrix_vector_multiply(m->cs, pos);
+    return jtk::vec3<float>(world_pos[0], world_pos[1], world_pos[2]);
+    }
+  pc* ptcl = _db.get_pc((uint32_t)p.db_id);
+  if (ptcl)
+    {
+    const float4 pos(ptcl->vertices[p.object_id][0], ptcl->vertices[p.object_id][1], ptcl->vertices[p.object_id][2], 1.f);
     auto world_pos = matrix_vector_multiply(m->cs, pos);
     return jtk::vec3<float>(world_pos[0], world_pos[1], world_pos[2]);
     }
@@ -599,6 +605,29 @@ jtk::vec3<float> view::get_world_position(int x, int y)
     return jtk::vec3<float>(world_pos[0], world_pos[1], world_pos[2]);
     }
   return invalid_vertex;
+  }
+
+uint32_t view::get_index(int x, int y)
+  {
+  std::scoped_lock lock(_mut);
+  if (x < 0 || y < 0 || x >= (int)_pixels.width() || y >= (int)_pixels.height())
+    return (uint32_t)(-1);
+  const auto& p = _pixels(x, y);
+  if (p.db_id == 0)
+    return (uint32_t)(-1);
+  uint32_t closest_v = get_closest_vertex(p, get_vertices(_db, p.db_id), get_triangles(_db, p.db_id));    
+  return closest_v;
+  }
+
+uint32_t view::get_id(int x, int y)
+  {
+  std::scoped_lock lock(_mut);
+  if (x < 0 || y < 0 || x >= (int)_pixels.width() || y >= (int)_pixels.height())
+    return (uint32_t)0;
+  const auto& p = _pixels(x, y);
+  if (p.db_id == 0)
+    return (uint32_t)0;
+  return p.db_id;
   }
 
 void view::unzoom()
@@ -873,6 +902,7 @@ std::vector<std::pair<long, long>> view::face_detector_predict()
   std::vector<std::pair<long, long>> points;
   if (p_face_detector.get())
     {
+    render_scene();
     points = p_face_detector->predict(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     }
   return points;
