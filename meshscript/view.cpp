@@ -908,6 +908,24 @@ std::vector<std::pair<long, long>> view::face_detector_predict()
   return points;
   }
 
+void view::fit_mm_to_mesh(uint32_t mm_id, uint32_t mesh_id)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh((uint32_t)mesh_id);
+  if (!m)
+    return;
+  mm* morph = _db.get_mm((uint32_t)mm_id);
+  if (!morph)
+    return;
+  fit_to_mesh(*morph, *m);
+  remove_object(mm_id, _scene);
+  if (morph->visible)
+    {
+    add_object(mm_id, _scene, _db);
+    _refresh = true;
+    }
+  }
+
 void view::poll_for_events()
   {
   _m.right_button_down = false;

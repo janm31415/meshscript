@@ -113,6 +113,8 @@ class view
 
     std::vector<std::pair<long, long>> face_detector_predict();
 
+    void fit_mm_to_mesh(uint32_t mm_id, uint32_t mesh_id);
+
     void unzoom();
 
     void loop();

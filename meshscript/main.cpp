@@ -845,6 +845,12 @@ uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt)
   return make_undefined();
   }
 
+void mm_fit(int64_t mm_id, int64_t mesh_id)
+  {
+  using namespace skiwi;
+  g_view.v->fit_mm_to_mesh((uint32_t)mm_id, (uint32_t)mesh_id);
+  }
+
 void* register_functions(void*)
   {
   using namespace skiwi;
@@ -884,6 +890,9 @@ void* register_functions(void*)
   register_external_primitive("morphable-model-color-coefficient", (void*)&mm_color_coeff, skiwi_scm, skiwi_int64, "");
   register_external_primitive("morphable-model-color-basic-shape-coefficient", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-color-coefficient-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
+
+
+  register_external_primitive("morphable-model-fit!", (void*)&mm_fit, skiwi_void, skiwi_int64, skiwi_int64, "(morphable-model-fit! mm_id mesh_id)");
 
   register_external_primitive("npoint", &npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "npoint");
 

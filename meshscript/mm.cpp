@@ -1,10 +1,13 @@
 #include "mm.h"
+#include <jtk/concurrency.h>
 #include <jtk/file_utils.h>
 #include <jtk/qbvh.h>
+#include <jtk/geometry.h>
 
 #include <hdf5.h>
 
 #include "hdf5aux.h"
+#include "mesh.h"
 
 namespace
   {
@@ -185,4 +188,74 @@ void clamp_vertex_colors(std::vector<jtk::vec3<float>>& vertex_colors)
     for (int j = 0; j < 3; ++j)
       v[j] = v[j] < 0.f ? 0.f : (v[j] > 1.f ? 1.f : v[j]);
     }
+  }
+
+void fit_to_mesh(mm& morph, const mesh& m)
+  {
+  using namespace jtk;
+  std::vector<vec3<float>> shape = morph.vertices;
+  uint32_t sz = (uint32_t)morph.vertices.size();
+
+  qbvh bvh(m.triangles, m.vertices.data());
+
+  float4x4 cs = m.cs;
+  float4x4 cs_inv = invert_orthonormal(m.cs);
+
+  for (int iter = 0; iter < 5; ++iter)
+    {
+    std::vector<jtk::vec3<float>> triangle_normals;
+    compute_triangle_normals(triangle_normals, morph.vertices.data(), morph.shape.triangles.data(), (uint32_t)morph.shape.triangles.size());
+
+    parallel_for(uint32_t(0), sz, [&](uint32_t i)
+      {
+      float4 pos(shape[i][0], shape[i][1], shape[i][2], 1.f);
+      pos = matrix_vector_multiply(cs_inv, pos);
+      float4 dir(triangle_normals[i][0], triangle_normals[i][1], triangle_normals[i][2], 0.f);
+      dir = matrix_vector_multiply(cs_inv, dir);
+
+      ray r;
+      r.orig = pos;
+      r.dir = dir;
+      r.t_near = -20.f;
+      r.t_far = std::numeric_limits<float>::max();
+
+      uint32_t triangle_id;
+      //vec3<float> pt(pos[0], pos[1], pos[2]);
+      //auto h = bvh.find_closest_triangle(triangle_id, pt, m.triangles.data(), m.vertices.data());
+
+      auto h = bvh.find_closest_triangle(triangle_id, r, m.triangles.data(), m.vertices.data());
+
+      if (h.found)
+        {
+        const auto v0 = m.vertices[m.triangles[triangle_id][0]];
+        const auto v1 = m.vertices[m.triangles[triangle_id][1]];
+        const auto v2 = m.vertices[m.triangles[triangle_id][2]];
+
+        const auto shape_vert = v0 * (1.f - h.u - h.v) + h.u*v1 + h.v*v2;
+        float4 sv(shape_vert[0], shape_vert[1], shape_vert[2], 1.f);
+        sv = matrix_vector_multiply(cs, sv);
+        shape[i][0] = sv[0];
+        shape[i][1] = sv[1];
+        shape[i][2] = sv[2];
+        }
+      });
+
+    std::vector<float> coeff = fit_shape(shape, morph.shape, false);
+    morph.coefficients = coeff;
+
+
+    morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);
+    morph.vertex_colors = jtk::get_vertices(morph.color, morph.color_coefficients);
+
+    shape = morph.vertices;
+    }
+
+  /*
+  std::vector<float> coeff = fit_shape(shape, morph.shape, false);
+  morph.coefficients = coeff;
+  
+  
+  morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);
+  morph.vertex_colors = jtk::get_vertices(morph.color, morph.color_coefficients);
+  */
   }

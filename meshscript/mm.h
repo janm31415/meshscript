@@ -3,6 +3,8 @@
 #include "morphable_model.h"
 #include <jtk/qbvh.h>
 
+struct mesh;
+
 struct mm
   {
   jtk::morphable_model shape, color;
@@ -21,3 +23,5 @@ bool triangles_to_csv(const mm& m, const std::string& filename);
 bool write_to_file(const mm& morph, const std::string& filename);
 
 void clamp_vertex_colors(std::vector<jtk::vec3<float>>& vertex_colors);
+
+void fit_to_mesh(mm& morph, const mesh& m);

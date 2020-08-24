@@ -24,6 +24,7 @@ namespace jtk
   bool read_morphable_model_binary(morphable_model& mm, const char* filename);
   bool write_morphable_model_binary(const morphable_model& mm, const char* filename);
   float sigma(const morphable_model& mm, uint64_t index);
+  std::vector<float> fit_shape(const std::vector<vec3<float>>& shape, const morphable_model& mm, bool i_sigma_constraint);
 
   inline void swap(morphable_model& left, morphable_model& right)
     {
@@ -158,4 +159,41 @@ namespace jtk
     return mm.S(index) / std::sqrt(denom);
     }
 
+  inline std::vector<float> fit_shape(const std::vector<vec3<float>>& shape, const morphable_model& mm, bool i_sigma_constraint)
+    {
+    assert(shape.size() * 3 == mm.average.rows());
+    std::vector<float> coeff(mm.S.rows(), 0.f);
+    if (shape.size() == mm.average.rows() / 3)
+      {
+      std::vector<float> RHS(mm.average.rows());
+      for (uint64_t i = 0; i < (uint64_t)shape.size(); ++i)
+        {
+        RHS[i * 3 + 0] = shape[i][0] - mm.average(i * 3 + 0);
+        RHS[i * 3 + 1] = shape[i][1] - mm.average(i * 3 + 1);
+        RHS[i * 3 + 2] = shape[i][2] - mm.average(i * 3 + 2);
+        }
+
+      for (uint64_t j = 0; j < mm.S.rows(); ++j)
+        {
+        float val = 0;
+        for (uint64_t i = 0; i < mm.average.rows(); ++i)
+          {
+          val += mm.U(j,i) * RHS[i];
+          }
+        coeff[j] = val;
+        }
+      if (i_sigma_constraint)
+        {
+        for (uint64_t j = 0; j < (uint64_t)coeff.size(); ++j)
+          {
+          auto range = std::abs(sigma(mm, j)*2.f);
+          if (coeff[j] < -range)
+            coeff[j] = -range;
+          else if (coeff[j] > range)
+            coeff[j] = range;
+          };
+        }
+      }
+    return coeff;
+    }
   } // namespace jtk
