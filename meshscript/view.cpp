@@ -926,6 +926,39 @@ void view::fit_mm_to_mesh(uint32_t mm_id, uint32_t mesh_id)
     }
   }
 
+void view::fit_mm_to_partial_positions(uint32_t mm_id, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions)
+  {
+  std::scoped_lock lock(_mut);
+  mm* morph = _db.get_mm((uint32_t)mm_id);
+  if (!morph)
+    return;
+  fit_to_partial_positions(*morph, vertex_indices, vertex_positions);
+  remove_object(mm_id, _scene);
+  if (morph->visible)
+    {
+    add_object(mm_id, _scene, _db);
+    _refresh = true;
+    }
+  }
+
+void view::fit_mm(uint32_t mm_id, uint32_t mesh_id, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions)
+  {
+  std::scoped_lock lock(_mut); 
+  mesh* m = _db.get_mesh((uint32_t)mesh_id);
+  if (!m)
+    return;
+  mm* morph = _db.get_mm((uint32_t)mm_id);
+  if (!morph)
+    return;
+  fit(*morph, *m, vertex_indices, vertex_positions);
+  remove_object(mm_id, _scene);
+  if (morph->visible)
+    {
+    add_object(mm_id, _scene, _db);
+    _refresh = true;
+    }
+  }
+
 void view::poll_for_events()
   {
   _m.right_button_down = false;

@@ -186,7 +186,7 @@ namespace jtk
         {
         for (uint64_t j = 0; j < (uint64_t)coeff.size(); ++j)
           {
-          auto range = std::abs(sigma(mm, j)*2.f);
+          auto range = std::abs(sigma(mm, j)*3.f);
           if (coeff[j] < -range)
             coeff[j] = -range;
           else if (coeff[j] > range)

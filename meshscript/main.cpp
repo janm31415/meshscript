@@ -795,7 +795,7 @@ uint64_t scm_face_detector_predict()
   return make_list(vec);
   }
 
-uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt)
+uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt, bool scaling, bool correct_reflections)
   {
   using namespace skiwi;
   try
@@ -825,7 +825,7 @@ uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt)
       target(i, 1) = tgt_row[1].get_number();
       target(i, 2) = tgt_row[2].get_number();
       }
-    auto m = jtk::npoint(source, target, false, false);
+    auto m = jtk::npoint(source, target, scaling, correct_reflections);
     std::vector<scm_type> m_row(4);
     std::vector<scm_type> rows;
     for (int j = 0; j < 4; ++j)
@@ -845,10 +845,64 @@ uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt)
   return make_undefined();
   }
 
-void mm_fit(int64_t mm_id, int64_t mesh_id)
+void mm_fit_mesh(int64_t mm_id, int64_t mesh_id)
   {
   using namespace skiwi;
   g_view.v->fit_mm_to_mesh((uint32_t)mm_id, (uint32_t)mesh_id);
+  }
+
+void mm_fit_indices(int64_t mm_id, skiwi::scm_type indices, skiwi::scm_type positions)
+  {
+  try
+    {
+    auto indices_list = indices.get_list();
+    std::vector<uint32_t> ind;
+    for (auto& nr : indices_list)
+      {
+      ind.push_back((uint32_t)nr.get_number());
+      }
+    std::vector<vec3<float>> pos;
+    auto pos_list = positions.get_list();
+    for (auto& p : pos_list)
+      {
+      auto p_list = p.get_list();
+      if (p_list.size() != 3)
+        throw std::runtime_error("error: morphable-model-fit-indices!: invalid vertex size (should have 3 float values)");
+      pos.emplace_back((float)p_list[0].get_number(), (float)p_list[1].get_number(), (float)p_list[2].get_number());
+      }
+    g_view.v->fit_mm_to_partial_positions((uint32_t)mm_id, ind, pos);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: morphable-model-fit-indices!: " << e.what() << "\n";
+    }
+  }
+
+void mm_fit(int64_t mm_id, int64_t mesh_id, skiwi::scm_type indices, skiwi::scm_type positions)
+  {
+  try
+    {
+    auto indices_list = indices.get_list();
+    std::vector<uint32_t> ind;
+    for (auto& nr : indices_list)
+      {
+      ind.push_back((uint32_t)nr.get_number());
+      }
+    std::vector<vec3<float>> pos;
+    auto pos_list = positions.get_list();
+    for (auto& p : pos_list)
+      {
+      auto p_list = p.get_list();
+      if (p_list.size() != 3)
+        throw std::runtime_error("error: morphable-model-fit!: invalid vertex size (should have 3 float values)");
+      pos.emplace_back((float)p_list[0].get_number(), (float)p_list[1].get_number(), (float)p_list[2].get_number());
+      }
+    g_view.v->fit_mm((uint32_t)mm_id, (uint32_t)mesh_id, ind, pos);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: morphable-model-fit!: " << e.what() << "\n";
+    }
   }
 
 void* register_functions(void*)
@@ -877,24 +931,27 @@ void* register_functions(void*)
   register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "");
 
 
-  register_external_primitive("morphable-model-coefficient-size", (void*)&mm_coeff_size, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-coefficients-size", (void*)&mm_coeff_size, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-shape-size", (void*)&mm_shape_size, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-sigma", (void*)&mm_sigma, skiwi_double, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-coefficient", (void*)&mm_coeff, skiwi_scm, skiwi_int64, "");
-  register_external_primitive("morphable-model-basic-shape-coefficient", (void*)&mm_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-coefficient-set!", (void*)&mm_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
+  register_external_primitive("morphable-model-coefficients", (void*)&mm_coeff, skiwi_scm, skiwi_int64, "");
+  register_external_primitive("morphable-model-basic-shape-coefficients", (void*)&mm_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-coefficients-set!", (void*)&mm_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
   register_external_primitive("morphable-model->mesh", (void*)&mm_to_mesh, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coefficient-size", (void*)&mm_color_coeff_size, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-color-coefficients-size", (void*)&mm_color_coeff_size, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-color-shape-size", (void*)&mm_color_shape_size, skiwi_int64, skiwi_int64, "");
   register_external_primitive("morphable-model-color-sigma", (void*)&mm_color_sigma, skiwi_double, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coefficient", (void*)&mm_color_coeff, skiwi_scm, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-basic-shape-coefficient", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coefficient-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
+  register_external_primitive("morphable-model-color-coefficients", (void*)&mm_color_coeff, skiwi_scm, skiwi_int64, "");
+  register_external_primitive("morphable-model-color-basic-shape-coefficients", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
+  register_external_primitive("morphable-model-color-coefficients-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
 
 
-  register_external_primitive("morphable-model-fit!", (void*)&mm_fit, skiwi_void, skiwi_int64, skiwi_int64, "(morphable-model-fit! mm_id mesh_id)");
+  register_external_primitive("morphable-model-fit-mesh!", (void*)&mm_fit_mesh, skiwi_void, skiwi_int64, skiwi_int64, "(morphable-model-fit-mesh! mm_id mesh_id)");
+  register_external_primitive("morphable-model-fit-indices!", (void*)&mm_fit_indices, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, "(morphable-model-fit-indices! mm_id indices positions)");
+  register_external_primitive("morphable-model-fit!", (void*)&mm_fit, skiwi_void, skiwi_int64, skiwi_int64, skiwi_scm, skiwi_scm, "(morphable-model-fit! mm_id mesh_id indices positions)");
 
-  register_external_primitive("npoint", &npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "npoint");
+
+  register_external_primitive("npoint", &npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_bool, skiwi::skiwi_bool, "npoint");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id)");
