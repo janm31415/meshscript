@@ -9,6 +9,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(JTK_THREADING "std" CACHE STRING  "Choose your threading library: tbb is Intel's Threading Building Blocks library, ppl is Windows' concurrency library, std uses std::thread, and none does not use threading.")
+set_property(CACHE JTK_THREADING PROPERTY STRINGS tbb ppl std none)
+
+
 set(HDF5_EXTERNALLY_CONFIGURED 1)
 set(HDF5_INSTALL_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(HDF5_INSTALL_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib")
@@ -30,7 +34,6 @@ set_target_properties (libskiwi PROPERTIES FOLDER skiwi)
 set_target_properties (libskiwi.tests PROPERTIES FOLDER skiwi)
 set_target_properties (life PROPERTIES FOLDER skiwi)
 set_target_properties (s PROPERTIES FOLDER skiwi)
-set_target_properties (utils PROPERTIES FOLDER skiwi)
 
 set_target_properties (dlib PROPERTIES FOLDER dlib)
 

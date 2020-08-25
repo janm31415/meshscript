@@ -87,9 +87,17 @@ add_definitions(-D_SCL_SECURE_NO_WARNINGS)
 add_definitions(-DMEMORY_LEAK_TRACKING)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
+if (${JTK_THREADING} STREQUAL "tbb")
 add_definitions(-D_ENABLE_TBB)
-#add_definitions(-D_ENABLE_PPL)
-#add_definitions(-D_ENABLE_THREADS)
+endif (${JTK_THREADING} STREQUAL "tbb")
+
+if (${JTK_THREADING} STREQUAL "ppl")
+add_definitions(-D_ENABLE_PPL)
+endif (${JTK_THREADING} STREQUAL "ppl")
+
+if (${JTK_THREADING} STREQUAL "std")
+add_definitions(-D_ENABLE_THREADS)
+endif (${JTK_THREADING} STREQUAL "std")
 
 add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB} ${PLY})
 
@@ -107,7 +115,6 @@ target_include_directories(meshscript
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/
     ${CMAKE_CURRENT_SOURCE_DIR}/../ply/
     ${SDL_INCLUDE_DIR}
-    ${TBB_INCLUDE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/../hdf5
     )	
 	
@@ -115,12 +122,22 @@ target_link_libraries(meshscript
     PRIVATE
     ${OPENGL_LIBRARIES}
     ${SDL_LIBRARIES}
-    ${TBB_LIBRARIES}   
     asm
     dlib
     libskiwi	
     hdf5-shared
     )	
+
+if (${JTK_THREADING} STREQUAL "tbb")
+  target_include_directories(meshscript
+      PRIVATE
+      ${TBB_INCLUDE_DIR}
+      )
+  target_link_libraries(meshscript
+      PRIVATE	
+      ${TBB_LIBRARIES}
+      )	
+endif (${JTK_THREADING} STREQUAL "tbb")
 
 if (WIN32)
 add_custom_command(TARGET meshscript POST_BUILD 
