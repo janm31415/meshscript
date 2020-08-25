@@ -268,7 +268,7 @@ void fit_to_partial_positions(mm& morph, const std::vector<uint32_t>& vertex_ind
 
   using namespace jtk;
 
-  int max_iter = 10;
+  int max_iter = 100;
   for (int iter = 0; iter < max_iter; ++iter)
     {
     std::vector<vec3<float>> shape = morph.vertices;
@@ -283,7 +283,8 @@ void fit_to_partial_positions(mm& morph, const std::vector<uint32_t>& vertex_ind
         continue;
       if (idx < shape.size())
         {
-        shape[idx] = shape[idx]+(vertex_positions[i] - shape[idx])*pow((float)(max_iter-iter), 2.f);
+        //shape[idx] = shape[idx]+(vertex_positions[i] - shape[idx])*pow((float)(max_iter-iter), 2.f);
+        shape[idx] = vertex_positions[i];
         }
       }
     bool sigma_constraint = iter > max_iter / 2;
