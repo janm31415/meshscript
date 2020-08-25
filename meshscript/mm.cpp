@@ -200,7 +200,7 @@ void fit_to_mesh(mm& morph, const mesh& m)
 
   float4x4 cs = m.cs;
   float4x4 cs_inv = invert_orthonormal(m.cs);
-  int max_iter = 50;
+  int max_iter = 5;
   for (int iter = 0; iter < max_iter; ++iter)
     {
     std::vector<jtk::vec3<float>> triangle_normals;
@@ -250,7 +250,7 @@ void fit_to_mesh(mm& morph, const mesh& m)
 
     shape = morph.vertices;
     }
-
+  clamp_vertex_colors(morph.vertex_colors);
   /*
   std::vector<float> coeff = fit_shape(shape, morph.shape, false);
   morph.coefficients = coeff;
@@ -268,7 +268,7 @@ void fit_to_partial_positions(mm& morph, const std::vector<uint32_t>& vertex_ind
 
   using namespace jtk;
 
-  int max_iter = 100;
+  int max_iter = 5;
   for (int iter = 0; iter < max_iter; ++iter)
     {
     std::vector<vec3<float>> shape = morph.vertices;
@@ -367,11 +367,11 @@ void fit(mm& morph, const mesh& m, const std::vector<uint32_t>& vertex_indices, 
       if (std::isnan(vertex_positions[i][2]))
         continue;
       if (idx < shape.size())
-        shape[idx] = vertex_positions[i];
+        shape[idx] = shape[idx] + (vertex_positions[i] - shape[idx])*(float)(max_iter-iter)*(float)(max_iter - iter);
       }
 
     bool sigma_constraint = iter > max_iter / 2;
-    //sigma_constraint = false;
+    sigma_constraint = false;
     std::vector<float> coeff = fit_shape(shape, morph.shape, sigma_constraint);
     morph.coefficients = coeff;
     morph.color_coefficients = fit_shape(color, morph.color, sigma_constraint);
@@ -382,4 +382,5 @@ void fit(mm& morph, const mesh& m, const std::vector<uint32_t>& vertex_indices, 
     shape = morph.vertices;
     color = morph.vertex_colors;
     }
+  clamp_vertex_colors(morph.vertex_colors);
   }

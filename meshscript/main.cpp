@@ -807,6 +807,7 @@ uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt, bool scaling, bool
       std::cout << "error: npoint: source and target list have different length\n";
       return make_undefined();
       }
+    uint64_t nr_rows = 0;
     for (int i = 0; i < source.rows(); ++i)
       {
       auto src_row = src_list[i].get_list();
@@ -816,13 +817,22 @@ uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt, bool scaling, bool
         std::cout << "error: npoint: source and target list should contain lists of size 3 as elements\n";
         return make_undefined();
         }
-      source(i, 0) = src_row[0].get_number();
-      source(i, 1) = src_row[1].get_number();
-      source(i, 2) = src_row[2].get_number();
-      target(i, 0) = tgt_row[0].get_number();
-      target(i, 1) = tgt_row[1].get_number();
-      target(i, 2) = tgt_row[2].get_number();
+      source(nr_rows, 0) = src_row[0].get_number();
+      source(nr_rows, 1) = src_row[1].get_number();
+      source(nr_rows, 2) = src_row[2].get_number();
+      target(nr_rows, 0) = tgt_row[0].get_number();
+      target(nr_rows, 1) = tgt_row[1].get_number();
+      target(nr_rows, 2) = tgt_row[2].get_number();
+      if (!std::isnan(source(nr_rows, 0))
+        && !std::isnan(source(nr_rows, 1))
+        && !std::isnan(source(nr_rows, 2))
+        && !std::isnan(target(nr_rows, 0))
+        && !std::isnan(target(nr_rows, 1))
+        && !std::isnan(target(nr_rows, 2)))
+      ++nr_rows;
       }
+    source.resize(nr_rows, 3);
+    target.resize(nr_rows, 3);
     auto m = jtk::npoint(source, target, scaling, correct_reflections);
     std::vector<scm_type> m_row(4);
     std::vector<scm_type> rows;
