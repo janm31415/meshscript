@@ -27,5 +27,3 @@ void clamp_vertex_colors(std::vector<jtk::vec3<float>>& vertex_colors);
 void fit_to_mesh(mm& morph, const mesh& m);
 
 void fit_to_partial_positions(mm& morph, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions);
-
-void fit(mm& morph, const mesh& m, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions);

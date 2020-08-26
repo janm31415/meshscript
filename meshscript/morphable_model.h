@@ -191,7 +191,7 @@ namespace jtk
             coeff[j] = -range;
           else if (coeff[j] > range)
             coeff[j] = range;
-          };
+          }
         }
       }
     return coeff;

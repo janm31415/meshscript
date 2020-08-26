@@ -190,77 +190,6 @@ void clamp_vertex_colors(std::vector<jtk::vec3<float>>& vertex_colors)
     }
   }
 
-void fit_to_mesh(mm& morph, const mesh& m)
-  {
-  using namespace jtk;
-  std::vector<vec3<float>> shape = morph.vertices;
-  uint32_t sz = (uint32_t)morph.vertices.size();
-
-  qbvh bvh(m.triangles, m.vertices.data());
-
-  float4x4 cs = m.cs;
-  float4x4 cs_inv = invert_orthonormal(m.cs);
-  int max_iter = 5;
-  for (int iter = 0; iter < max_iter; ++iter)
-    {
-    std::vector<jtk::vec3<float>> triangle_normals;
-    compute_triangle_normals(triangle_normals, morph.vertices.data(), morph.shape.triangles.data(), (uint32_t)morph.shape.triangles.size());
-
-    parallel_for(uint32_t(0), sz, [&](uint32_t i)
-      {
-      float4 pos(shape[i][0], shape[i][1], shape[i][2], 1.f);
-      pos = matrix_vector_multiply(cs_inv, pos);
-      float4 dir(triangle_normals[i][0], triangle_normals[i][1], triangle_normals[i][2], 0.f);
-      dir = matrix_vector_multiply(cs_inv, dir);
-
-      ray r;
-      r.orig = pos;
-      r.dir = dir;
-      r.t_near = -200.f;
-      r.t_far = std::numeric_limits<float>::max();
-
-      uint32_t triangle_id;
-      //vec3<float> pt(pos[0], pos[1], pos[2]);
-      //auto h = bvh.find_closest_triangle(triangle_id, pt, m.triangles.data(), m.vertices.data());
-
-      auto h = bvh.find_closest_triangle(triangle_id, r, m.triangles.data(), m.vertices.data());
-
-      if (h.found)
-        {
-        const auto v0 = m.vertices[m.triangles[triangle_id][0]];
-        const auto v1 = m.vertices[m.triangles[triangle_id][1]];
-        const auto v2 = m.vertices[m.triangles[triangle_id][2]];
-
-        const auto shape_vert = v0 * (1.f - h.u - h.v) + h.u*v1 + h.v*v2;
-        float4 sv(shape_vert[0], shape_vert[1], shape_vert[2], 1.f);
-        sv = matrix_vector_multiply(cs, sv);
-        shape[i][0] = sv[0];
-        shape[i][1] = sv[1];
-        shape[i][2] = sv[2];
-        }
-      });
-    bool sigma_constraint = iter > max_iter / 2;
-    sigma_constraint = false;
-    std::vector<float> coeff = fit_shape(shape, morph.shape, sigma_constraint);
-    morph.coefficients = coeff;
-
-
-    morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);
-    morph.vertex_colors = jtk::get_vertices(morph.color, morph.color_coefficients);
-
-    shape = morph.vertices;
-    }
-  clamp_vertex_colors(morph.vertex_colors);
-  /*
-  std::vector<float> coeff = fit_shape(shape, morph.shape, false);
-  morph.coefficients = coeff;
-  
-  
-  morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);
-  morph.vertex_colors = jtk::get_vertices(morph.color, morph.color_coefficients);
-  */
-  }
-
 void fit_to_partial_positions(mm& morph, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions)
   {
   if (vertex_indices.size() != vertex_positions.size())
@@ -268,7 +197,8 @@ void fit_to_partial_positions(mm& morph, const std::vector<uint32_t>& vertex_ind
 
   using namespace jtk;
 
-  int max_iter = 5;
+  /*
+  int max_iter = 50;
   for (int iter = 0; iter < max_iter; ++iter)
     {
     std::vector<vec3<float>> shape = morph.vertices;
@@ -295,9 +225,124 @@ void fit_to_partial_positions(mm& morph, const std::vector<uint32_t>& vertex_ind
     morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);
     //morph.vertex_colors = jtk::get_vertices(morph.color, morph.color_coefficients);
     }
+    */
+
+  /*
+  std::vector<float> coeff = morph.coefficients;
+
+  for (int iter = 0; iter < 5; ++iter)
+    {
+    std::vector<vec3<float>> shape = jtk::get_vertices(morph.shape, coeff);
+    for (uint32_t i = 0; i < (uint32_t)vertex_indices.size(); ++i)
+      {
+      uint32_t idx = vertex_indices[i];
+      if (std::isnan(vertex_positions[i][0]))
+        continue;
+      if (std::isnan(vertex_positions[i][1]))
+        continue;
+      if (std::isnan(vertex_positions[i][2]))
+        continue;
+      if (idx < shape.size())
+        {
+        shape[idx] = vertex_positions[i];
+        }
+      }
+    coeff = fit_shape(shape, morph.shape, false);
+    morph.coefficients = coeff;
+    morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);
+    }
+  */
+  using namespace jtk;
+
+  int nr_rows = 0;
+
+  matf x(vertex_indices.size()*3, 1);
+
+  matf U(vertex_indices.size() * 3, morph.shape.U.cols());
+
+  for (uint32_t i = 0; i < (uint32_t)vertex_indices.size(); ++i)
+    {
+    uint32_t idx = vertex_indices[i];
+    if (std::isnan(vertex_positions[i][0]))
+      continue;
+    if (std::isnan(vertex_positions[i][1]))
+      continue;
+    if (std::isnan(vertex_positions[i][2]))
+      continue;
+   
+    x(nr_rows * 3 + 0) = vertex_positions[i][0] - morph.shape.average(vertex_indices[i] * 3 + 0);
+    x(nr_rows * 3 + 1) = vertex_positions[i][1] - morph.shape.average(vertex_indices[i] * 3 + 1);
+    x(nr_rows * 3 + 2) = vertex_positions[i][2] - morph.shape.average(vertex_indices[i] * 3 + 2);
+
+    for (int j = 0; j < U.cols(); ++j)
+      {
+      U(nr_rows * 3 + 0, j) = morph.shape.U(vertex_indices[i] * 3 + 0, j);
+      U(nr_rows * 3 + 1, j) = morph.shape.U(vertex_indices[i] * 3 + 1, j);
+      U(nr_rows * 3 + 2, j) = morph.shape.U(vertex_indices[i] * 3 + 2, j);
+      }
+    ++nr_rows;
+    }
+  x.resize(nr_rows * 3, 1);
+  U.resize(nr_rows * 3, morph.shape.U.cols());
+  //matf Uinv;// = transpose(U);
+  //int res = pseudo_inverse(Uinv, U, 0.001f);
+  //matf c = Uinv * x;
+  //std::vector<float> coeff(c.rows());
+  //for (int i = 0; i < c.rows(); ++i)
+  //  coeff[i] = c(i);
+
+  lsd(U, x, 0.1f);
+  std::vector<float> coeff(x.rows());
+  for (int i = 0; i < x.rows(); ++i)
+    coeff[i] = x(i);
+
+  //matf Uinv = transpose(U);
+  //matf c = Uinv * x;
+  //std::vector<float> coeff(c.rows());
+  //for (int i = 0; i < c.rows(); ++i)
+  //  coeff[i] = c(i);
+
+  bool sigma_constraint = false;
+  if (sigma_constraint)
+    {
+    for (uint64_t j = 0; j < (uint64_t)coeff.size(); ++j)
+      {
+      auto range = std::abs(sigma(morph.shape, j)*2.f);
+      if (coeff[j] < -range)
+        coeff[j] = -range;
+      else if (coeff[j] > range)
+        coeff[j] = range;
+      }
+    }
+
+  morph.coefficients = coeff;
+  morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);
+
+  /*
+  for (int iter = 0; iter < 5; ++iter)
+    {
+    std::vector<vec3<float>> shape = jtk::get_vertices(morph.shape, coeff);
+    for (uint32_t i = 0; i < (uint32_t)vertex_indices.size(); ++i)
+      {
+      uint32_t idx = vertex_indices[i];
+      if (std::isnan(vertex_positions[i][0]))
+        continue;
+      if (std::isnan(vertex_positions[i][1]))
+        continue;
+      if (std::isnan(vertex_positions[i][2]))
+        continue;
+      if (idx < shape.size())
+        {
+        shape[idx] = vertex_positions[i];
+        }
+      }
+    coeff = fit_shape(shape, morph.shape, true);
+    morph.coefficients = coeff;
+    morph.vertices = jtk::get_vertices(morph.shape, morph.coefficients);
+    }*/
   }
 
-void fit(mm& morph, const mesh& m, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions)
+void fit_to_mesh(mm& morph, const mesh& m)
   {
   using namespace jtk;
   std::vector<vec3<float>> shape = morph.vertices;
@@ -309,10 +354,18 @@ void fit(mm& morph, const mesh& m, const std::vector<uint32_t>& vertex_indices, 
   float4x4 cs = m.cs;
   float4x4 cs_inv = invert(m.cs);
   int max_iter = 5;
+
+  float inlier_distance = 50.f;
+
+  std::vector<jtk::vec3<float>> mesh_normals;
+  compute_triangle_normals(mesh_normals, m.vertices.data(), m.triangles.data(), (uint32_t)m.triangles.size());
+
   for (int iter = 0; iter < max_iter; ++iter)
     {
+    float multiplier = 1.f;// (float)((max_iter - iter)*(max_iter - iter));
     std::vector<jtk::vec3<float>> triangle_normals;
     compute_triangle_normals(triangle_normals, morph.vertices.data(), morph.shape.triangles.data(), (uint32_t)morph.shape.triangles.size());
+
 
     parallel_for(uint32_t(0), sz, [&](uint32_t i)
       {
@@ -324,8 +377,8 @@ void fit(mm& morph, const mesh& m, const std::vector<uint32_t>& vertex_indices, 
       ray r;
       r.orig = pos;
       r.dir = dir;
-      r.t_near = -200.f;
-      r.t_far = std::numeric_limits<float>::max();
+      r.t_near = -inlier_distance;
+      r.t_far = inlier_distance;
 
       uint32_t triangle_id;
       //vec3<float> pt(pos[0], pos[1], pos[2]);
@@ -335,28 +388,36 @@ void fit(mm& morph, const mesh& m, const std::vector<uint32_t>& vertex_indices, 
 
       if (h.found)
         {
-        const auto v0 = m.vertices[m.triangles[triangle_id][0]];
-        const auto v1 = m.vertices[m.triangles[triangle_id][1]];
-        const auto v2 = m.vertices[m.triangles[triangle_id][2]];
+        float4 mesh_norm(mesh_normals[triangle_id][0], mesh_normals[triangle_id][1], mesh_normals[triangle_id][2], 0.f);
 
-        const auto shape_vert = v0 * (1.f - h.u - h.v) + h.u*v1 + h.v*v2;
-        float4 sv(shape_vert[0], shape_vert[1], shape_vert[2], 1.f);
-        sv = matrix_vector_multiply(cs, sv);
-        shape[i][0] = sv[0];
-        shape[i][1] = sv[1];
-        shape[i][2] = sv[2];
+        float normal_dot = dot(dir, mesh_norm);
 
-        if (!color.empty() && !m.vertex_colors.empty())
+        if (normal_dot > 0.8f)
           {
-          const auto c0 = m.vertex_colors[m.triangles[triangle_id][0]];
-          const auto c1 = m.vertex_colors[m.triangles[triangle_id][1]];
-          const auto c2 = m.vertex_colors[m.triangles[triangle_id][2]];
-          const auto new_color = c0 * (1.f - h.u - h.v) + h.u*c1 + h.v*c2;
-          color[i] = new_color;
+
+          const auto v0 = m.vertices[m.triangles[triangle_id][0]];
+          const auto v1 = m.vertices[m.triangles[triangle_id][1]];
+          const auto v2 = m.vertices[m.triangles[triangle_id][2]];
+
+          const auto shape_vert = v0 * (1.f - h.u - h.v) + h.u*v1 + h.v*v2;
+          float4 sv(shape_vert[0], shape_vert[1], shape_vert[2], 1.f);
+          sv = matrix_vector_multiply(cs, sv);
+          shape[i][0] += (sv[0]-shape[i][0])*multiplier;
+          shape[i][1] += (sv[1]-shape[i][1])*multiplier;
+          shape[i][2] += (sv[2]-shape[i][2])*multiplier;
+
+          if (!color.empty() && !m.vertex_colors.empty())
+            {
+            const auto c0 = m.vertex_colors[m.triangles[triangle_id][0]];
+            const auto c1 = m.vertex_colors[m.triangles[triangle_id][1]];
+            const auto c2 = m.vertex_colors[m.triangles[triangle_id][2]];
+            const auto new_color = c0 * (1.f - h.u - h.v) + h.u*c1 + h.v*c2;
+            color[i] = new_color;
+            }
           }
         }
       });
-
+    /*
     for (uint32_t i = 0; i < (uint32_t)vertex_indices.size(); ++i)
       {
       uint32_t idx = vertex_indices[i];
@@ -367,9 +428,9 @@ void fit(mm& morph, const mesh& m, const std::vector<uint32_t>& vertex_indices, 
       if (std::isnan(vertex_positions[i][2]))
         continue;
       if (idx < shape.size())
-        shape[idx] = shape[idx] + (vertex_positions[i] - shape[idx])*(float)(max_iter-iter)*(float)(max_iter - iter);
+        shape[idx] = shape[idx] + (vertex_positions[i] - shape[idx])*multiplier;
       }
-
+    */
     bool sigma_constraint = iter > max_iter / 2;
     sigma_constraint = false;
     std::vector<float> coeff = fit_shape(shape, morph.shape, sigma_constraint);
