@@ -21,12 +21,14 @@ set(BUILD_TESTING OFF)
 add_subdirectory(dlib)
 add_subdirectory(hdf5)
 add_subdirectory(jtk)
+add_subdirectory(libpoisson)
 add_subdirectory(meshscript)
 add_subdirectory(skiwi)
 
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+set_target_properties (libpoisson PROPERTIES FOLDER poisson)
 
 set_target_properties (asm PROPERTIES FOLDER skiwi)
 set_target_properties (asm.tests PROPERTIES FOLDER skiwi)

@@ -4,6 +4,8 @@
 #include "pc.h"
 #include "face_detector.h"
 
+#include <libpoisson/poisson_reconstruction_screened.h>
+
 #include <iostream>
 
 #include <SDL_syswm.h>
@@ -939,6 +941,29 @@ void view::fit_mm(uint32_t mm_id, uint32_t mesh_id)
     add_object(mm_id, _scene, _db);
     _refresh = true;
     }
+  }
+
+int64_t view::poisson(uint32_t pc_id, uint32_t depth)
+  {
+  std::scoped_lock lock(_mut);
+  pc* p = _db.get_pc(pc_id);
+  if (!p)
+    return -1;  
+  poisson_reconstruction_screened_parameters pars;
+  pars.depth = depth;  
+  mesh* db_mesh;
+  uint32_t id;
+  _db.create_mesh(db_mesh, id);
+  poisson_reconstruction_screened(db_mesh->vertices, db_mesh->triangles, p->vertices, p->normals, pars);
+  db_mesh->cs = jtk::get_identity();
+  db_mesh->visible = true;
+  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  if (db_mesh->visible)
+    add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return (int64_t)id;
   }
 
 void view::poll_for_events()

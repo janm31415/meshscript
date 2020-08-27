@@ -116,6 +116,8 @@ class view
     void fit_mm_to_partial_positions(uint32_t mm_id, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions);
 
     void fit_mm(uint32_t mm_id, uint32_t mesh_id);
+
+    int64_t poisson(uint32_t pc_id, uint32_t depth);
     
     void unzoom();
 

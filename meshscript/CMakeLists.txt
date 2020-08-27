@@ -124,6 +124,7 @@ target_link_libraries(meshscript
     ${SDL_LIBRARIES}
     asm
     dlib
+    libpoisson
     libskiwi	
     hdf5-shared
     )	
@@ -135,7 +136,7 @@ if (${JTK_THREADING} STREQUAL "tbb")
       )
   target_link_libraries(meshscript
       PRIVATE	
-      ${TBB_LIBRARIES}
+      ${TBB_LIBRARIES}      
       )	
 endif (${JTK_THREADING} STREQUAL "tbb")
 

@@ -793,7 +793,7 @@ uint64_t scm_face_detector_predict()
   return make_list(vec);
   }
 
-uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt, bool scaling, bool correct_reflections)
+uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt)
   {
   using namespace skiwi;
   try
@@ -833,7 +833,7 @@ uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt, bool scaling, bool
       }
     source.resize(nr_rows, 3);
     target.resize(nr_rows, 3);
-    auto m = jtk::npoint(source, target, scaling, correct_reflections);
+    auto m = jtk::npoint(source, target, false, true);
     std::vector<scm_type> m_row(4);
     std::vector<scm_type> rows;
     for (int j = 0; j < 4; ++j)
@@ -885,10 +885,15 @@ void mm_fit(int64_t mm_id, int64_t mesh_id)
   g_view.v->fit_mm((uint32_t)mm_id, (uint32_t)mesh_id);
   }
 
+int64_t scm_poisson(int64_t id, int64_t depth)
+  {
+  return g_view.v->poisson((uint32_t)id, (uint32_t)depth);
+  }
+
 void* register_functions(void*)
   {
   using namespace skiwi;
-  register_external_primitive("cs-ref", (void*)&scm_get_coordinate_system, skiwi_scm, skiwi_int64, "(cs-ref id) returns the coordinate system for the object with tag `id`.");
+  register_external_primitive("cs", (void*)&scm_get_coordinate_system, skiwi_scm, skiwi_int64, "(cs id) returns the coordinate system for the object with tag `id`.");
   register_external_primitive("cs-rotate!", (void*)&scm_rotate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-rotate! id x y z) rotates the object with tag `id` by `x` degrees over the x-axis, by `y` degrees over the y-axis, and by `z` degrees over the z_axis.");
   register_external_primitive("cs-set!", (void*)&scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for the object with tag `id`. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
@@ -930,7 +935,11 @@ void* register_functions(void*)
   register_external_primitive("morphable-model-fit!", (void*)&mm_fit, skiwi_void, skiwi_int64, skiwi_int64, "(morphable-model-fit! mm_id mesh_id)");
 
 
-  register_external_primitive("npoint", &npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_bool, skiwi::skiwi_bool, "npoint");
+  register_external_primitive("npoint", &npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "npoint");
+
+  register_external_primitive("poisson", &scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth)");
+
+  register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id)");
@@ -958,9 +967,7 @@ void* register_functions(void*)
   register_external_primitive("view-size-set!", (void*)&scm_set_image_size, skiwi_void, skiwi_scm, skiwi_scm, "(view-size-set! w h) resizes the plotted image to size (w, h).");
   register_external_primitive("view-textured-set!", (void*)&scm_set_textured, skiwi_void, skiwi_bool, "(view-textured-set! #t/#f) turns on/off rendering of texture.");
   register_external_primitive("view-unzoom!", (void*)&scm_unzoom, skiwi_void, "(view-unzoom!) sets the camera to its initial position.");
-  register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
-
-  register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
+  register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");  
 
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript.");
   return nullptr;
