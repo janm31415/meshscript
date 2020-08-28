@@ -935,9 +935,9 @@ void* register_functions(void*)
   register_external_primitive("morphable-model-fit!", (void*)&mm_fit, skiwi_void, skiwi_int64, skiwi_int64, "(morphable-model-fit! mm_id mesh_id)");
 
 
-  register_external_primitive("npoint", &npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "npoint");
+  register_external_primitive("npoint", (void*)&npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "npoint");
 
-  register_external_primitive("poisson", &scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth)");
+  register_external_primitive("poisson", (void*)&scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth)");
 
   register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
 
