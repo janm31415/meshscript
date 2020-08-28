@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jtk/vec.h>
+#include <stdint.h>
 #include "libpoisson_api.h"
 
 #include <vector>
