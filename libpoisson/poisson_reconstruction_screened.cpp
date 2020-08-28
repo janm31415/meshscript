@@ -14,8 +14,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
+
+#ifdef _WIN32
 #include <Windows.h>
 #include <Psapi.h>
+#endif
+
 #include "poisson_screened/mytime.h"
 #include "poisson_screened/MarchingCubes.h"
 #include "poisson_screened/Octree.h"
