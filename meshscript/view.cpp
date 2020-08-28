@@ -954,7 +954,7 @@ int64_t view::poisson(uint32_t pc_id, uint32_t depth)
   mesh* db_mesh;
   uint32_t id;
   _db.create_mesh(db_mesh, id);
-  poisson_reconstruction_screened(db_mesh->vertices, db_mesh->triangles, p->vertices, p->normals, pars);
+  poisson_reconstruction_screened(db_mesh->vertices, db_mesh->triangles, db_mesh->vertex_colors, p->vertices, p->normals, p->vertex_colors, pars);
   db_mesh->cs = jtk::get_identity();
   db_mesh->visible = true;
   _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
