@@ -20,7 +20,7 @@
 #include <Psapi.h>
 #endif
 
-#include "poisson_screened/mytime.h"
+#include "poisson_screened/MyTime.h"
 #include "poisson_screened/MarchingCubes.h"
 #include "poisson_screened/Octree.h"
 #include "poisson_screened/SparseMatrix.h"
