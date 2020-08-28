@@ -26,7 +26,7 @@ poisson_screened/PointStream.h
 poisson_screened/Polynomial.h
 poisson_screened/PPolynomial.h
 poisson_screened/SparseMatrix.h
-#poisson_screened/Time.h
+poisson_screened/MyTime.h
 poisson_screened/Vector.h
 poisson_screened/Array.inl
 poisson_screened/BSplineData.inl
