@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "io.h"
 
 #include <jtk/geometry.h>
 
@@ -41,6 +42,24 @@ bool read_from_file(mesh& m, const std::string& filename)
     {
     if (!read_stl(m.vertices, m.triangles, filename.c_str()))
       return false;
+    }
+  else if (ext == "ply")
+    {
+    std::vector<uint32_t> vertex_colors;
+    if (!read_ply(filename.c_str(), m.vertices, m.triangles, vertex_colors))
+      return false;
+    if (!vertex_colors.empty())
+      {
+      m.vertex_colors.clear();
+      m.vertex_colors.reserve(vertex_colors.size());
+      for (uint32_t clr : vertex_colors)
+        {
+        uint32_t red = clr & 255;
+        uint32_t green = (clr >> 8) & 255;
+        uint32_t blue = (clr >> 16) & 255;
+        m.vertex_colors.emplace_back((float)red / 255.f, (float)green / 255.f, (float)blue / 255.f);
+        }
+      }
     }
   else if (ext == "off")
     {
@@ -124,7 +143,7 @@ bool write_to_file(const mesh& m, const std::string& filename)
   else if (ext == "ply")
     {
     if (m.vertex_colors.empty())
-      jtk::write_ply(filename.c_str(), m.vertices, m.triangles);
+      return jtk::write_ply(filename.c_str(), m.vertices, m.triangles);
     else
       {
       std::vector<uint32_t> colors;

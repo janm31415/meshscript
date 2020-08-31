@@ -682,7 +682,63 @@ void ply_put_obj_info(PlyFile *plyfile, char *obj_info)
 /*  Reading  */
 /*************/
 
+static int ply_is_binary_format(FILE *fp)
+  {
+  /* check for NULL file pointer */
+  if (fp == NULL)
+    return 0;
+  int nwords;
+  char **words;
+  char *orig_line;
 
+  words = get_words(fp, &nwords, &orig_line);
+  if (!words || !equal_strings(words[0], "ply"))
+    return (NULL);
+
+  while (words) 
+    {
+
+    /* parse words */
+
+    if (equal_strings(words[0], "format")) 
+      {
+      if (nwords != 3)
+        {
+        free(words);
+        return 0;
+        }
+      if (equal_strings(words[1], "ascii"))
+        {
+        free(words);
+        return 0;
+        }
+      else if (equal_strings(words[1], "binary_big_endian"))
+        {
+        free(words);
+        return 1;
+        }
+      else if (equal_strings(words[1], "binary_little_endian"))
+        {
+        free(words);
+        return 1;
+        }
+      else
+        {
+        free(words);
+        return 0;
+        }      
+      }    
+    else if (equal_strings(words[0], "end_header"))
+      break;
+
+    /* free up words space */
+    free(words);
+
+    words = get_words(fp, &nwords, &orig_line);
+    }
+  free(words);
+  return 0;
+  }
 
 /******************************************************************************
 Given a file pointer, get ready to read PLY data from the file.
@@ -828,6 +884,18 @@ PlyFile *ply_open_for_reading(
   fp = fopen(name, "r");
   if (fp == NULL)
     return (NULL);
+
+  if (ply_is_binary_format(fp))
+    {
+    fclose(fp);
+    fp = fopen(name, "rb");
+    if (fp == NULL)
+      return (NULL);
+    }
+  else
+    {
+    fseek(fp, 0, SEEK_SET);
+    }
 
   /* create the PlyFile data structure */
 

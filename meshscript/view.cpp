@@ -1298,6 +1298,8 @@ void view::loop()
       blit_screen_to_opengl_texture();
       SDL_GL_SwapWindow(_window);
       }
+    else
+      std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(16.0));
 
     if (_suspend)
       {
