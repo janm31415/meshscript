@@ -20,8 +20,11 @@ set(STB
 )
 
 set(PLY
-../ply/ply.h
-../ply/plyfile.c
+#../ply/ply.h
+#../ply/plyfile.c
+../ply/rply.c
+../ply/rply.h
+../ply/rplyfile.h
 )
 
 set(HDRS
