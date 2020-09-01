@@ -11,6 +11,28 @@
 
 using namespace jtk;
 
+namespace
+  {
+
+  jtk::image<uint32_t> make_dummy_texture(int w, int h)
+    {
+    jtk::image<uint32_t> im(w, h);
+    for (int y = 0; y < h; ++y)
+      {
+      uint32_t* p_clr = im.row(y);
+      bool y_even = ((y / 32) & 1) == 1;
+      for (int x = 0; x < w; ++x, ++p_clr)
+        {
+        bool x_even = ((x / 32) & 1) == 1;
+        bool black = (x_even && y_even) || (!x_even && !y_even);
+        *p_clr = black ? 0xff000000 : 0xffffffff;
+        }
+      }
+    return im;
+    }
+
+  }
+
 void compute_bb(vec3<float>& min, vec3<float>& max, uint32_t nr_of_vertices, const vec3<float>* vertices)
   {
   if (nr_of_vertices == 0)
@@ -45,8 +67,9 @@ bool read_from_file(mesh& m, const std::string& filename)
     }
   else if (ext == "ply")
     {
+    std::vector<jtk::vec3<float>> vertex_normals;
     std::vector<uint32_t> vertex_colors;
-    if (!read_ply(filename.c_str(), m.vertices, m.triangles, vertex_colors))
+    if (!read_ply(filename.c_str(), m.vertices, vertex_normals, vertex_colors, m.triangles, m.uv_coordinates))
       return false;
     if (!vertex_colors.empty())
       {
@@ -96,6 +119,8 @@ bool read_from_file(mesh& m, const std::string& filename)
     }
   else
     return false;
+  if (!m.uv_coordinates.empty() && (m.texture.width() == 0 || m.texture.height() == 0))
+    m.texture = make_dummy_texture(512, 512);
   m.cs = get_identity();
   m.visible = true;
   return true;

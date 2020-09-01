@@ -1047,6 +1047,9 @@ void ply_get_property(
   prop_ptr->count_internal = prop->count_internal;
   prop_ptr->count_offset = prop->count_offset;
 
+  prop->external_type = prop_ptr->external_type;
+  prop->count_external = prop_ptr->count_external;
+
   /* specify that the user wants this property */
   elem->store_prop[index] = STORE_PROP;
   }

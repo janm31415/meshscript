@@ -15,7 +15,11 @@ bool read_from_file(pc& point_cloud, const std::string& filename)
   std::transform(ext.begin(), ext.end(), ext.begin(), [](char ch) {return (char)::tolower(ch); });
   if (ext == "ply")
     {
-    if (!read_ply(filename.c_str(), point_cloud.vertices, point_cloud.normals, point_cloud.vertex_colors))
+    std::vector<jtk::vec3<uint32_t>> triangles;
+    std::vector<jtk::vec3<jtk::vec2<float>>> uv;
+    if (!read_ply(filename.c_str(), point_cloud.vertices, point_cloud.normals, point_cloud.vertex_colors, triangles, uv))
+      return false;
+    if (point_cloud.vertices.empty())
       return false;
     }
   point_cloud.cs = get_identity();
