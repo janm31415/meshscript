@@ -113,6 +113,16 @@ bool read_ply(const char* filename, std::vector<jtk::vec3<float>>& vertices, std
   long nblue = ply_set_read_cb(ply, "vertex", "blue", read_color, (void*)(&p_blue), 0);
   long nalpha = ply_set_read_cb(ply, "vertex", "alpha", read_color, (void*)(&p_alpha), 0);
 
+  if (nred == 0)    
+    nred = ply_set_read_cb(ply, "vertex", "diffuse_red", read_color, (void*)(&p_red), 0);
+  if (ngreen == 0)
+    ngreen = ply_set_read_cb(ply, "vertex", "diffuse_green", read_color, (void*)(&p_green), 0);
+  if (nblue == 0)
+    nblue = ply_set_read_cb(ply, "vertex", "diffuse_blue", read_color, (void*)(&p_blue), 0);
+  if (nalpha == 0)
+    nalpha = ply_set_read_cb(ply, "vertex", "diffuse_alpha", read_color, (void*)(&p_alpha), 0);
+    
+
   if (nred > 0)
     clrs.resize(nred);
 
@@ -124,6 +134,8 @@ bool read_ply(const char* filename, std::vector<jtk::vec3<float>>& vertices, std
   uint32_t* p_tria_index = NULL;
 
   long ntriangles = ply_set_read_cb(ply, "face", "vertex_indices", read_face, (void*)(&p_tria_index), 0);
+  if (ntriangles == 0)
+    ntriangles = ply_set_read_cb(ply, "face", "vertex_index", read_face, (void*)(&p_tria_index), 0);
 
   if (ntriangles > 0)
     triangles.resize(ntriangles);
