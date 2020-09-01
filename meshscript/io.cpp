@@ -83,6 +83,11 @@ bool read_ply(const char* filename, std::vector<jtk::vec3<float>>& vertices, std
   long nvertices_y = ply_set_read_cb(ply, "vertex", "y", read_vec3_coord, (void*)(&p_vertex_pointer_y), 0);
   long nvertices_z = ply_set_read_cb(ply, "vertex", "z", read_vec3_coord, (void*)(&p_vertex_pointer_z), 0);
 
+  if (nvertices_x != nvertices_y)
+    return false;
+  if (nvertices_x != nvertices_z)
+    return false;
+
   if (nvertices_x > 0)
     vertices.resize(nvertices_x);
   p_vertex_pointer_x = (float*)vertices.data();
@@ -96,6 +101,11 @@ bool read_ply(const char* filename, std::vector<jtk::vec3<float>>& vertices, std
   long nnormals_x = ply_set_read_cb(ply, "vertex", "nx", read_vec3_coord, (void*)(&p_normal_pointer_x), 0);
   long nnormals_y = ply_set_read_cb(ply, "vertex", "ny", read_vec3_coord, (void*)(&p_normal_pointer_y), 0);
   long nnormals_z = ply_set_read_cb(ply, "vertex", "nz", read_vec3_coord, (void*)(&p_normal_pointer_z), 0);
+
+  if (nnormals_x != nnormals_y)
+    return false;
+  if (nnormals_x != nnormals_z)
+    return false;
 
   if (nnormals_x > 0)
     normals.resize(nnormals_x);
@@ -113,6 +123,15 @@ bool read_ply(const char* filename, std::vector<jtk::vec3<float>>& vertices, std
   long nblue = ply_set_read_cb(ply, "vertex", "blue", read_color, (void*)(&p_blue), 0);
   long nalpha = ply_set_read_cb(ply, "vertex", "alpha", read_color, (void*)(&p_alpha), 0);
 
+  if (nred == 0)
+    nred = ply_set_read_cb(ply, "vertex", "r", read_color, (void*)(&p_red), 0);
+  if (ngreen == 0)
+    ngreen = ply_set_read_cb(ply, "vertex", "g", read_color, (void*)(&p_green), 0);
+  if (nblue == 0)
+    nblue = ply_set_read_cb(ply, "vertex", "b", read_color, (void*)(&p_blue), 0);
+  if (nalpha == 0)
+    nalpha = ply_set_read_cb(ply, "vertex", "a", read_color, (void*)(&p_alpha), 0);
+
   if (nred == 0)    
     nred = ply_set_read_cb(ply, "vertex", "diffuse_red", read_color, (void*)(&p_red), 0);
   if (ngreen == 0)
@@ -120,11 +139,10 @@ bool read_ply(const char* filename, std::vector<jtk::vec3<float>>& vertices, std
   if (nblue == 0)
     nblue = ply_set_read_cb(ply, "vertex", "diffuse_blue", read_color, (void*)(&p_blue), 0);
   if (nalpha == 0)
-    nalpha = ply_set_read_cb(ply, "vertex", "diffuse_alpha", read_color, (void*)(&p_alpha), 0);
-    
+    nalpha = ply_set_read_cb(ply, "vertex", "diffuse_alpha", read_color, (void*)(&p_alpha), 0);      
 
-  if (nred > 0)
-    clrs.resize(nred);
+  if (nred > 0 || ngreen > 0 || nblue > 0 || nalpha > 0)
+    clrs.resize(nred, 0xffffffff);
 
   p_red = (uint8_t*)clrs.data();
   p_green = p_red + 1;
