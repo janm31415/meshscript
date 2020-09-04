@@ -9,6 +9,8 @@
 
 #include <stb_image.h>
 
+#include <iostream>
+
 using namespace jtk;
 
 namespace
@@ -187,4 +189,38 @@ bool write_to_file(const mesh& m, const std::string& filename)
       }
     }
   return false;
+  }
+
+void info(const mesh& m)
+  {
+  std::cout << "---------------------------------------" << std::endl;
+  std::cout << "Triangles: " << m.triangles.size() << std::endl;
+  std::cout << "Vertices: " << m.vertices.size() << std::endl;
+  std::cout << "Coordinate system: " << std::endl;
+  for (int i = 0; i < 4; ++i)
+    {
+    for (int j = 0; j < 4; ++j)
+      {
+      std::cout << m.cs[i + 4 * j] << " ";
+      }
+    std::cout << std::endl;
+    }
+  std::cout << "Vertex colors: " << (m.vertex_colors.empty() ? "No" : "Yes") << std::endl;
+  std::cout << "UV coordinates: " << (m.uv_coordinates.empty() ? "No" : "Yes") << std::endl;
+  std::cout << "Texture dimensions: " << m.texture.width() << " x " << m.texture.height() << std::endl;
+  std::cout << "Visible: " << (m.visible ? "Yes" : "No") << std::endl;
+  std::cout << "---------------------------------------" << std::endl;
+  }
+
+void cs_apply(mesh& m)
+  {
+  for (auto& v : m.vertices)
+    {
+    jtk::float4 V(v[0], v[1], v[2], 1.f);
+    V = jtk::matrix_vector_multiply(m.cs, V);
+    v[0] = V[0];
+    v[1] = V[1];
+    v[2] = V[2];
+    }
+  m.cs = jtk::get_identity();
   }

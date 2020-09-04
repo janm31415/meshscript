@@ -2,6 +2,7 @@
 #include "io.h"
 
 #include <jtk/file_utils.h>
+#include <iostream>
 
 #include <algorithm>
 
@@ -44,4 +45,36 @@ bool vertices_to_csv(const pc& m, const std::string& filename)
 bool write_to_file(const pc& p, const std::string& filename)
   {
   return false;
+  }
+
+void info(const pc& p)
+  {
+  std::cout << "---------------------------------------" << std::endl;
+  std::cout << "Vertices: " << p.vertices.size() << std::endl;
+  std::cout << "Coordinate system: " << std::endl;
+  for (int i = 0; i < 4; ++i)
+    {
+    for (int j = 0; j < 4; ++j)
+      {
+      std::cout << p.cs[i + 4 * j] << " ";
+      }
+    std::cout << std::endl;
+    }
+  std::cout << "Vertex normals: " << (p.normals.empty() ? "No" : "Yes") << std::endl;
+  std::cout << "Vertex colors: " << (p.vertex_colors.empty() ? "No" : "Yes") << std::endl;
+  std::cout << "Visible: " << (p.visible ? "Yes" : "No") << std::endl;
+  std::cout << "---------------------------------------" << std::endl;
+  }
+
+void cs_apply(pc& p)
+  {
+  for (auto& v : p.vertices)
+    {
+    jtk::float4 V(v[0], v[1], v[2], 1.f);
+    V = jtk::matrix_vector_multiply(p.cs, V);
+    v[0] = V[0];
+    v[1] = V[1];
+    v[2] = V[2];
+    }
+  p.cs = jtk::get_identity();
   }

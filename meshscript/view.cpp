@@ -949,12 +949,20 @@ int64_t view::poisson(uint32_t pc_id, uint32_t depth)
   pc* p = _db.get_pc(pc_id);
   if (!p)
     return -1;  
+  if (p->normals.empty())
+    {
+    std::cout << "error: This pointcloud has no normals\n";
+    return -1;
+    }
   poisson_reconstruction_screened_parameters pars;
   pars.depth = depth;  
   mesh* db_mesh;
   uint32_t id;
   _db.create_mesh(db_mesh, id);
-  poisson_reconstruction_screened(db_mesh->vertices, db_mesh->triangles, db_mesh->vertex_colors, p->vertices, p->normals, p->vertex_colors, pars);
+  if (p->vertex_colors.empty())  
+    poisson_reconstruction_screened(db_mesh->vertices, db_mesh->triangles, p->vertices, p->normals, pars);
+  else
+    poisson_reconstruction_screened(db_mesh->vertices, db_mesh->triangles, db_mesh->vertex_colors, p->vertices, p->normals, p->vertex_colors, pars);
   db_mesh->cs = jtk::get_identity();
   db_mesh->visible = true;
   _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
@@ -964,6 +972,35 @@ int64_t view::poisson(uint32_t pc_id, uint32_t depth)
   ::unzoom(_scene);
   _refresh = true;
   return (int64_t)id;
+  }
+
+void view::info(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  pc* p = _db.get_pc(id);
+  if (p)
+    ::info(*p);
+  mesh* m = _db.get_mesh(id);
+  if (m)
+    ::info(*m);
+  mm* morph = _db.get_mm(id);
+  if (morph)
+    ::info(*morph);
+  }
+
+void view::cs_apply(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  pc* p = _db.get_pc(id);
+  if (p)
+    ::cs_apply(*p);
+  mesh* m = _db.get_mesh(id);
+  if (m)
+    ::cs_apply(*m);
+  mm* morph = _db.get_mm(id);
+  if (morph)
+    ::cs_apply(*morph);
+  // no refresh needed (I think)
   }
 
 void view::poll_for_events()

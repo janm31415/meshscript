@@ -4,6 +4,8 @@
 #include <jtk/qbvh.h>
 #include <jtk/geometry.h>
 
+#include <iostream>
+
 #include <hdf5.h>
 
 #include "hdf5aux.h"
@@ -348,4 +350,29 @@ void fit_to_mesh(mm& morph, const mesh& m)
     color = morph.vertex_colors;
     }
   clamp_vertex_colors(morph.vertex_colors);
+  }
+
+void info(const mm& morph)
+  {
+  std::cout << "---------------------------------------" << std::endl;
+  std::cout << "Triangles: " << morph.shape.triangles.size() << std::endl;
+  std::cout << "Vertices: " << morph.vertices.size() << std::endl;
+  std::cout << "Coordinate system: " << std::endl;
+  for (int i = 0; i < 4; ++i)
+    {
+    for (int j = 0; j < 4; ++j)
+      {
+      std::cout << morph.cs[i + 4 * j] << " ";
+      }
+    std::cout << std::endl;
+    }  
+  std::cout << "Coefficient size: " << morph.coefficients.size() << std::endl;
+  std::cout << "Vertex colors: " << (morph.vertex_colors.empty() ? "No" : "Yes") << std::endl;
+  std::cout << "Visible: " << (morph.visible ? "Yes" : "No") << std::endl;
+  std::cout << "---------------------------------------" << std::endl;
+  }
+
+void cs_apply(mm&)
+  {
+  std::cout << "error: A morphable model's coordinate system cannot be applied.\n";
   }

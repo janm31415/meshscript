@@ -27,3 +27,7 @@ bool vertices_to_csv(const mesh& m, const std::string& filename);
 bool triangles_to_csv(const mesh& m, const std::string& filename);
 
 bool write_to_file(const mesh& m, const std::string& filename);
+
+void info(const mesh& m);
+
+void cs_apply(mesh& m);

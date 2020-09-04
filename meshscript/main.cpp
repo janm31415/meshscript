@@ -890,17 +890,30 @@ int64_t scm_poisson(int64_t id, int64_t depth)
   return g_view.v->poisson((uint32_t)id, (uint32_t)depth);
   }
 
+void info(int64_t id)
+  {
+  return g_view.v->info((uint32_t)id);
+  }
+
+void scm_cs_apply(int64_t id)
+  {
+  return g_view.v->cs_apply((uint32_t)id);
+  }
+
 void* register_functions(void*)
   {
   using namespace skiwi;
   register_external_primitive("cs", (void*)&scm_get_coordinate_system, skiwi_scm, skiwi_int64, "(cs id) returns the coordinate system for the object with tag `id`.");
+  register_external_primitive("cs-apply!", (void*)&scm_cs_apply, skiwi_void, skiwi_int64, "(cs-apply! id) transforms the vertices of object with tag `id` by its coordinate system, and sets its coordinate system to the world.");
   register_external_primitive("cs-rotate!", (void*)&scm_rotate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-rotate! id x y z) rotates the object with tag `id` by `x` degrees over the x-axis, by `y` degrees over the y-axis, and by `z` degrees over the z_axis.");
   register_external_primitive("cs-set!", (void*)&scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for the object with tag `id`. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
 
+
   register_external_primitive("face-detector-predict", (void*)&scm_face_detector_predict, skiwi_scm, "(face-detector-predict) runs the face predictor on the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-face-detector.");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
+  register_external_primitive("info", (void*)&info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list of values between 0 and 1 and returns a list of lists with (r g b) values.");
 
   register_external_primitive("load-face-detector", (void*)&scm_load_face_detector, skiwi_void, skiwi_char_pointer, "(load-face-detector \"filename\") initializes the face detector with the shape predictor given by \"filename\".");

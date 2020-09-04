@@ -118,6 +118,10 @@ class view
     void fit_mm(uint32_t mm_id, uint32_t mesh_id);
 
     int64_t poisson(uint32_t pc_id, uint32_t depth);
+
+    void info(uint32_t id);
+
+    void cs_apply(uint32_t id);
     
     void unzoom();
 

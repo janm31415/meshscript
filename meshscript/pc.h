@@ -22,3 +22,7 @@ bool read_from_file(pc& point_cloud, const std::string& filename);
 bool vertices_to_csv(const pc& m, const std::string& filename);
 
 bool write_to_file(const pc& p, const std::string& filename);
+
+void info(const pc& p);
+
+void cs_apply(pc& p);
