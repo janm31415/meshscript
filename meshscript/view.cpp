@@ -992,15 +992,31 @@ void view::cs_apply(uint32_t id)
   {
   std::scoped_lock lock(_mut);
   pc* p = _db.get_pc(id);
+  bool visible = false;
   if (p)
+    {
     ::cs_apply(*p);
+    visible = p->visible;
+    }
   mesh* m = _db.get_mesh(id);
   if (m)
+    {
     ::cs_apply(*m);
+    visible = m->visible;
+    }
   mm* morph = _db.get_mm(id);
   if (morph)
+    {
     ::cs_apply(*morph);
-  // no refresh needed (I think)
+    visible = morph->visible;
+    }
+
+  remove_object(id, _scene);
+  if (visible)
+    {
+    add_object(id, _scene, _db);
+    _refresh = true;
+    }
   }
 
 void view::poll_for_events()
