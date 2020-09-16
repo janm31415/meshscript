@@ -14,6 +14,14 @@ if (UNIX)
   set(OPENGL_LIBRARIES "/usr/lib/x86_64-linux-gnu/libOpenGL.so.0.0.0")
 endif (UNIX)
 
+if (APPLE)
+  set(SDL_INCLUDE_DIR "/Library/Frameworks/SDL2.framework/Versions/A/Headers/")
+  set(SDL_LIBRARIES "/Library/Frameworks/SDL2.framework/Versions/A/SDL2")
+  set(TBB_INCLUDE_DIR "")
+  set(TBB_LIBRARIES "")
+  set(OPENGL_LIBRARIES "/System/Library/Frameworks/OpenGL.framework/OpenGL")
+endif (APPLE)
+
 set(STB
 ../stb/stb_image.h
 ../stb/stb_image_write.h
@@ -79,9 +87,9 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:16000000")
 endif (WIN32)
 
 if (UNIX)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -msse4.1 -pthread -std=c++11")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -msse4.1 -pthread")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -msse4.1 -pthread -std=c++11")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -msse4.1 -pthread -std=c++11")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -msse4.1 -pthread")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4.1 -pthread -std=c++11")
 endif (UNIX)
 
