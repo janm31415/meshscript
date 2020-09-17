@@ -35,55 +35,7 @@ using namespace jtk;
 
 constexpr double pi = 3.141592653589793238462643383279;
 
-struct view_data
-  {
-  view_data() : v(nullptr), initialised(false) {}
-  view* v;
-  std::mutex mt;
-  std::condition_variable cv;
-  bool initialised;
-  std::unique_ptr<std::thread> t;
-  };
-
-void create_view_with_loop(view_data* vd)
-  {
-  vd->mt.lock();
-  vd->v = new view();
-  vd->initialised = true;
-  vd->cv.notify_all();
-  vd->mt.unlock();
-
-  vd->v->loop();
-  }
-
-std::unique_ptr<std::thread> create_threaded_view(view_data& vd)
-  {
-  assert(!vd.initialised);
-  assert(vd.v == nullptr);
-  std::unique_ptr<std::thread> res(new std::thread(create_view_with_loop, &vd));
-  std::unique_lock<std::mutex> lk(vd.mt);
-  if (!vd.initialised)
-    vd.cv.wait(lk, [&] {return vd.initialised; });
-  return res;
-  }
-
-void create_view(view_data& vd)
-  {
-  vd.t = create_threaded_view(vd);
-  }
-
-void close_view(view_data& vd)
-  {
-  if (!vd.v)
-    return;
-  vd.v->quit();
-  vd.t->join();
-  delete vd.v;
-  vd.v = nullptr;
-  vd.initialised = false;
-  }
-
-view_data g_view;
+view* g_view = nullptr;
 
 bool quit = false;
 
@@ -94,29 +46,29 @@ void scm_exit()
 
 void scm_hide_view()
   {
-  g_view.v->hide();
+  g_view->hide();
   }
 
 void scm_show_view()
   {
-  g_view.v->show();
+  g_view->show();
   }
 
 int64_t load_mesh(const char* filename)
   {
-  int64_t id = g_view.v->load_mesh_from_file(filename);
+  int64_t id = g_view->load_mesh_from_file(filename);
   return id;
   }
 
 int64_t load_morphable_model(const char* filename)
   {
-  int64_t id = g_view.v->load_morphable_model_from_file(filename);
+  int64_t id = g_view->load_morphable_model_from_file(filename);
   return id;
   }
 
 int64_t load_pc(const char* filename)
   {
-  int64_t id = g_view.v->load_pc_from_file(filename);
+  int64_t id = g_view->load_pc_from_file(filename);
   return id;
   }
 
@@ -143,7 +95,7 @@ void scm_set_coordinate_system(int64_t id, skiwi::scm_type scheme_variable)
         {
         m[i] = (float)v[i].get_number();
         }
-      g_view.v->set_coordinate_system((uint32_t)id, m);
+      g_view->set_coordinate_system((uint32_t)id, m);
       }
     catch (std::runtime_error e)
       {
@@ -172,7 +124,7 @@ void scm_set_coordinate_system(int64_t id, skiwi::scm_type scheme_variable)
         m[i + 8] = (float)v2.get_number();
         m[i + 12] = (float)v3.get_number();
         }
-      g_view.v->set_coordinate_system((uint32_t)id, m);
+      g_view->set_coordinate_system((uint32_t)id, m);
       }
     catch (std::runtime_error e)
       {
@@ -208,7 +160,7 @@ void scm_set_view_coordinate_system(skiwi::scm_type scheme_variable)
         {
         m[i] = (float)v[i].get_number();
         }
-      g_view.v->set_coordinate_system(m);
+      g_view->set_coordinate_system(m);
       }
     catch (std::runtime_error e)
       {
@@ -237,7 +189,7 @@ void scm_set_view_coordinate_system(skiwi::scm_type scheme_variable)
         m[i + 8] = (float)v2.get_number();
         m[i + 12] = (float)v3.get_number();
         }
-      g_view.v->set_coordinate_system(m);
+      g_view->set_coordinate_system(m);
       }
     catch (std::runtime_error e)
       {
@@ -253,7 +205,7 @@ void scm_set_view_coordinate_system(skiwi::scm_type scheme_variable)
 uint64_t scm_get_coordinate_system(int64_t id)
   {
   using namespace skiwi;
-  auto cs = g_view.v->get_coordinate_system((uint32_t)id);
+  auto cs = g_view->get_coordinate_system((uint32_t)id);
   std::vector<scm_type> lst;
   for (int r = 0; r < 4; ++r)
     {
@@ -270,7 +222,7 @@ uint64_t scm_get_coordinate_system(int64_t id)
 uint64_t scm_get_view_coordinate_system()
   {
   using namespace skiwi;
-  auto cs = g_view.v->get_coordinate_system();
+  auto cs = g_view->get_coordinate_system();
   std::vector<scm_type> lst;
   for (int r = 0; r < 4; ++r)
     {
@@ -337,7 +289,7 @@ int64_t scm_marching_cubes(skiwi::scm_type bb, skiwi::scm_type dim, skiwi::scm_t
 
       marching_cubes_fun = skiwi::skiwi_compile(script);
 
-      int64_t id = g_view.v->marching_cubes(bounding, width, height, depth, (float)isovalue, &marching_cubes_distance_fun);
+      int64_t id = g_view->marching_cubes(bounding, width, height, depth, (float)isovalue, &marching_cubes_distance_fun);
 
       thread_specific_scheme_context.combine_each([](void* ctxt)
         {
@@ -390,7 +342,7 @@ int64_t make_mesh(skiwi::scm_type scm_vertices, skiwi::scm_type scm_triangles)
       triangles.emplace_back((uint32_t)triangle[0].get_fixnum(), (uint32_t)triangle[1].get_fixnum(), (uint32_t)triangle[2].get_fixnum());
       }
     }
-    int64_t id = g_view.v->load_mesh(vertices, triangles);
+    int64_t id = g_view->load_mesh(vertices, triangles);
     return id;
     }
   catch (std::runtime_error e)
@@ -402,34 +354,34 @@ int64_t make_mesh(skiwi::scm_type scm_vertices, skiwi::scm_type scm_triangles)
 
 bool vertices_to_csv(int64_t id, const char* filename)
   {
-  bool res = g_view.v->vertices_to_csv(id, filename);
+  bool res = g_view->vertices_to_csv(id, filename);
   return res;
   }
 
 bool triangles_to_csv(int64_t id, const char* filename)
   {
-  bool res = g_view.v->triangles_to_csv(id, filename);
+  bool res = g_view->triangles_to_csv(id, filename);
   return res;
   }
 
 void show(int64_t id)
   {
-  g_view.v->show(id);
+  g_view->show(id);
   }
 
 void hide(int64_t id)
   {
-  g_view.v->hide(id);
+  g_view->hide(id);
   }
 
 void set_matcap(int64_t id, int64_t clr_id)
   {
-  g_view.v->set_matcap(id, clr_id);
+  g_view->set_matcap(id, clr_id);
   }
 
 void scm_unzoom()
   {
-  g_view.v->unzoom();
+  g_view->unzoom();
   }
 
 uint64_t scm_jet(skiwi::scm_type mask)
@@ -489,7 +441,7 @@ void scm_set_vertex_colors(int64_t id, skiwi::scm_type scm_colors)
         throw std::runtime_error("error: set-vertex-colors: invalid color size (should have 3 int values)");
       colors.emplace_back((uint8_t)c[0].get_fixnum(), (uint8_t)c[1].get_fixnum(), (uint8_t)c[2].get_fixnum());
       }
-    g_view.v->set_vertex_colors((uint32_t)id, colors);
+    g_view->set_vertex_colors((uint32_t)id, colors);
     }
   catch (std::runtime_error e)
     {
@@ -510,7 +462,7 @@ void scm_rotate(int64_t id, skiwi::scm_type x_axis, skiwi::scm_type y_axis, skiw
   auto rot_z = jtk::make_rotation(vec3<float>(0, 0, 0), vec3<float>(0, 0, 1), (float)z);
 
   auto rot = jtk::matrix_matrix_multiply(jtk::matrix_matrix_multiply(rot_x, rot_y), rot_z);
-  g_view.v->premultiply_coordinate_system((uint32_t)id, rot);
+  g_view->premultiply_coordinate_system((uint32_t)id, rot);
   }
 
 void scm_translate(int64_t id, skiwi::scm_type x_axis, skiwi::scm_type y_axis, skiwi::scm_type z_axis)
@@ -520,61 +472,61 @@ void scm_translate(int64_t id, skiwi::scm_type x_axis, skiwi::scm_type y_axis, s
   double z = z_axis.get_number();
 
   auto t = jtk::make_translation((float)x, (float)y, (float)z);
-  g_view.v->premultiply_coordinate_system((uint32_t)id, t);
+  g_view->premultiply_coordinate_system((uint32_t)id, t);
   }
 
 void scm_set_shading(bool b)
   {
-  g_view.v->set_shading(b);
+  g_view->set_shading(b);
   }
 
 void scm_set_edges(bool b)
   {
-  g_view.v->set_edges(b);
+  g_view->set_edges(b);
   }
 
 void scm_set_textured(bool b)
   {
-  g_view.v->set_textured(b);
+  g_view->set_textured(b);
   }
 
 void scm_set_shadow(bool b)
   {
-  g_view.v->set_shadow(b);
+  g_view->set_shadow(b);
   }
 
 void scm_set_wireframe(bool b)
   {
-  g_view.v->set_wireframe(b);
+  g_view->set_wireframe(b);
   }
 
 void scm_set_one_bit(bool b)
   {
-  g_view.v->set_one_bit(b);
+  g_view->set_one_bit(b);
   }
 
 void scm_set_image_size(skiwi::scm_type w, skiwi::scm_type h)
   {
   int width = (int)w.get_number();
   int height = (int)h.get_number();
-  g_view.v->set_image_size(width, height);
+  g_view->set_image_size(width, height);
   }
 
 void scm_export_image(const char* filename)
   {
-  auto im = g_view.v->get_image();
+  auto im = g_view->get_image();
   stbi_write_png(filename, im.width(), im.height(), 4, (void*)im.data(), im.stride() * 4);
   }
 
 void scm_set_bg_color(int64_t r, int64_t g, int64_t b)
   {
-  g_view.v->set_bg_color((uint8_t)r, (uint8_t)g, (uint8_t)b);
+  g_view->set_bg_color((uint8_t)r, (uint8_t)g, (uint8_t)b);
   }
 
 uint64_t scm_get_position(skiwi::scm_type x, skiwi::scm_type y)
   {
   using namespace skiwi;
-  auto pos = g_view.v->get_world_position((int)x.get_number(), (int)y.get_number());
+  auto pos = g_view->get_world_position((int)x.get_number(), (int)y.get_number());
   std::vector<scm_type> coord;
   coord.push_back(make_flonum(pos[0]));
   coord.push_back(make_flonum(pos[1]));
@@ -585,36 +537,36 @@ uint64_t scm_get_position(skiwi::scm_type x, skiwi::scm_type y)
 uint64_t scm_get_index(skiwi::scm_type x, skiwi::scm_type y)
   {
   using namespace skiwi;
-  auto idx = g_view.v->get_index((int)x.get_number(), (int)y.get_number());
+  auto idx = g_view->get_index((int)x.get_number(), (int)y.get_number());
   return make_fixnum(idx);
   }
 
 uint64_t scm_get_id(skiwi::scm_type x, skiwi::scm_type y)
   {
   using namespace skiwi;
-  auto id = g_view.v->get_id((int)x.get_number(), (int)y.get_number());
+  auto id = g_view->get_id((int)x.get_number(), (int)y.get_number());
   return make_fixnum(id);
   }
 
 int64_t mm_coeff_size(int64_t id)
   {
-  return g_view.v->mm_coeff_size((uint32_t)id);
+  return g_view->mm_coeff_size((uint32_t)id);
   }
 
 int64_t mm_shape_size(int64_t id)
   {
-  return g_view.v->mm_shape_size((uint32_t)id);
+  return g_view->mm_shape_size((uint32_t)id);
   }
 
 double mm_sigma(int64_t id, int64_t idx)
   {
-  return g_view.v->mm_sigma((uint32_t)id, idx);
+  return g_view->mm_sigma((uint32_t)id, idx);
   }
 
 uint64_t mm_coeff(int64_t id)
   {
   using namespace skiwi;
-  std::vector<float> coeff = g_view.v->mm_coeff((uint32_t)id);
+  std::vector<float> coeff = g_view->mm_coeff((uint32_t)id);
   std::vector<scm_type> coefflist;
   for (const auto& v : coeff)
     {
@@ -626,7 +578,7 @@ uint64_t mm_coeff(int64_t id)
 uint64_t mm_basic_shape_coeff(int64_t id, int64_t shape_id)
   {
   using namespace skiwi;
-  std::vector<float> coeff = g_view.v->mm_basic_shape_coeff((uint32_t)id, shape_id);
+  std::vector<float> coeff = g_view->mm_basic_shape_coeff((uint32_t)id, shape_id);
   std::vector<scm_type> coefflist;
   for (const auto& v : coeff)
     {
@@ -647,7 +599,7 @@ void mm_coeff_set(int64_t id, skiwi::scm_type scm_coeff)
       double c = clr.get_number();
       coeff.push_back((float)c);
       }
-    g_view.v->mm_coeff_set((uint32_t)id, coeff);
+    g_view->mm_coeff_set((uint32_t)id, coeff);
     }
   catch (std::runtime_error e)
     {
@@ -657,23 +609,23 @@ void mm_coeff_set(int64_t id, skiwi::scm_type scm_coeff)
 
 int64_t mm_color_coeff_size(int64_t id)
   {
-  return g_view.v->mm_color_coeff_size((uint32_t)id);
+  return g_view->mm_color_coeff_size((uint32_t)id);
   }
 
 int64_t mm_color_shape_size(int64_t id)
   {
-  return g_view.v->mm_color_shape_size((uint32_t)id);
+  return g_view->mm_color_shape_size((uint32_t)id);
   }
 
 double mm_color_sigma(int64_t id, int64_t idx)
   {
-  return g_view.v->mm_color_sigma((uint32_t)id, idx);
+  return g_view->mm_color_sigma((uint32_t)id, idx);
   }
 
 uint64_t mm_color_coeff(int64_t id)
   {
   using namespace skiwi;
-  std::vector<float> coeff = g_view.v->mm_color_coeff((uint32_t)id);
+  std::vector<float> coeff = g_view->mm_color_coeff((uint32_t)id);
   std::vector<scm_type> coefflist;
   for (const auto& v : coeff)
     {
@@ -685,7 +637,7 @@ uint64_t mm_color_coeff(int64_t id)
 uint64_t mm_color_basic_shape_coeff(int64_t id, int64_t shape_id)
   {
   using namespace skiwi;
-  std::vector<float> coeff = g_view.v->mm_color_basic_shape_coeff((uint32_t)id, shape_id);
+  std::vector<float> coeff = g_view->mm_color_basic_shape_coeff((uint32_t)id, shape_id);
   std::vector<scm_type> coefflist;
   for (const auto& v : coeff)
     {
@@ -706,7 +658,7 @@ void mm_color_coeff_set(int64_t id, skiwi::scm_type scm_coeff)
       double c = clr.get_number();
       coeff.push_back((float)c);
       }
-    g_view.v->mm_color_coeff_set((uint32_t)id, coeff);
+    g_view->mm_color_coeff_set((uint32_t)id, coeff);
     }
   catch (std::runtime_error e)
     {
@@ -716,13 +668,13 @@ void mm_color_coeff_set(int64_t id, skiwi::scm_type scm_coeff)
 
 int64_t mm_to_mesh(int64_t id)
   {
-  return g_view.v->mm_to_mesh((uint32_t)id);
+  return g_view->mm_to_mesh((uint32_t)id);
   }
 
 uint64_t scm_triangles(int64_t id)
   {
   using namespace skiwi;
-  auto trias = g_view.v->triangles((uint32_t)id);
+  auto trias = g_view->triangles((uint32_t)id);
   std::vector<scm_type> trialist;
   for (const auto& tria : trias)
     {
@@ -738,7 +690,7 @@ uint64_t scm_triangles(int64_t id)
 uint64_t scm_vertices(int64_t id)
   {
   using namespace skiwi;
-  auto verts = g_view.v->vertices((uint32_t)id);
+  auto verts = g_view->vertices((uint32_t)id);
   std::vector<scm_type> vertlist;
   for (const auto& vert : verts)
     {
@@ -753,13 +705,13 @@ uint64_t scm_vertices(int64_t id)
 
 bool scm_write(int64_t id, const char* filename)
   {
-  return g_view.v->write((uint32_t)id, filename);
+  return g_view->write((uint32_t)id, filename);
   }
 
 uint64_t scm_mesh_texture_to_vertexcolors(uint64_t id)
   {
   using namespace skiwi;
-  std::vector<vec3<uint8_t>> colors = g_view.v->mesh_texture_to_vertexcolors((uint32_t)id);
+  std::vector<vec3<uint8_t>> colors = g_view->mesh_texture_to_vertexcolors((uint32_t)id);
   std::vector<scm_type> vertclrlist;
   for (const auto& clr : colors)
     {
@@ -774,18 +726,18 @@ uint64_t scm_mesh_texture_to_vertexcolors(uint64_t id)
 
 void scm_load_face_detector(const char* filename)
   {
-  g_view.v->load_face_detector(filename);
+  g_view->load_face_detector(filename);
   }
 
 void scm_set_show_face_detector(bool b)
   {
-  g_view.v->set_show_face_detector(b);
+  g_view->set_show_face_detector(b);
   }
 
 uint64_t scm_face_detector_predict()
   {
   using namespace skiwi;
-  std::vector<std::pair<long, long>> landmarks = g_view.v->face_detector_predict();
+  std::vector<std::pair<long, long>> landmarks = g_view->face_detector_predict();
   std::vector<skiwi::scm_type> vec;
   vec.reserve(landmarks.size());
   for (const auto& pr : landmarks)
@@ -872,7 +824,7 @@ void mm_fit_indices(int64_t mm_id, skiwi::scm_type indices, skiwi::scm_type posi
         throw std::runtime_error("error: morphable-model-fit-indices!: invalid vertex size (should have 3 float values)");
       pos.emplace_back((float)p_list[0].get_number(), (float)p_list[1].get_number(), (float)p_list[2].get_number());
       }
-    g_view.v->fit_mm_to_partial_positions((uint32_t)mm_id, ind, pos);
+    g_view->fit_mm_to_partial_positions((uint32_t)mm_id, ind, pos);
     }
   catch (std::runtime_error e)
     {
@@ -882,22 +834,22 @@ void mm_fit_indices(int64_t mm_id, skiwi::scm_type indices, skiwi::scm_type posi
 
 void mm_fit(int64_t mm_id, int64_t mesh_id)
   {  
-  g_view.v->fit_mm((uint32_t)mm_id, (uint32_t)mesh_id);
+  g_view->fit_mm((uint32_t)mm_id, (uint32_t)mesh_id);
   }
 
 int64_t scm_poisson(int64_t id, int64_t depth)
   {
-  return g_view.v->poisson((uint32_t)id, (uint32_t)depth);
+  return g_view->poisson((uint32_t)id, (uint32_t)depth);
   }
 
 void info(int64_t id)
   {
-  return g_view.v->info((uint32_t)id);
+  return g_view->info((uint32_t)id);
   }
 
 void scm_cs_apply(int64_t id)
   {
-  return g_view.v->cs_apply((uint32_t)id);
+  return g_view->cs_apply((uint32_t)id);
   }
 
 void* register_functions(void*)
@@ -986,12 +938,21 @@ void* register_functions(void*)
   return nullptr;
   }
 
-int main(int argc, char** argv)
+struct scheme_loop_data
   {
-  if (SDL_Init(SDL_INIT_VIDEO))
-    return -1;
+  scheme_loop_data() : initialised(false) {}
+  std::mutex mt;
+  std::condition_variable cv;
+  bool initialised;
+  std::unique_ptr<std::thread> t;
+  };
 
-  create_view(g_view);
+void create_scheme_with_loop(scheme_loop_data* sld, int argc, char** argv)
+  {
+  sld->mt.lock();
+  sld->initialised = true;
+  sld->cv.notify_all();
+  sld->mt.unlock();
 
   skiwi::skiwi_parameters pars;
   pars.heap_size = 64 * 1024 * 1024;
@@ -1007,9 +968,45 @@ int main(int argc, char** argv)
   if (!quit)
     skiwi::skiwi_repl();
 
-  skiwi::skiwi_quit();
+  g_view->quit();
 
-  close_view(g_view);
+  skiwi::skiwi_quit();
+  }
+
+std::unique_ptr<std::thread> create_threaded_scheme_loop(scheme_loop_data& sld, int argc, char** argv)
+  {
+  assert(!sld.initialised);
+  std::unique_ptr<std::thread> res(new std::thread(create_scheme_with_loop, &sld, argc, argv));
+  std::unique_lock<std::mutex> lk(sld.mt);
+  if (!sld.initialised)
+    sld.cv.wait(lk, [&] {return sld.initialised; });
+  return res;
+  }
+
+void create_scheme_loop(scheme_loop_data& sld, int argc, char** argv)
+  {
+  sld.t = create_threaded_scheme_loop(sld, argc, argv);
+  }
+
+void close_scheme_loop(scheme_loop_data& sld)
+  {
+  sld.t->join();
+  }
+
+int main(int argc, char** argv)
+  {
+  if (SDL_Init(SDL_INIT_VIDEO))
+    return -1;
+
+  {
+  view v;
+  g_view = &v;
+  scheme_loop_data sld;
+  create_scheme_loop(sld, argc, argv);
+  v.loop();
+  close_scheme_loop(sld);
+  }
+  
   SDL_Quit();
   return 0;
   }
