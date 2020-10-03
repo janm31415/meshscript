@@ -77,8 +77,9 @@ Input can be a vector of size 16 in column major format,
 or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
 which can be read from a csv file.
 */
-void scm_set_coordinate_system(int64_t id, skiwi::scm_type scheme_variable)
+void scm_set_coordinate_system(int64_t id, uint64_t scheme_variable_64)
   {
+  skiwi::scm_type scheme_variable(scheme_variable_64);
   if (scheme_variable.is_vector())
     {
     auto v = scheme_variable.get_vector();
@@ -142,8 +143,9 @@ Input can be a vector of size 16 in column major format,
 or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
 which can be read from a csv file.
 */
-void scm_set_view_coordinate_system(skiwi::scm_type scheme_variable)
+void scm_set_view_coordinate_system(uint64_t scheme_variable_64)
   {
+  skiwi::scm_type scheme_variable(scheme_variable_64);
   if (scheme_variable.is_vector())
     {
     auto v = scheme_variable.get_vector();
@@ -255,8 +257,13 @@ namespace
 
   }
 
-int64_t scm_marching_cubes(skiwi::scm_type bb, skiwi::scm_type dim, skiwi::scm_type iso, skiwi::scm_type fun)
+int64_t scm_marching_cubes(uint64_t bb64, uint64_t dim64, uint64_t iso64, uint64_t fun64)
   {
+  skiwi::scm_type bb(bb64);
+  skiwi::scm_type dim(dim64);
+  skiwi::scm_type iso(iso64);
+  skiwi::scm_type fun(fun64);
+
   skiwi::save_compiler_data();
 
   jtk::boundingbox3d<float> bounding;
@@ -312,8 +319,11 @@ int64_t scm_marching_cubes(skiwi::scm_type bb, skiwi::scm_type dim, skiwi::scm_t
   return -1;
   }
 
-int64_t make_mesh(skiwi::scm_type scm_vertices, skiwi::scm_type scm_triangles)
+int64_t make_mesh(uint64_t scm_vertices_64, uint64_t scm_triangles_64)
   {
+  skiwi::scm_type scm_vertices(scm_vertices_64);
+  skiwi::scm_type scm_triangles(scm_triangles_64);
+
   try
     {
     std::vector<vec3<float>> vertices;
@@ -384,9 +394,10 @@ void scm_unzoom()
   g_view->unzoom();
   }
 
-uint64_t scm_jet(skiwi::scm_type mask)
+uint64_t scm_jet(uint64_t mask64)
   {
   using namespace skiwi;
+  skiwi::scm_type mask(mask64);
   try
     {
     auto m = mask.get_list();
@@ -427,8 +438,9 @@ uint64_t scm_jet(skiwi::scm_type mask)
   return make_undefined();
   }
 
-void scm_set_vertex_colors(int64_t id, skiwi::scm_type scm_colors)
+void scm_set_vertex_colors(int64_t id, uint64_t scm_colors_64)
   {
+  skiwi::scm_type scm_colors(scm_colors_64);
   std::vector<vec3<uint8_t>> colors;
   try
     {
@@ -449,8 +461,11 @@ void scm_set_vertex_colors(int64_t id, skiwi::scm_type scm_colors)
     }
   }
 
-void scm_rotate(int64_t id, skiwi::scm_type x_axis, skiwi::scm_type y_axis, skiwi::scm_type z_axis)
+void scm_rotate(int64_t id, uint64_t x_axis_64, uint64_t y_axis_64, uint64_t z_axis_64)
   {
+  skiwi::scm_type x_axis(x_axis_64);
+  skiwi::scm_type y_axis(y_axis_64);
+  skiwi::scm_type z_axis(z_axis_64);
   double x = x_axis.get_number();
   double y = y_axis.get_number();
   double z = z_axis.get_number();
@@ -465,8 +480,12 @@ void scm_rotate(int64_t id, skiwi::scm_type x_axis, skiwi::scm_type y_axis, skiw
   g_view->premultiply_coordinate_system((uint32_t)id, rot);
   }
 
-void scm_translate(int64_t id, skiwi::scm_type x_axis, skiwi::scm_type y_axis, skiwi::scm_type z_axis)
+void scm_translate(int64_t id, uint64_t x_axis_64, uint64_t y_axis_64, uint64_t z_axis_64)
   {
+  skiwi::scm_type x_axis(x_axis_64);
+  skiwi::scm_type y_axis(y_axis_64);
+  skiwi::scm_type z_axis(z_axis_64);
+
   double x = x_axis.get_number();
   double y = y_axis.get_number();
   double z = z_axis.get_number();
@@ -505,8 +524,10 @@ void scm_set_one_bit(bool b)
   g_view->set_one_bit(b);
   }
 
-void scm_set_image_size(skiwi::scm_type w, skiwi::scm_type h)
+void scm_set_image_size(uint64_t w64, uint64_t h64)
   {
+  skiwi::scm_type w(w64);
+  skiwi::scm_type h(h64);
   int width = (int)w.get_number();
   int height = (int)h.get_number();
   g_view->set_image_size(width, height);
@@ -523,9 +544,11 @@ void scm_set_bg_color(int64_t r, int64_t g, int64_t b)
   g_view->set_bg_color((uint8_t)r, (uint8_t)g, (uint8_t)b);
   }
 
-uint64_t scm_get_position(skiwi::scm_type x, skiwi::scm_type y)
+uint64_t scm_get_position(uint64_t x64, uint64_t y64)
   {
   using namespace skiwi;
+  skiwi::scm_type x(x64);
+  skiwi::scm_type y(y64);
   auto pos = g_view->get_world_position((int)x.get_number(), (int)y.get_number());
   std::vector<scm_type> coord;
   coord.push_back(make_flonum(pos[0]));
@@ -534,16 +557,20 @@ uint64_t scm_get_position(skiwi::scm_type x, skiwi::scm_type y)
   return make_list(coord);
   }
 
-uint64_t scm_get_index(skiwi::scm_type x, skiwi::scm_type y)
+uint64_t scm_get_index(uint64_t x64, uint64_t y64)
   {
   using namespace skiwi;
+  skiwi::scm_type x(x64);
+  skiwi::scm_type y(y64);
   auto idx = g_view->get_index((int)x.get_number(), (int)y.get_number());
   return make_fixnum(idx);
   }
 
-uint64_t scm_get_id(skiwi::scm_type x, skiwi::scm_type y)
+uint64_t scm_get_id(uint64_t x64, uint64_t y64)
   {
   using namespace skiwi;
+  skiwi::scm_type x(x64);
+  skiwi::scm_type y(y64);
   auto id = g_view->get_id((int)x.get_number(), (int)y.get_number());
   return make_fixnum(id);
   }
@@ -587,8 +614,9 @@ uint64_t mm_basic_shape_coeff(int64_t id, int64_t shape_id)
   return make_list(coefflist);
   }
 
-void mm_coeff_set(int64_t id, skiwi::scm_type scm_coeff)
+void mm_coeff_set(int64_t id, uint64_t scm_coeff_64)
   {
+  skiwi::scm_type scm_coeff(scm_coeff_64);
   std::vector<float> coeff;
   try
     {
@@ -646,8 +674,9 @@ uint64_t mm_color_basic_shape_coeff(int64_t id, int64_t shape_id)
   return make_list(coefflist);
   }
 
-void mm_color_coeff_set(int64_t id, skiwi::scm_type scm_coeff)
+void mm_color_coeff_set(int64_t id, uint64_t scm_coeff_64)
   {
+  skiwi::scm_type scm_coeff(scm_coeff_64);
   std::vector<float> coeff;
   try
     {
@@ -745,9 +774,11 @@ uint64_t scm_face_detector_predict()
   return make_list(vec);
   }
 
-uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt)
+uint64_t npoint_scm(uint64_t src64, uint64_t tgt64)
   {
   using namespace skiwi;
+  skiwi::scm_type src(src64);
+  skiwi::scm_type tgt(tgt64);
   try
     {
     auto src_list = src.get_list();
@@ -805,8 +836,10 @@ uint64_t npoint_scm(skiwi::scm_type src, skiwi::scm_type tgt)
   return make_undefined();
   }
 
-void mm_fit_indices(int64_t mm_id, skiwi::scm_type indices, skiwi::scm_type positions)
+void mm_fit_indices(int64_t mm_id, uint64_t indices64, uint64_t positions64)
   {
+  skiwi::scm_type indices(indices64);
+  skiwi::scm_type positions(positions64);
   try
     {
     auto indices_list = indices.get_list();
