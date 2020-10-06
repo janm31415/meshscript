@@ -357,7 +357,7 @@ jtk::float4x4 view::icp(uint32_t id1, uint32_t id2, double inlier_distance)
   auto vert_id1 = get_vertices(_db, id1);
   auto vert_id2 = get_vertices(_db, id2);
   if (!vert_id1 || !vert_id2)
-    return false;
+    return jtk::get_identity();
   auto cs1 = *get_cs(_db, id1);
   auto cs2 = *get_cs(_db, id2);
   model_points = *vert_id1;

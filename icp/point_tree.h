@@ -118,43 +118,12 @@ namespace jtk
         return (&_Min)[i];
         }
 
-      template <int _D>
       inline _Ty distance_sqr(const _Point_type& _Pt) const
         {
         _Ty dist = _Sqr(_Pt[0] - std::min<_Ty>(_Max[0], std::max<_Ty>(_Min[0], _Pt[0])));
-        for (size_t i = 1; i < _D; ++i)
+        for (int i = 1; i < _Dim; ++i)
           dist += _Sqr(_Pt[i] - std::min<_Ty>(_Max[i], std::max<_Ty>(_Min[i], _Pt[i])));
         return dist;
-        }
-
-      template <>
-      inline _Ty distance_sqr<4>(const _Point_type& _Pt) const
-        {
-        return _Sqr(_Pt[0] - std::min<_Ty>(_Max[0], std::max<_Ty>(_Min[0], _Pt[0])))
-          + _Sqr(_Pt[1] - std::min<_Ty>(_Max[1], std::max<_Ty>(_Min[1], _Pt[1])))
-          + _Sqr(_Pt[2] - std::min<_Ty>(_Max[2], std::max<_Ty>(_Min[2], _Pt[2])))
-          + _Sqr(_Pt[3] - std::min<_Ty>(_Max[3], std::max<_Ty>(_Min[3], _Pt[3])));
-        }
-
-      template <>
-      inline _Ty distance_sqr<3>(const _Point_type& _Pt) const
-        {
-        return _Sqr(_Pt[0] - std::min<_Ty>(_Max[0], std::max<_Ty>(_Min[0], _Pt[0])))
-          + _Sqr(_Pt[1] - std::min<_Ty>(_Max[1], std::max<_Ty>(_Min[1], _Pt[1])))
-          + _Sqr(_Pt[2] - std::min<_Ty>(_Max[2], std::max<_Ty>(_Min[2], _Pt[2])));
-        }
-
-      template <>
-      inline _Ty distance_sqr<2>(const _Point_type& _Pt) const
-        {
-        return _Sqr(_Pt[0] - std::min<_Ty>(_Max[0], std::max<_Ty>(_Min[0], _Pt[0])))
-          + _Sqr(_Pt[1] - std::min<_Ty>(_Max[1], std::max<_Ty>(_Min[1], _Pt[1])));
-        }
-
-      template <>
-      inline _Ty distance_sqr<1>(const _Point_type& _Pt) const
-        {
-        return _Sqr(_Pt[0] - std::min<_Ty>(_Max[0], std::max<_Ty>(_Min[0], _Pt[0])));
         }
 
       inline _Ty center(size_t dim) const
@@ -337,8 +306,8 @@ namespace jtk
         }
       else
         {
-        value_type _Min_d1 = _Kd[_Kd_node._Child_1]._Node.distance_sqr<_Traits::dimension>(point);
-        value_type _Min_d2 = _Kd[_Kd_node._Child_2]._Node.distance_sqr<_Traits::dimension>(point);
+        value_type _Min_d1 = _Kd[_Kd_node._Child_1]._Node.distance_sqr(point);
+        value_type _Min_d2 = _Kd[_Kd_node._Child_2]._Node.distance_sqr(point);
 
         if (_Min_d1 < _Min_d2)
           {
@@ -397,8 +366,8 @@ namespace jtk
         }
       else
         {
-        value_type _Min_d1 = _Kd[_Kd_node._Child_1]._Node.distance_sqr<_Traits::dimension>(point);
-        value_type _Min_d2 = _Kd[_Kd_node._Child_2]._Node.distance_sqr<_Traits::dimension>(point);
+        value_type _Min_d1 = _Kd[_Kd_node._Child_1]._Node.distance_sqr(point);
+        value_type _Min_d2 = _Kd[_Kd_node._Child_2]._Node.distance_sqr(point);
 
         if (_Min_d1 < _Min_d2)
           {
@@ -489,8 +458,8 @@ namespace jtk
         }
       else
         {
-        value_type _Min_d1 = _Kd[_Kd_node._Child_1]._Node.distance_sqr<_Traits::dimension>(point);
-        value_type _Min_d2 = _Kd[_Kd_node._Child_2]._Node.distance_sqr<_Traits::dimension>(point);
+        value_type _Min_d1 = _Kd[_Kd_node._Child_1]._Node.distance_sqr(point);
+        value_type _Min_d2 = _Kd[_Kd_node._Child_2]._Node.distance_sqr(point);
         if (_K_best_d > _Min_d2 || _Candidates.size() < k)
           _St.push_back(_Kd_node._Child_2);
         if (_K_best_d > _Min_d1 || _Candidates.size() < k)
@@ -507,7 +476,7 @@ namespace jtk
   std::vector<typename _Traits::point_type> point_tree<_Traits>::find_k_nearest_if(int k, const typename _Traits::point_type& point, Predicate pred) const
     {
     std::vector<typename _Traits::point_type> _Pts;
-    std::multiset<std::pair<typename _Traits::value_type, typename _Traits::point_type>, details::k_set_compare<typename _Traits::value_type, typename _Traits::point_type>> _Candidates;
+    std::multiset<std::pair<typename _Traits::value_type, typename _Traits::point_type>, point_tree_details::k_set_compare<typename _Traits::value_type, typename _Traits::point_type>> _Candidates;
     std::vector<size_t> _St;
     _St.reserve(size_t(std::log(_Size)*2.0));
     _St.push_back(_Kd.size() - 1);
