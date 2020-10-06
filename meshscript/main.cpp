@@ -240,6 +240,18 @@ uint64_t scm_icp(int64_t id1, int64_t id2, uint64_t inlier_distance)
   return make_list(lst);
   }
 
+uint64_t scm_distance_map(int64_t id1, int64_t id2, bool sign)
+  {
+  using namespace skiwi;
+  auto lst = g_view->distance_map((uint32_t)id1, (uint32_t)id2, sign);
+  std::vector<scm_type> outlist;
+  for (const auto& v : lst)
+    {
+    outlist.push_back(make_flonum((double)v));
+    }
+  return make_list(outlist);
+  }
+
 uint64_t scm_get_view_coordinate_system()
   {
   using namespace skiwi;
@@ -913,6 +925,7 @@ void* register_functions(void*)
   register_external_primitive("cs-set!", (void*)&scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for the object with tag `id`. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
 
+  register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed)");
 
   register_external_primitive("face-detector-predict", (void*)&scm_face_detector_predict, skiwi_scm, "(face-detector-predict) runs the face predictor on the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-face-detector.");
 

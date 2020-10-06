@@ -49,6 +49,7 @@ set(HDRS
 camera.h
 canvas.h
 db.h
+distance_map.h
 face_detector.h
 hdf5aux.h
 io.h
@@ -70,6 +71,7 @@ meshscript.rc
 camera.cpp
 canvas.cpp
 db.cpp
+distance_map.cpp
 face_detector.cpp
 io.cpp
 jet.cpp

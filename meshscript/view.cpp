@@ -3,6 +3,8 @@
 #include "mm.h"
 #include "pc.h"
 #include "face_detector.h"
+#include "view.h"
+#include "distance_map.h"
 
 #include <libpoisson/poisson_reconstruction_screened.h>
 
@@ -388,6 +390,25 @@ jtk::float4x4 view::icp(uint32_t id1, uint32_t id2, double inlier_distance)
     {
     out[i] = transf(i % 4, i / 4);
     }
+  return out;
+  }
+
+std::vector<float> view::distance_map(uint32_t id1, uint32_t id2, bool sign)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<float> out;
+  auto vert_id1 = get_vertices(_db, id1);
+  auto vert_id2 = get_vertices(_db, id2);
+  auto tria_id2 = get_triangles(_db, id2);
+  if (!vert_id1)
+    return out;
+  if (!vert_id2)
+    return out;
+  if (!tria_id2)
+    return out;
+
+  out = ::distance_map(*vert_id1, *vert_id2, *tria_id2, sign);
+
   return out;
   }
 
