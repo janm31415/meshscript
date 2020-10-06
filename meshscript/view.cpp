@@ -406,8 +406,9 @@ std::vector<float> view::distance_map(uint32_t id1, uint32_t id2, bool sign)
     return out;
   if (!tria_id2)
     return out;
-
-  out = ::distance_map(*vert_id1, *vert_id2, *tria_id2, sign);
+  auto cs1 = *get_cs(_db, id1);
+  auto cs2 = *get_cs(_db, id2);
+  out = ::distance_map(*vert_id1, cs1, *vert_id2, *tria_id2, cs2, sign);
 
   return out;
   }

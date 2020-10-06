@@ -511,6 +511,67 @@ void scm_rotate(int64_t id, uint64_t x_axis_64, uint64_t y_axis_64, uint64_t z_a
   g_view->premultiply_coordinate_system((uint32_t)id, rot);
   }
 
+void scm_cs_premultiply(int64_t id, uint64_t scheme_variable_64)
+  {
+  skiwi::scm_type scheme_variable(scheme_variable_64);
+  if (scheme_variable.is_vector())
+    {
+    auto v = scheme_variable.get_vector();
+    if (v.size() != 16)
+      {
+      std::cout << "error: cs-premultiply!: second input parameter should be a vector of size 16\n";
+      std::cout << "                        current size of vector is " << v.size() << "\n";
+      return;
+      }
+    float4x4 m;
+    try
+      {
+      for (int i = 0; i < 16; ++i)
+        {
+        m[i] = (float)v[i].get_number();
+        }
+      g_view->premultiply_coordinate_system((uint32_t)id, m);
+      }
+    catch (std::runtime_error e)
+      {
+      std::cout << e.what() << "\n";
+      }
+    }
+  else if (scheme_variable.is_pair())
+    {
+    try
+      {
+      std::vector<skiwi::scm_type> rows(4);
+      rows[0] = scheme_variable.get_pair().first;
+      rows[1] = scheme_variable.get_pair().second.get_pair().first;
+      rows[2] = scheme_variable.get_pair().second.get_pair().second.get_pair().first;
+      rows[3] = scheme_variable.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+      float4x4 m;
+      for (int i = 0; i < 4; ++i)
+        {
+        const auto& r = rows[i];
+        auto v0 = r.get_pair().first;
+        auto v1 = r.get_pair().second.get_pair().first;
+        auto v2 = r.get_pair().second.get_pair().second.get_pair().first;
+        auto v3 = r.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+        m[i] = (float)v0.get_number();
+        m[i + 4] = (float)v1.get_number();
+        m[i + 8] = (float)v2.get_number();
+        m[i + 12] = (float)v3.get_number();
+        }
+      g_view->premultiply_coordinate_system((uint32_t)id, m);
+      }
+    catch (std::runtime_error e)
+      {
+      std::cout << e.what() << "\n";
+      }
+    }
+  else
+    {
+    std::cout << "error: cs-premultiply!: invalid input type\n";
+    }
+  }
+
 void scm_translate(int64_t id, uint64_t x_axis_64, uint64_t y_axis_64, uint64_t z_axis_64)
   {
   skiwi::scm_type x_axis(x_axis_64);
@@ -924,6 +985,8 @@ void* register_functions(void*)
   register_external_primitive("cs-rotate!", (void*)&scm_rotate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-rotate! id x y z) rotates the object with tag `id` by `x` degrees over the x-axis, by `y` degrees over the y-axis, and by `z` degrees over the z_axis.");
   register_external_primitive("cs-set!", (void*)&scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for the object with tag `id`. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
+  register_external_primitive("cs-premultiply!", (void*)&scm_cs_premultiply, skiwi_void, skiwi_int64, skiwi_scm, "(cs-premultiply! id cs) premultiplies the coordinate system of the object with tag `id` by the input coordinate system.");
+
 
   register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed)");
 
