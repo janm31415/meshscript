@@ -89,6 +89,7 @@ view::view() : _w(1600), _h(900), _window(nullptr)
   _m.left_button_down = false;
   _m.wheel_down = false;
   _m.wheel_mouse_pressed = false;
+  _m.ctrl_pressed = false;
   _m.mouse_x = 0.f;
   _m.mouse_y = 0.f;
   _m.prev_mouse_x = 0.f;
@@ -1144,6 +1145,18 @@ void view::poll_for_events()
       {
       _m.wheel_rotation += event.wheel.y;
       }
+    if (event.type == SDL_KEYDOWN)
+      {
+      switch (event.key.keysym.sym)
+        {
+        case SDLK_LCTRL:
+        case SDLK_RCTRL:
+        {
+        _m.ctrl_pressed = true;
+        break;
+        }
+        }
+      }
     if (event.type == SDL_KEYUP)
       {
       switch (event.key.keysym.sym)
@@ -1151,6 +1164,12 @@ void view::poll_for_events()
         case SDLK_ESCAPE:
         {
         _quit = true;
+        break;
+        }
+        case SDLK_LCTRL:
+        case SDLK_RCTRL:
+        {
+        _m.ctrl_pressed = false;
         break;
         }
         case SDLK_1:

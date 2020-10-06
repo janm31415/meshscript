@@ -153,7 +153,7 @@ void canvas::do_mouse(bool& refresh, mouse_data& data, scene& s, float mouse_off
     }
   if (data.prev_mouse_x != data.mouse_x || data.prev_mouse_y != data.mouse_y)
     {
-    if (data.right_dragging || data.left_dragging)
+    if ((data.right_dragging || data.left_dragging) && !data.ctrl_pressed)
       {
       refresh = true;
       float spin_quat[4];
@@ -186,7 +186,7 @@ void canvas::do_mouse(bool& refresh, mouse_data& data, scene& s, float mouse_off
       data.prev_mouse_x = data.mouse_x;
       data.prev_mouse_y = data.mouse_y;
       }
-    else if (data.wheel_mouse_pressed)
+    else if (data.wheel_mouse_pressed || ((data.right_dragging || data.left_dragging) && data.ctrl_pressed))
       {
       refresh = true;
       float x = float(data.mouse_x);
