@@ -221,6 +221,25 @@ uint64_t scm_get_coordinate_system(int64_t id)
   return make_list(lst);
   }
 
+uint64_t scm_icp(int64_t id1, int64_t id2, uint64_t inlier_distance)
+  {
+  using namespace skiwi;
+  scm_type inlier_dist(inlier_distance);
+  double inlierd = inlier_dist.get_number();
+  auto cs = g_view->icp((uint32_t)id1, (uint32_t)id2, inlierd);
+  std::vector<scm_type> lst;
+  for (int r = 0; r < 4; ++r)
+    {
+    std::vector<scm_type> row;
+    for (int c = 0; c < 4; ++c)
+      {
+      row.push_back(make_flonum(cs[r + 4 * c]));
+      }
+    lst.push_back(make_list(row));
+    }
+  return make_list(lst);
+  }
+
 uint64_t scm_get_view_coordinate_system()
   {
   using namespace skiwi;
@@ -898,6 +917,7 @@ void* register_functions(void*)
   register_external_primitive("face-detector-predict", (void*)&scm_face_detector_predict, skiwi_scm, "(face-detector-predict) runs the face predictor on the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-face-detector.");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
+  register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of iterative closest point as coordinate system.");
   register_external_primitive("info", (void*)&info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list of values between 0 and 1 and returns a list of lists with (r g b) values.");
 

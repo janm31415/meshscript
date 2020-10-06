@@ -35,6 +35,16 @@ set(PLY
 ../ply/rplyfile.h
 )
 
+set(ICP
+../icp/icp.h
+../icp/icp.cpp
+../icp/icp_point_to_plane.h
+../icp/icp_point_to_plane.cpp
+../icp/icp_point_to_point.h
+../icp/icp_point_to_point.cpp
+../icp/point_tree.h
+)
+
 set(HDRS
 camera.h
 canvas.h
@@ -110,12 +120,13 @@ if (${JTK_THREADING} STREQUAL "std")
 add_definitions(-D_ENABLE_THREADS)
 endif (${JTK_THREADING} STREQUAL "std")
 
-add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB} ${PLY})
+add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB} ${PLY} ${ICP})
 
 source_group("Header Files" FILES ${HDRS})
 source_group("Source Files" FILES ${SRCS})
 source_group("stb" FILES ${STB})
 source_group("ply" FILES ${PLY})
+source_group("icp" FILES ${ICP})
 
 target_include_directories(meshscript
     PRIVATE

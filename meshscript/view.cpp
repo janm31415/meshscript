@@ -12,6 +12,8 @@
 
 #include <jtk/geometry.h>
 
+#include <icp/icp_point_to_plane.h>
+
 #include <sstream>
 
 using namespace jtk;
@@ -344,6 +346,49 @@ jtk::float4x4 view::get_coordinate_system()
   {
   std::scoped_lock lock(_mut);
   return _scene.coordinate_system;
+  }
+
+jtk::float4x4 view::icp(uint32_t id1, uint32_t id2, double inlier_distance)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<jtk::vec3<float>> model_points, template_points;
+  auto vert_id1 = get_vertices(_db, id1);
+  auto vert_id2 = get_vertices(_db, id2);
+  if (!vert_id1 || !vert_id2)
+    return false;
+  auto cs1 = *get_cs(_db, id1);
+  auto cs2 = *get_cs(_db, id2);
+  model_points = *vert_id1;
+  template_points = *vert_id2;
+  for (auto& v : model_points)
+    {
+    jtk::float4 V(v[0], v[1], v[2], 1.f);
+    V = jtk::matrix_vector_multiply(cs1, V);
+    v[0] = V[0];
+    v[1] = V[1];
+    v[2] = V[2];
+    }
+  for (auto& v : template_points)
+    {
+    jtk::float4 V(v[0], v[1], v[2], 1.f);
+    V = jtk::matrix_vector_multiply(cs2, V);
+    v[0] = V[0];
+    v[1] = V[1];
+    v[2] = V[2];
+    }
+  std::cout << "Initializing icp\n";
+  jtk::icp_point_to_plane icp_algo(model_points);
+  matf16 transf = jtk::identity<float>(4, 4);
+  icp_algo.set_maximum_iterations(10);
+  std::cout << "Running icp\n";
+  float residu = icp_algo.fit(transf, template_points, (float)inlier_distance);
+  std::cout << "icp residu: " << residu << "\n";
+  jtk::float4x4 out;
+  for (int i = 0; i < 16; ++i)
+    {
+    out[i] = transf(i % 4, i / 4);
+    }
+  return out;
   }
 
 void view::set_bg_color(uint8_t r, uint8_t g, uint8_t b)

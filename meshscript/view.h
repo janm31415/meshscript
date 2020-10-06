@@ -41,6 +41,8 @@ class view
 
     jtk::float4x4 get_coordinate_system();
 
+    jtk::float4x4 icp(uint32_t id1, uint32_t id2, double inlier_distance);
+
     int64_t mm_coeff_size(uint32_t id);
     int64_t mm_shape_size(uint32_t id);
     double mm_sigma(uint32_t id, int64_t idx);
