@@ -50,6 +50,7 @@ camera.h
 canvas.h
 db.h
 distance_map.h
+ear_detector.h
 face_detector.h
 hdf5aux.h
 io.h
@@ -59,9 +60,11 @@ mesh.h
 mm.h
 morphable_model.h
 mouse.h
+objects.h
 pc.h
 pixel.h
 scene.h
+shape_predictor.h
 trackball.h
 view.h
 )
@@ -72,6 +75,7 @@ camera.cpp
 canvas.cpp
 db.cpp
 distance_map.cpp
+ear_detector.cpp
 face_detector.cpp
 io.cpp
 jet.cpp
@@ -82,6 +86,7 @@ mm.cpp
 pc.cpp
 pixel.cpp
 scene.cpp
+shape_predictor.cpp
 trackball.c
 view.cpp
 )

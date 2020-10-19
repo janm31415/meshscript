@@ -9,6 +9,7 @@
 #include "db.h"
 #include "scene.h"
 #include "mouse.h"
+#include "objects.h"
 
 #include <jtk/qbvh.h>
 
@@ -16,6 +17,7 @@
 #include <memory>
 
 class face_detector;
+class shape_predictor;
 
 class view
   {
@@ -111,11 +113,15 @@ class view
 
     bool write(uint32_t id, const char* filename);
 
-    void load_face_detector(const char* filename);
+    void load_shape_predictor(const char* filename);
 
     void set_show_face_detector(bool b);
 
-    std::vector<std::pair<long, long>> face_detector_predict();
+    void set_show_shape_predictor(bool b);
+
+    std::vector<std::pair<long, long>> shape_predict(const rect& r);
+
+    std::vector<rect> face_detect();
 
     void fit_mm_to_partial_positions(uint32_t mm_id, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions);
 
@@ -178,8 +184,10 @@ class view
     jtk::image<pixel> _pixels;
     matcapmap _matcap;
     std::unique_ptr<face_detector> p_face_detector;
+    std::unique_ptr<shape_predictor> p_shape_predictor;
 
     std::mutex _mut;
 
     bool _show_face_detector;
+    bool _show_shape_predictor;
   };

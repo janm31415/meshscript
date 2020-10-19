@@ -3,6 +3,7 @@
 #include "mm.h"
 #include "pc.h"
 #include "face_detector.h"
+#include "shape_predictor.h"
 #include "view.h"
 #include "distance_map.h"
 
@@ -77,6 +78,7 @@ view::view() : _w(1600), _h(900), _window(nullptr)
   _quit = false;
   _refresh = true;
   _show_face_detector = false;
+  _show_shape_predictor = false;
 
   //prepare_window();
 
@@ -111,6 +113,8 @@ view::view() : _w(1600), _h(900), _window(nullptr)
 
   _suspend = false;
   _resume = false;
+
+  p_face_detector.reset(new face_detector());
   }
 
 view::~view()
@@ -314,8 +318,16 @@ void view::render_scene()
 
   if (_show_face_detector && p_face_detector.get())
     {
-    auto points = p_face_detector->predict(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
-    p_face_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+    auto rectangles = p_face_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    p_face_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
+    if (_show_shape_predictor && p_shape_predictor.get())
+      {
+      for (const auto& r : rectangles)
+        {
+        auto points = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+        p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+        }
+      }
     }
 
   }
@@ -958,11 +970,11 @@ std::vector<jtk::vec3<uint8_t>> view::mesh_texture_to_vertexcolors(uint32_t id)
   return colors;
   }
 
-void view::load_face_detector(const char* filename)
+void view::load_shape_predictor(const char* filename)
   {
   std::scoped_lock lock(_mut);
   std::string fn(filename);
-  p_face_detector.reset(new face_detector(fn));
+  p_shape_predictor.reset(new shape_predictor(fn));
   }
 
 void view::set_show_face_detector(bool b)
@@ -972,16 +984,34 @@ void view::set_show_face_detector(bool b)
   _refresh = true;
   }
 
-std::vector<std::pair<long, long>> view::face_detector_predict()
+void view::set_show_shape_predictor(bool b)
   {
   std::scoped_lock lock(_mut);
-  std::vector<std::pair<long, long>> points;
+  _show_shape_predictor = b;
+  _refresh = true;
+  }
+
+std::vector<std::pair<long, long>> view::shape_predict(const rect& r)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<std::pair<long, long>> landmarks;
+  if (p_shape_predictor.get())
+    {
+    landmarks = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    }
+  return landmarks;
+  }
+
+std::vector<rect> view::face_detect()
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<rect> rectangles;
   if (p_face_detector.get())
     {
     render_scene();
-    points = p_face_detector->predict(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    rectangles = p_face_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     }
-  return points;
+  return rectangles;
   }
 
 void view::fit_mm_to_partial_positions(uint32_t mm_id, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions)

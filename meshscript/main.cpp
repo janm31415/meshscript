@@ -845,9 +845,9 @@ uint64_t scm_mesh_texture_to_vertexcolors(uint64_t id)
   return make_list(vertclrlist);
   }
 
-void scm_load_face_detector(const char* filename)
+void scm_load_shape_predictor(const char* filename)
   {
-  g_view->load_face_detector(filename);
+  g_view->load_shape_predictor(filename);
   }
 
 void scm_set_show_face_detector(bool b)
@@ -855,15 +855,68 @@ void scm_set_show_face_detector(bool b)
   g_view->set_show_face_detector(b);
   }
 
-uint64_t scm_face_detector_predict()
+void scm_set_show_shape_predictor(bool b)
+  {
+  g_view->set_show_shape_predictor(b);
+  }
+
+uint64_t scm_face_detect()
   {
   using namespace skiwi;
-  std::vector<std::pair<long, long>> landmarks = g_view->face_detector_predict();
+  std::vector<rect> rectangles = g_view->face_detect();
   std::vector<skiwi::scm_type> vec;
-  vec.reserve(landmarks.size());
-  for (const auto& pr : landmarks)
-    vec.push_back(make_pair(make_fixnum(pr.first), make_pair(make_fixnum(pr.second), make_nil())));
+  vec.reserve(rectangles.size());
+  for (const auto& pr : rectangles)
+    {
+    std::vector<skiwi::scm_type> r;
+    r.push_back(make_fixnum(pr.x));
+    r.push_back(make_fixnum(pr.y));
+    r.push_back(make_fixnum(pr.w));
+    r.push_back(make_fixnum(pr.h));
+    vec.push_back(make_list(r));
+    }
   return make_list(vec);
+  }
+
+uint64_t scm_shape_predict(uint64_t rect64)
+  {
+  using namespace skiwi;
+  skiwi::scm_type rectangle(rect64);
+  if (!rectangle.is_pair())
+    {
+    std::cout << "error: shape-predict: I expect a list of the form (x y w h) as input.\n";
+    return make_nil();
+    }
+  try
+    {
+    std::vector<skiwi::scm_type> rect_values(4);
+    rect_values[0] = rectangle.get_pair().first;
+    rect_values[1] = rectangle.get_pair().second.get_pair().first;
+    rect_values[2] = rectangle.get_pair().second.get_pair().second.get_pair().first;
+    rect_values[3] = rectangle.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+    std::vector<int> rect_values_int(4);
+    for (int i = 0; i < 4; ++i)
+      {
+      rect_values_int[i] = rect_values[i].get_fixnum();
+      }
+    rect r;
+    r.x = rect_values_int[0];
+    r.y = rect_values_int[1];
+    r.w = rect_values_int[2];
+    r.h = rect_values_int[3];
+    std::vector<std::pair<long, long>> landmarks = g_view->shape_predict(r);
+    std::vector<skiwi::scm_type> vec;
+    vec.reserve(landmarks.size());
+    for (const auto& pr : landmarks)
+      vec.push_back(make_pair(make_fixnum(pr.first), make_pair(make_fixnum(pr.second), make_nil())));
+    return make_list(vec);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: shape-predict: I expect a list of the form (x y w h) as input.\n";
+    }
+
+  return make_nil();
   }
 
 uint64_t npoint_scm(uint64_t src64, uint64_t tgt64)
@@ -990,18 +1043,17 @@ void* register_functions(void*)
 
   register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed)");
 
-  register_external_primitive("face-detector-predict", (void*)&scm_face_detector_predict, skiwi_scm, "(face-detector-predict) runs the face predictor on the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-face-detector.");
+  register_external_primitive("face-detect", (void*)&scm_face_detect, skiwi_scm, "(face-detect) runs the face detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the face starting in corner (x,y) and with sizes (w,h).");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of iterative closest point as coordinate system.");
   register_external_primitive("info", (void*)&info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list of values between 0 and 1 and returns a list of lists with (r g b) values.");
 
-  register_external_primitive("load-face-detector", (void*)&scm_load_face_detector, skiwi_void, skiwi_char_pointer, "(load-face-detector \"filename\") initializes the face detector with the shape predictor given by \"filename\".");
-
   register_external_primitive("load-mesh", (void*)&load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
   register_external_primitive("load-morphable-model", (void*)&load_morphable_model, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
   register_external_primitive("load-pointcloud", (void*)&load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");
+  register_external_primitive("load-shape-predictor", (void*)&scm_load_shape_predictor, skiwi_void, skiwi_char_pointer, "(load-shape-predictor \"filename\") initializes the shape predictor with the data given by \"filename\".");
 
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. Vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
   register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with bb of the form ((min_x max_x) (min_y max_y) (min_z max_z)), dim of the form (width height depth), isovalue a flonum, fun a lambda function accepting (x y z) values and returning a distance.");
@@ -1035,6 +1087,8 @@ void* register_functions(void*)
 
   register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
 
+  register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_scm, "(shape-predict (x y w h)) runs the shape predictor on the region defined by (x y w h) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
+
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id)");
   register_external_primitive("triangles->csv", (void*)&triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of the object with tag `id` to a csv file.");
@@ -1057,6 +1111,7 @@ void* register_functions(void*)
 
   register_external_primitive("view-shading-set!", (void*)&scm_set_shading, skiwi_void, skiwi_bool, "(view-shading-set! #t/#f) turns on/off lighting.");
   register_external_primitive("view-shadow-set!", (void*)&scm_set_shadow, skiwi_void, skiwi_bool, "(view-shadow-set! #t/#f) turns on/off rendering of shadow.");
+  register_external_primitive("view-shape-predictor-set!", (void*)&scm_set_show_shape_predictor, skiwi_void, skiwi_bool, "(view-shape-predictor-set! #t/#f) turns on/off rendering of the shape predictor result.");
   register_external_primitive("view-show!", (void*)&scm_show_view, skiwi_void, "(view-show!) shows the 3d view.");
   register_external_primitive("view-size-set!", (void*)&scm_set_image_size, skiwi_void, skiwi_scm, skiwi_scm, "(view-size-set! w h) resizes the plotted image to size (w, h).");
   register_external_primitive("view-textured-set!", (void*)&scm_set_textured, skiwi_void, skiwi_bool, "(view-textured-set! #t/#f) turns on/off rendering of texture.");
