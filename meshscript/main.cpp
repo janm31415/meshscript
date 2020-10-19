@@ -1076,6 +1076,23 @@ struct scheme_loop_data
   std::unique_ptr<std::thread> t;
   };
 
+std::string get_help_text()
+  {
+  std::string help = R"(This is meshscript. You are interacting with the REPL.
+Enter scheme commands or one of the following:
+
+,asm
+,env
+,exit
+,expand
+,external <optional: (part of) external function name>
+,mem
+,unresolved
+
+)";
+  return help;
+  }
+
 void create_scheme_with_loop(scheme_loop_data* sld, int argc, char** argv)
   {
   sld->mt.lock();
@@ -1086,6 +1103,8 @@ void create_scheme_with_loop(scheme_loop_data* sld, int argc, char** argv)
   skiwi::skiwi_parameters pars;
   pars.heap_size = 64 * 1024 * 1024;
   skiwi::set_prompt("ms> ");
+  skiwi::set_welcome_message("\nWelcome to meshscript\nType ,? for help.\n");
+  skiwi::set_help_text(get_help_text());
   skiwi::scheme_with_skiwi(&register_functions, nullptr, pars);
 
   for (int i = 1; i < argc; ++i)
