@@ -1033,6 +1033,7 @@ std::vector<std::pair<long, long>> view::shape_predict(const rect& r)
   _show_ear_detector = show_ear;
   _show_face_detector = show_face;
   _show_shape_predictor = show_predict;
+  _refresh = _show_ear_detector || _show_face_detector;
   return landmarks;
   }
 
@@ -1054,6 +1055,7 @@ std::vector<rect> view::ear_detect()
   _show_ear_detector = show_ear;
   _show_face_detector = show_face;
   _show_shape_predictor = show_predict;
+  _refresh = _show_ear_detector || _show_face_detector;
   return rectangles;
   }
 
@@ -1075,6 +1077,7 @@ std::vector<rect> view::face_detect()
   _show_ear_detector = show_ear;
   _show_face_detector = show_face;
   _show_shape_predictor = show_predict;
+  _refresh = _show_ear_detector || _show_face_detector;
   return rectangles;
   }
 
