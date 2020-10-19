@@ -1102,7 +1102,10 @@ void view::poll_for_events()
   while (SDL_PollEvent(&event))
     {
     if (event.type == SDL_QUIT)
-      _quit = true;
+      {
+      SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+      this->hide();
+      }
     if (event.type == SDL_MOUSEMOTION)
       {
       _m.prev_mouse_x = _m.mouse_x;
