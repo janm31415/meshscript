@@ -2,6 +2,7 @@
 #include "mesh.h"
 #include "mm.h"
 #include "pc.h"
+#include "ear_detector.h"
 #include "face_detector.h"
 #include "shape_predictor.h"
 #include "view.h"
@@ -77,6 +78,7 @@ view::view() : _w(1600), _h(900), _window(nullptr)
 
   _quit = false;
   _refresh = true;
+  _show_ear_detector = false;
   _show_face_detector = false;
   _show_shape_predictor = false;
 
@@ -115,6 +117,7 @@ view::view() : _w(1600), _h(900), _window(nullptr)
   _resume = false;
 
   p_face_detector.reset(new face_detector());
+  p_ear_detector.reset(new ear_detector());
   }
 
 view::~view()
@@ -320,6 +323,20 @@ void view::render_scene()
     {
     auto rectangles = p_face_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     p_face_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
+    if (_show_shape_predictor && p_shape_predictor.get())
+      {
+      for (const auto& r : rectangles)
+        {
+        auto points = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+        p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+        }
+      }
+    }
+
+  if (_show_ear_detector && p_ear_detector.get())
+    {
+    auto rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    p_ear_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
     if (_show_shape_predictor && p_shape_predictor.get())
       {
       for (const auto& r : rectangles)
@@ -977,6 +994,13 @@ void view::load_shape_predictor(const char* filename)
   p_shape_predictor.reset(new shape_predictor(fn));
   }
 
+void view::set_show_ear_detector(bool b)
+  {
+  std::scoped_lock lock(_mut);
+  _show_ear_detector = b;
+  _refresh = true;
+  }
+
 void view::set_show_face_detector(bool b)
   {
   std::scoped_lock lock(_mut);
@@ -995,22 +1019,62 @@ std::vector<std::pair<long, long>> view::shape_predict(const rect& r)
   {
   std::scoped_lock lock(_mut);
   std::vector<std::pair<long, long>> landmarks;
+  bool show_ear = _show_ear_detector;
+  bool show_face = _show_face_detector;
+  bool show_predict = _show_shape_predictor;
   if (p_shape_predictor.get())
     {
+    _show_ear_detector = false;
+    _show_face_detector = false;
+    _show_shape_predictor = false;
+    render_scene();
     landmarks = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     }
+  _show_ear_detector = show_ear;
+  _show_face_detector = show_face;
+  _show_shape_predictor = show_predict;
   return landmarks;
+  }
+
+std::vector<rect> view::ear_detect()
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<rect> rectangles;
+  bool show_ear = _show_ear_detector;
+  bool show_face = _show_face_detector;
+  bool show_predict = _show_shape_predictor;
+  if (p_ear_detector.get())
+    {
+    _show_ear_detector = false;
+    _show_face_detector = false;
+    _show_shape_predictor = false;
+    render_scene();
+    rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    }
+  _show_ear_detector = show_ear;
+  _show_face_detector = show_face;
+  _show_shape_predictor = show_predict;
+  return rectangles;
   }
 
 std::vector<rect> view::face_detect()
   {
   std::scoped_lock lock(_mut);
   std::vector<rect> rectangles;
+  bool show_ear = _show_ear_detector;
+  bool show_face = _show_face_detector;
+  bool show_predict = _show_shape_predictor;
   if (p_face_detector.get())
     {
+    _show_ear_detector = false;
+    _show_face_detector = false;
+    _show_shape_predictor = false;
     render_scene();
     rectangles = p_face_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     }
+  _show_ear_detector = show_ear;
+  _show_face_detector = show_face;
+  _show_shape_predictor = show_predict;
   return rectangles;
   }
 

@@ -173,3 +173,6 @@ if (WIN32)
 add_custom_command(TARGET meshscript POST_BUILD 
    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../skiwi/bin" ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif (WIN32)
+
+add_custom_command(TARGET meshscript POST_BUILD 
+   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:meshscript>/data")

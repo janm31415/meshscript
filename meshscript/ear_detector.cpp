@@ -1,6 +1,5 @@
-#include "face_detector.h"
+#include "ear_detector.h"
 
-#include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing.h>
 #include <dlib/image_io.h>
 
@@ -11,22 +10,25 @@
 #include <streambuf>
 
 #include <jtk/image.h>
+#include <jtk/file_utils.h>
 
-struct face_detector_data
+struct ear_detector_data
   {
-  dlib::frontal_face_detector detector;
+  typedef dlib::scan_fhog_pyramid<dlib::pyramid_down<6> > image_scanner_type;
+  dlib::object_detector<image_scanner_type> detector;
   };
 
-face_detector::face_detector() : mp_data(new face_detector_data)
+ear_detector::ear_detector() : mp_data(new ear_detector_data)
   {
-  mp_data->detector = dlib::get_frontal_face_detector();
+  std::string path = jtk::get_folder(jtk::get_executable_path()) + std::string("data/ear_detector.svm");
+  dlib::deserialize(path) >> mp_data->detector;
   }
 
-face_detector::~face_detector()
+ear_detector::~ear_detector()
   {
   }
 
-std::vector<rect> face_detector::detect(int w, int h, int stride, const uint32_t* p_image)
+std::vector<rect> ear_detector::detect(int w, int h, int stride, const uint32_t* p_image)
   {
   std::vector<rect> out;
   using namespace dlib;
@@ -57,7 +59,7 @@ std::vector<rect> face_detector::detect(int w, int h, int stride, const uint32_t
   return out;
   }
 
-void face_detector::draw_prediction_rgba(int w, int h, int stride, uint32_t* p_image, const std::vector<rect>& rectangles) const
+void ear_detector::draw_prediction_rgba(int w, int h, int stride, uint32_t* p_image, const std::vector<rect>& rectangles) const
   {
   uint32_t line_color = 0xff00ff00;
   for (const auto& r : rectangles)

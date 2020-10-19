@@ -850,6 +850,11 @@ void scm_load_shape_predictor(const char* filename)
   g_view->load_shape_predictor(filename);
   }
 
+void scm_set_show_ear_detector(bool b)
+  {
+  g_view->set_show_ear_detector(b);
+  }
+
 void scm_set_show_face_detector(bool b)
   {
   g_view->set_show_face_detector(b);
@@ -858,6 +863,24 @@ void scm_set_show_face_detector(bool b)
 void scm_set_show_shape_predictor(bool b)
   {
   g_view->set_show_shape_predictor(b);
+  }
+
+uint64_t scm_ear_detect()
+  {
+  using namespace skiwi;
+  std::vector<rect> rectangles = g_view->ear_detect();
+  std::vector<skiwi::scm_type> vec;
+  vec.reserve(rectangles.size());
+  for (const auto& pr : rectangles)
+    {
+    std::vector<skiwi::scm_type> r;
+    r.push_back(make_fixnum(pr.x));
+    r.push_back(make_fixnum(pr.y));
+    r.push_back(make_fixnum(pr.w));
+    r.push_back(make_fixnum(pr.h));
+    vec.push_back(make_list(r));
+    }
+  return make_list(vec);
   }
 
 uint64_t scm_face_detect()
@@ -881,30 +904,43 @@ uint64_t scm_face_detect()
 uint64_t scm_shape_predict(uint64_t rect64)
   {
   using namespace skiwi;
-  skiwi::scm_type rectangle(rect64);
-  if (!rectangle.is_pair())
+  skiwi::scm_type rectangles(rect64);
+  if (rectangles.is_nil())
+    return make_nil();
+  if (!rectangles.is_pair())
     {
     std::cout << "error: shape-predict: I expect a list of the form (x y w h) as input.\n";
     return make_nil();
     }
   try
     {
-    std::vector<skiwi::scm_type> rect_values(4);
-    rect_values[0] = rectangle.get_pair().first;
-    rect_values[1] = rectangle.get_pair().second.get_pair().first;
-    rect_values[2] = rectangle.get_pair().second.get_pair().second.get_pair().first;
-    rect_values[3] = rectangle.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
-    std::vector<int> rect_values_int(4);
-    for (int i = 0; i < 4; ++i)
+    std::vector<skiwi::scm_type> list_of_rectangles;
+    if (rectangles.get_pair().first.is_pair())
+      list_of_rectangles = rectangles.get_list();
+    else
+      list_of_rectangles.push_back(rectangles);
+
+    std::vector<std::pair<long, long>> landmarks;
+    for (const auto& rectangle : list_of_rectangles)
       {
-      rect_values_int[i] = rect_values[i].get_fixnum();
+      std::vector<skiwi::scm_type> rect_values(4);
+      rect_values[0] = rectangle.get_pair().first;
+      rect_values[1] = rectangle.get_pair().second.get_pair().first;
+      rect_values[2] = rectangle.get_pair().second.get_pair().second.get_pair().first;
+      rect_values[3] = rectangle.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+      std::vector<int> rect_values_int(4);
+      for (int i = 0; i < 4; ++i)
+        {
+        rect_values_int[i] = rect_values[i].get_fixnum();
+        }
+      rect r;
+      r.x = rect_values_int[0];
+      r.y = rect_values_int[1];
+      r.w = rect_values_int[2];
+      r.h = rect_values_int[3];
+      std::vector<std::pair<long, long>> lms = g_view->shape_predict(r);
+      landmarks.insert(landmarks.end(), lms.begin(), lms.end());
       }
-    rect r;
-    r.x = rect_values_int[0];
-    r.y = rect_values_int[1];
-    r.w = rect_values_int[2];
-    r.h = rect_values_int[3];
-    std::vector<std::pair<long, long>> landmarks = g_view->shape_predict(r);
     std::vector<skiwi::scm_type> vec;
     vec.reserve(landmarks.size());
     for (const auto& pr : landmarks)
@@ -1043,6 +1079,8 @@ void* register_functions(void*)
 
   register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed)");
 
+  register_external_primitive("ear-detect", (void*)&scm_ear_detect, skiwi_scm, "(ear-detect) runs the ear detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the ear starting in corner (x,y) and with sizes (w,h).");
+
   register_external_primitive("face-detect", (void*)&scm_face_detect, skiwi_scm, "(face-detect) runs the face detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the face starting in corner (x,y) and with sizes (w,h).");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
@@ -1087,7 +1125,7 @@ void* register_functions(void*)
 
   register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
 
-  register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_scm, "(shape-predict (x y w h)) runs the shape predictor on the region defined by (x y w h) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
+  register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_scm, "(shape-predict (x y w h)) or (shape-predict ((x y w h) ...)) runs the shape predictor on the region defined by (x y w h) or on the regions defined by ((x y w h) ...) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id)");
@@ -1101,6 +1139,7 @@ void* register_functions(void*)
   register_external_primitive("view-edges-set!", (void*)&scm_set_edges, skiwi_void, skiwi_bool, "(view-edges-set! #t/#f) turns on/off rendering of edges.");
   register_external_primitive("view-export", (void*)&scm_export_image, skiwi_void, skiwi_char_pointer, "(view-export \"image-file.png\") exports the current view to a png image.");
 
+  register_external_primitive("view-ear-detector-set!", (void*)&scm_set_show_ear_detector, skiwi_void, skiwi_bool, "(view-ear-detector-set! #t/#f) turns on/off rendering of the ear detector result.");
   register_external_primitive("view-face-detector-set!", (void*)&scm_set_show_face_detector, skiwi_void, skiwi_bool, "(view-face-detector-set! #t/#f) turns on/off rendering of the face detector result.");
 
   register_external_primitive("view-hide!", (void*)&scm_hide_view, skiwi_void, "(view-hide!) hides the 3d view.");
