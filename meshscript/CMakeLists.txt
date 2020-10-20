@@ -178,3 +178,8 @@ endif (WIN32)
 
 add_custom_command(TARGET meshscript POST_BUILD 
    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/data" "$<TARGET_FILE_DIR:meshscript>/data")
+   
+add_custom_command(TARGET meshscript POST_BUILD 
+   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/../skiwi/libskiwi/scm" "$<TARGET_FILE_DIR:meshscript>/scm")   
+   
+   
