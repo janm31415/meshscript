@@ -10,6 +10,7 @@
 #include "scene.h"
 #include "mouse.h"
 #include "objects.h"
+#include "sp.h"
 
 #include <jtk/qbvh.h>
 
@@ -122,6 +123,10 @@ class view
     void set_show_ear_left_detector(bool b);
 
     std::vector<std::pair<long, long>> shape_predict(uint32_t id, const rect& r);
+
+    void shape_predictor_set_flip_horizontal(uint32_t id, bool flip);
+
+    void shape_predictor_link(uint32_t id, sp::object_detector_link link);
 
     std::vector<rect> face_detect();
 

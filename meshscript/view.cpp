@@ -324,48 +324,51 @@ void view::render_scene()
     {
     auto rectangles = p_face_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     p_face_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
-    /*
-    if (_show_shape_predictor && p_shape_predictor.get())
+    for (const auto& sp : _db.get_sps())
       {
-      for (const auto& r : rectangles)
+      if (sp.second->p_shape_predictor.get() && sp.second->odl == sp::odl_facial)
         {
-        auto points = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
-        p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+        for (const auto& r : rectangles)
+          {
+          auto points = sp.second->p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), sp.second->flip_horizontal);
+          sp.second->p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+          }
         }
       }
-      */
     }
 
   if (_show_ear_right_detector && p_ear_detector.get())
     {
     auto rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), true);
     p_ear_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
-    /*
-    if (_show_shape_predictor && p_shape_predictor.get())
+    for (const auto& sp : _db.get_sps())
       {
-      for (const auto& r : rectangles)
+      if (sp.second->p_shape_predictor.get() && sp.second->odl == sp::odl_ear_right)
         {
-        auto points = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
-        p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+        for (const auto& r : rectangles)
+          {
+          auto points = sp.second->p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), sp.second->flip_horizontal);
+          sp.second->p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+          }
         }
       }
-      */
     }
 
   if (_show_ear_left_detector && p_ear_detector.get())
     {
     auto rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), false);
     p_ear_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
-    /*
-    if (_show_shape_predictor && p_shape_predictor.get())
+    for (const auto& sp : _db.get_sps())
       {
-      for (const auto& r : rectangles)
+      if (sp.second->p_shape_predictor.get() && sp.second->odl == sp::odl_ear_left)
         {
-        auto points = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
-        p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+        for (const auto& r : rectangles)
+          {
+          auto points = sp.second->p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), sp.second->flip_horizontal);
+          sp.second->p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+          }
         }
       }
-      */
     }
 
   }
@@ -1008,6 +1011,27 @@ std::vector<jtk::vec3<uint8_t>> view::mesh_texture_to_vertexcolors(uint32_t id)
   return colors;
   }
 
+void view::shape_predictor_set_flip_horizontal(uint32_t id, bool flip)
+  {
+  std::scoped_lock lock(_mut);
+  sp* m = _db.get_sp((uint32_t)id);
+  if (m)
+    {
+    m->flip_horizontal = flip;
+    _refresh = true;
+    }
+  }
+
+void view::shape_predictor_link(uint32_t id, sp::object_detector_link link)
+  {
+  std::scoped_lock lock(_mut);
+  sp* m = _db.get_sp((uint32_t)id);
+  if (m)
+    {
+    m->odl = link;
+    }
+  }
+
 int64_t view::load_shape_predictor(const char* filename)
   {
   std::scoped_lock lock(_mut);
@@ -1019,7 +1043,7 @@ int64_t view::load_shape_predictor(const char* filename)
   sp* db_sp;
   uint32_t id;
   _db.create_sp(db_sp, id);
-  db_sp->p_shape_predictor.swap(m.p_shape_predictor);
+  swap(*db_sp, m);
   return (int64_t)id;
   }
 

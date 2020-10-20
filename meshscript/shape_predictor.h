@@ -17,7 +17,7 @@ class shape_predictor
     shape_predictor(const std::string& shape_predictor_filename);
     ~shape_predictor();
 
-    std::vector<std::pair<long, long>> predict(const rect& r, int w, int h, int stride, const uint32_t* p_image);
+    std::vector<std::pair<long, long>> predict(const rect& r, int w, int h, int stride, const uint32_t* p_image, bool flip_horizontal);
 
     void draw_prediction_rgba(int w, int h, int stride, uint32_t* p_image, const std::vector<std::pair<long, long>>& points) const;
 

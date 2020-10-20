@@ -919,6 +919,31 @@ uint64_t scm_face_detect()
   return make_list(vec);
   }
 
+void scm_shape_predictor_horizontal_flip_set(int64_t id, bool f)
+  {
+  g_view->shape_predictor_set_flip_horizontal((uint32_t)id, f);
+  }
+
+void scm_sp_link_to_face(int64_t id)
+  {
+  g_view->shape_predictor_link((uint32_t)id, sp::odl_facial);
+  }
+
+void scm_sp_link_to_ear_right(int64_t id)
+  {
+  g_view->shape_predictor_link((uint32_t)id, sp::odl_ear_right);
+  }
+
+void scm_sp_link_to_ear_left(int64_t id)
+  {
+  g_view->shape_predictor_link((uint32_t)id, sp::odl_ear_left);
+  }
+
+void scm_sp_link_remove(int64_t id)
+  {
+  g_view->shape_predictor_link((uint32_t)id, sp::odl_none);
+  }
+
 uint64_t scm_shape_predict(int64_t id, uint64_t rect64)
   {
   using namespace skiwi;
@@ -1146,6 +1171,11 @@ void* register_functions(void*)
   register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
 
   register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_int64, skiwi_scm, "(shape-predict sp_id (x y w h)) or (shape-predict sp_id ((x y w h) ...)) runs the shape predictor with tag sp_id on the region defined by (x y w h) or on the regions defined by ((x y w h) ...) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
+  register_external_primitive("shape-predictor-horizontal-flip-set!", (void*)&scm_shape_predictor_horizontal_flip_set, skiwi_void, skiwi_int64, skiwi_bool, "(shape-predictor-horizontal-flip-set! id #t/#f) toggles horizontal flipping of the shape predictor given by tag id.");
+  register_external_primitive("shape-predictor-link-to-face-detector", (void*)&scm_sp_link_to_face, skiwi_void, skiwi_int64, "(shape-predictor-link-to-face-detector id) links the shape predictor given by tag id to the face detector");
+  register_external_primitive("shape-predictor-link-to-ear-right-detector", (void*)&scm_sp_link_to_ear_right, skiwi_void, skiwi_int64, "(shape-predictor-link-to-ear-right-detector id) links the shape predictor given by tag id to the ear right detector");
+  register_external_primitive("shape-predictor-link-to-ear-left-detector", (void*)&scm_sp_link_to_ear_left, skiwi_void, skiwi_int64, "(shape-predictor-link-to-ear-left-detector id) links the shape predictor given by tag id to the ear left detector");
+  register_external_primitive("shape-predictor-unlink", (void*)&scm_sp_link_remove, skiwi_void, skiwi_int64, "(shape-predictor-unlink id) unlinks the shape predictor given by tag id.");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id)");

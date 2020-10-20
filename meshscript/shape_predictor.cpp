@@ -25,30 +25,55 @@ shape_predictor::~shape_predictor()
   {
   }
 
-std::vector<std::pair<long, long>> shape_predictor::predict(const rect& r, int w, int h, int stride, const uint32_t* p_image)
+std::vector<std::pair<long, long>> shape_predictor::predict(const rect& r, int w, int h, int stride, const uint32_t* p_image, bool flip_horizontal)
   {
   std::vector<std::pair<long, long>> out;
   using namespace dlib;
   array2d<rgb_pixel> img;
   img.set_size(h, w);
-  for (size_t y = 0; y < h; ++y)
+  if (flip_horizontal)
     {
-    const uint32_t* p_im = p_image + y * stride;
-    for (size_t x = 0; x < w; ++x, ++p_im)
+    for (size_t y = 0; y < h; ++y)
       {
-      uint32_t col = *p_im;
-      auto& pix = img[y][x];
-      pix.red = col & 0xff;
-      pix.green = (col >> 8) & 0xff;
-      pix.blue = (col >> 16) & 0xff;
+      const uint32_t* p_im = p_image + y * stride;
+      for (size_t x = 0; x < w; ++x, ++p_im)
+        {
+        uint32_t col = *p_im;
+        auto& pix = img[y][w-x-1];
+        pix.red = col & 0xff;
+        pix.green = (col >> 8) & 0xff;
+        pix.blue = (col >> 16) & 0xff;
+        }
       }
     }
-  rectangle re(r.x, r.y, r.x + r.w - 1, r.y + r.h - 1);
+  else
+    {
+    for (size_t y = 0; y < h; ++y)
+      {
+      const uint32_t* p_im = p_image + y * stride;
+      for (size_t x = 0; x < w; ++x, ++p_im)
+        {
+        uint32_t col = *p_im;
+        auto& pix = img[y][x];
+        pix.red = col & 0xff;
+        pix.green = (col >> 8) & 0xff;
+        pix.blue = (col >> 16) & 0xff;
+        }
+      }
+    }
+  rectangle re;
+  if (flip_horizontal)    
+    re = rectangle(w - r.x - r.w, r.y, w - r.x - 1, r.y + r.h - 1);
+  else
+    re = rectangle(r.x, r.y, r.x + r.w - 1, r.y + r.h - 1);
 
   full_object_detection shape = mp_data->sp(img, re);
   for (unsigned i = 0; i < shape.num_parts(); ++i)
     {
-    out.push_back(std::pair<long, long>(shape.part(i).x(), shape.part(i).y()));
+    if (flip_horizontal)
+      out.push_back(std::pair<long, long>(w - shape.part(i).x() - 1, shape.part(i).y()));
+    else
+      out.push_back(std::pair<long, long>(shape.part(i).x(), shape.part(i).y()));
     }
     
   return out;

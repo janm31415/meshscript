@@ -11,10 +11,10 @@ struct pc;
 struct mm;
 struct sp;
 
-#define MESH_KEY 1
-#define PC_KEY 2
-#define MM_KEY 3
-#define SP_KEY 4
+#define MESH_KEY 1 // mesh
+#define PC_KEY 2   // point cloud
+#define MM_KEY 3   // morphable model
+#define SP_KEY 4   // shape predictor
 
 inline uint32_t get_db_key(uint32_t id)
   {
