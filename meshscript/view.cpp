@@ -2,11 +2,12 @@
 #include "mesh.h"
 #include "mm.h"
 #include "pc.h"
+#include "sp.h"
 #include "ear_detector.h"
 #include "face_detector.h"
-#include "shape_predictor.h"
 #include "view.h"
 #include "distance_map.h"
+#include "shape_predictor.h"
 
 #include <libpoisson/poisson_reconstruction_screened.h>
 
@@ -78,9 +79,9 @@ view::view() : _w(1600), _h(900), _window(nullptr)
 
   _quit = false;
   _refresh = true;
-  _show_ear_detector = false;
+  _show_ear_left_detector = false;
+  _show_ear_right_detector = false;
   _show_face_detector = false;
-  _show_shape_predictor = false;
 
   //prepare_window();
 
@@ -323,6 +324,7 @@ void view::render_scene()
     {
     auto rectangles = p_face_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     p_face_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
+    /*
     if (_show_shape_predictor && p_shape_predictor.get())
       {
       for (const auto& r : rectangles)
@@ -331,12 +333,14 @@ void view::render_scene()
         p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
         }
       }
+      */
     }
 
-  if (_show_ear_detector && p_ear_detector.get())
+  if (_show_ear_right_detector && p_ear_detector.get())
     {
-    auto rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    auto rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), true);
     p_ear_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
+    /*
     if (_show_shape_predictor && p_shape_predictor.get())
       {
       for (const auto& r : rectangles)
@@ -345,6 +349,23 @@ void view::render_scene()
         p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
         }
       }
+      */
+    }
+
+  if (_show_ear_left_detector && p_ear_detector.get())
+    {
+    auto rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), false);
+    p_ear_detector->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), rectangles);
+    /*
+    if (_show_shape_predictor && p_shape_predictor.get())
+      {
+      for (const auto& r : rectangles)
+        {
+        auto points = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+        p_shape_predictor->draw_prediction_rgba(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), points);
+        }
+      }
+      */
     }
 
   }
@@ -987,17 +1008,32 @@ std::vector<jtk::vec3<uint8_t>> view::mesh_texture_to_vertexcolors(uint32_t id)
   return colors;
   }
 
-void view::load_shape_predictor(const char* filename)
+int64_t view::load_shape_predictor(const char* filename)
   {
   std::scoped_lock lock(_mut);
-  std::string fn(filename);
-  p_shape_predictor.reset(new shape_predictor(fn));
+  sp m;
+  std::string f(filename);
+  bool res = read_from_file(m, f);
+  if (!res)
+    return -1;
+  sp* db_sp;
+  uint32_t id;
+  _db.create_sp(db_sp, id);
+  db_sp->p_shape_predictor.swap(m.p_shape_predictor);
+  return (int64_t)id;
   }
 
-void view::set_show_ear_detector(bool b)
+void view::set_show_ear_left_detector(bool b)
   {
   std::scoped_lock lock(_mut);
-  _show_ear_detector = b;
+  _show_ear_left_detector = b;
+  _refresh = true;
+  }
+
+void view::set_show_ear_right_detector(bool b)
+  {
+  std::scoped_lock lock(_mut);
+  _show_ear_right_detector = b;
   _refresh = true;
   }
 
@@ -1008,54 +1044,51 @@ void view::set_show_face_detector(bool b)
   _refresh = true;
   }
 
-void view::set_show_shape_predictor(bool b)
-  {
-  std::scoped_lock lock(_mut);
-  _show_shape_predictor = b;
-  _refresh = true;
-  }
-
-std::vector<std::pair<long, long>> view::shape_predict(const rect& r)
+std::vector<std::pair<long, long>> view::shape_predict(uint32_t id, const rect& r)
   {
   std::scoped_lock lock(_mut);
   std::vector<std::pair<long, long>> landmarks;
-  bool show_ear = _show_ear_detector;
+  bool show_left_ear = _show_ear_left_detector;
+  bool show_right_ear = _show_ear_right_detector;
   bool show_face = _show_face_detector;
-  bool show_predict = _show_shape_predictor;
-  if (p_shape_predictor.get())
+  sp* m = _db.get_sp((uint32_t)id);
+  if (!m)
+    return landmarks;
+  if (m->p_shape_predictor.get())
     {
-    _show_ear_detector = false;
+    _show_ear_left_detector = false;
+    _show_ear_right_detector = false;
     _show_face_detector = false;
-    _show_shape_predictor = false;
     render_scene();
-    landmarks = p_shape_predictor->predict(r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    landmarks = predict(*m, r, _canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     }
-  _show_ear_detector = show_ear;
+  _show_ear_left_detector = show_left_ear;
+  _show_ear_right_detector = show_right_ear;
   _show_face_detector = show_face;
-  _show_shape_predictor = show_predict;
-  _refresh = _show_ear_detector || _show_face_detector;
+  _refresh = _show_ear_left_detector || _show_ear_right_detector || _show_face_detector;
   return landmarks;
   }
 
-std::vector<rect> view::ear_detect()
+std::vector<rect> view::ear_detect(bool right_ear)
   {
   std::scoped_lock lock(_mut);
   std::vector<rect> rectangles;
-  bool show_ear = _show_ear_detector;
+  bool show_left_ear = _show_ear_left_detector;
+  bool show_right_ear = _show_ear_right_detector;
   bool show_face = _show_face_detector;
-  bool show_predict = _show_shape_predictor;
+
   if (p_ear_detector.get())
     {
-    _show_ear_detector = false;
+    _show_ear_left_detector = false;
+    _show_ear_right_detector = false;
     _show_face_detector = false;
-    _show_shape_predictor = false;
     render_scene();
-    rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
+    rectangles = p_ear_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data(), right_ear);
     }
-  _show_ear_detector = show_ear;
+  _show_ear_left_detector = show_left_ear;
+  _show_ear_right_detector = show_right_ear;
   _show_face_detector = show_face;
-  _show_shape_predictor = show_predict;
-  _refresh = _show_ear_detector || _show_face_detector;
+  _refresh = _show_ear_left_detector || _show_ear_right_detector || _show_face_detector;
   return rectangles;
   }
 
@@ -1063,21 +1096,21 @@ std::vector<rect> view::face_detect()
   {
   std::scoped_lock lock(_mut);
   std::vector<rect> rectangles;
-  bool show_ear = _show_ear_detector;
+  bool show_left_ear = _show_ear_left_detector;
+  bool show_right_ear = _show_ear_right_detector;
   bool show_face = _show_face_detector;
-  bool show_predict = _show_shape_predictor;
   if (p_face_detector.get())
     {
-    _show_ear_detector = false;
+    _show_ear_left_detector = false;
+    _show_ear_right_detector = false;
     _show_face_detector = false;
-    _show_shape_predictor = false;
     render_scene();
     rectangles = p_face_detector->detect(_canvas.get_image().width(), _canvas.get_image().height(), _canvas.get_image().stride(), _canvas.get_image().data());
     }
-  _show_ear_detector = show_ear;
+  _show_ear_left_detector = show_left_ear;
+  _show_ear_right_detector = show_right_ear;
   _show_face_detector = show_face;
-  _show_shape_predictor = show_predict;
-  _refresh = _show_ear_detector || _show_face_detector;
+  _refresh = _show_ear_left_detector || _show_ear_right_detector || _show_face_detector;
   return rectangles;
   }
 

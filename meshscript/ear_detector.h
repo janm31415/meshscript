@@ -17,7 +17,7 @@ class ear_detector
     ear_detector();
     ~ear_detector();
 
-    std::vector<rect> detect(int w, int h, int stride, const uint32_t* p_image);
+    std::vector<rect> detect(int w, int h, int stride, const uint32_t* p_image, bool right_ear = true);
 
     void draw_prediction_rgba(int w, int h, int stride, uint32_t* p_image, const std::vector<rect>& rectangles) const;
 

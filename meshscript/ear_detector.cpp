@@ -28,22 +28,40 @@ ear_detector::~ear_detector()
   {
   }
 
-std::vector<rect> ear_detector::detect(int w, int h, int stride, const uint32_t* p_image)
+std::vector<rect> ear_detector::detect(int w, int h, int stride, const uint32_t* p_image, bool right_ear)
   {
   std::vector<rect> out;
   using namespace dlib;
   array2d<rgb_pixel> img;
   img.set_size(h, w);
-  for (size_t y = 0; y < h; ++y)
+  if (right_ear)
     {
-    const uint32_t* p_im = p_image + y * stride;
-    for (size_t x = 0; x < w; ++x, ++p_im)
+    for (size_t y = 0; y < h; ++y)
       {
-      uint32_t col = *p_im;
-      auto& pix = img[y][x];
-      pix.red = col & 0xff;
-      pix.green = (col >> 8) & 0xff;
-      pix.blue = (col >> 16) & 0xff;
+      const uint32_t* p_im = p_image + y * stride;
+      for (size_t x = 0; x < w; ++x, ++p_im)
+        {
+        uint32_t col = *p_im;
+        auto& pix = img[y][x];
+        pix.red = col & 0xff;
+        pix.green = (col >> 8) & 0xff;
+        pix.blue = (col >> 16) & 0xff;
+        }
+      }
+    }
+  else
+    {
+    for (size_t y = 0; y < h; ++y)
+      {
+      const uint32_t* p_im = p_image + y * stride;
+      for (size_t x = 0; x < w; ++x, ++p_im)
+        {
+        uint32_t col = *p_im;
+        auto& pix = img[y][w-x-1];
+        pix.red = col & 0xff;
+        pix.green = (col >> 8) & 0xff;
+        pix.blue = (col >> 16) & 0xff;
+        }
       }
     }
   std::vector<rectangle> dets = mp_data->detector(img);
@@ -54,6 +72,10 @@ std::vector<rect> ear_detector::detect(int w, int h, int stride, const uint32_t*
     r.y = dets[j].top();
     r.w = dets[j].width();
     r.h = dets[j].height();
+    if (!right_ear)
+      {
+      r.x = w - r.x - r.w;
+      }
     out.push_back(r);
     }
   return out;

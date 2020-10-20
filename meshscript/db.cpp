@@ -2,6 +2,8 @@
 #include "mesh.h"
 #include "mm.h"
 #include "pc.h"
+#include "sp.h"
+#include "shape_predictor.h"
 
 #include <cassert>
 
@@ -25,6 +27,8 @@ void db::swap(db& other)
   std::swap(pcs_deleted, other.pcs_deleted);
   std::swap(mms, other.mms);
   std::swap(mms_deleted, other.mms_deleted);
+  std::swap(sps, other.sps);
+  std::swap(sps_deleted, other.sps_deleted);
   }
 
 void db::create_mesh(mesh*& new_mesh, uint32_t& id)
@@ -105,6 +109,33 @@ bool db::is_mm(uint32_t id) const
   return get_db_key(id) == MM_KEY;
   }
 
+
+void db::create_sp(sp*& new_sp, uint32_t& id)
+  {
+  sp* m = new sp();
+  id = make_db_id(SP_KEY, (uint32_t)sps.size());
+  new_sp = m;
+  sps.push_back(std::make_pair(id, m));
+  sps_deleted.push_back(std::make_pair(id, nullptr));
+  }
+
+sp* db::get_sp(uint32_t id) const
+  {
+  auto key = get_db_key(id);
+  auto vector_index = get_db_vector_index(id);
+  if (key != SP_KEY)
+    return nullptr;
+  if (vector_index >= sps.size())
+    return nullptr;
+  assert(sps[vector_index].first == id);
+  return sps[vector_index].second;
+  }
+
+bool db::is_sp(uint32_t id) const
+  {
+  return get_db_key(id) == SP_KEY;
+  }
+
 void db::delete_object(uint32_t id)
   {
   auto key = get_db_key(id);
@@ -130,6 +161,13 @@ void db::delete_object(uint32_t id)
         {
         mms_deleted[vector_index].second = mms[vector_index].second;
         mms[vector_index].second = nullptr;
+        }
+      break;
+    case SP_KEY:
+      if (sps[vector_index].second)
+        {
+        sps_deleted[vector_index].second = sps[vector_index].second;
+        sps[vector_index].second = nullptr;
         }
       break;
     }
@@ -162,6 +200,13 @@ void db::restore_object(uint32_t id)
         mms_deleted[vector_index].second = nullptr;
         }
       break;
+    case SP_KEY:
+      if (!sps[vector_index].second)
+        {
+        sps[vector_index].second = sps_deleted[vector_index].second;
+        sps_deleted[vector_index].second = nullptr;
+        }
+      break;
     }
   }
 
@@ -187,6 +232,8 @@ void db::clear()
   delete_objects(pcs_deleted);
   delete_objects(mms);
   delete_objects(mms_deleted);
+  delete_objects(sps);
+  delete_objects(sps_deleted);
   }
 
 std::vector<vec3<float>>* get_vertices(const db& _db, uint32_t id)

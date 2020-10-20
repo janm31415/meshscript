@@ -65,6 +65,7 @@ pc.h
 pixel.h
 scene.h
 shape_predictor.h
+sp.h
 trackball.h
 view.h
 )
@@ -87,6 +88,7 @@ pc.cpp
 pixel.cpp
 scene.cpp
 shape_predictor.cpp
+sp.cpp
 trackball.c
 view.cpp
 )

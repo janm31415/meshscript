@@ -18,7 +18,6 @@
 
 class ear_detector;
 class face_detector;
-class shape_predictor;
 
 class view
   {
@@ -114,19 +113,19 @@ class view
 
     bool write(uint32_t id, const char* filename);
 
-    void load_shape_predictor(const char* filename);
+    int64_t load_shape_predictor(const char* filename);
 
     void set_show_face_detector(bool b);
 
-    void set_show_ear_detector(bool b);
+    void set_show_ear_right_detector(bool b);
 
-    void set_show_shape_predictor(bool b);
+    void set_show_ear_left_detector(bool b);
 
-    std::vector<std::pair<long, long>> shape_predict(const rect& r);
+    std::vector<std::pair<long, long>> shape_predict(uint32_t id, const rect& r);
 
     std::vector<rect> face_detect();
 
-    std::vector<rect> ear_detect();
+    std::vector<rect> ear_detect(bool right_ear);
 
     void fit_mm_to_partial_positions(uint32_t mm_id, const std::vector<uint32_t>& vertex_indices, const std::vector<jtk::vec3<float>>& vertex_positions);
 
@@ -190,11 +189,10 @@ class view
     matcapmap _matcap;
     std::unique_ptr<ear_detector> p_ear_detector;
     std::unique_ptr<face_detector> p_face_detector;
-    std::unique_ptr<shape_predictor> p_shape_predictor;
 
     std::mutex _mut;
 
-    bool _show_ear_detector;
+    bool _show_ear_left_detector;
+    bool _show_ear_right_detector;
     bool _show_face_detector;
-    bool _show_shape_predictor;
   };
