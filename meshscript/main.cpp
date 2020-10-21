@@ -667,6 +667,11 @@ uint64_t scm_get_id(uint64_t x64, uint64_t y64)
   return make_fixnum(id);
   }
 
+void scm_force_redraw()
+  {
+  g_view->force_redraw();
+  }
+
 int64_t mm_coeff_size(int64_t id)
   {
   return g_view->mm_coeff_size((uint32_t)id);
@@ -1127,6 +1132,8 @@ void* register_functions(void*)
   register_external_primitive("ear-left-detect", (void*)&scm_left_ear_detect, skiwi_scm, "(ear-left-detect) runs the ear detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the left ear starting in corner (x,y) and with sizes (w,h).");
 
   register_external_primitive("face-detect", (void*)&scm_face_detect, skiwi_scm, "(face-detect) runs the face detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the face starting in corner (x,y) and with sizes (w,h).");
+
+  register_external_primitive("force-redraw", (void*)&scm_force_redraw, skiwi_void, "(force-redraw) redraws the canvas. This is useful if you want to use view-position.");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of iterative closest point as coordinate system.");

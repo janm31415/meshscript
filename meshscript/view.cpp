@@ -308,6 +308,7 @@ void view::set_coordinate_system(const float4x4& cs)
   std::scoped_lock lock(_mut);
   _scene.coordinate_system = cs;
   _scene.coordinate_system_inv = jtk::invert_orthonormal(cs);
+  _refresh = true;
   }
 
 void view::render_scene()
@@ -689,6 +690,12 @@ void view::set_image_size(int w, int h)
   std::scoped_lock lock(_mut);
   resize_canvas(w, h);
   _refresh = true;
+  }
+
+void view::force_redraw()
+  {
+  std::scoped_lock lock(_mut);
+  render_scene();
   }
 
 jtk::vec3<float> view::get_world_position(int x, int y)

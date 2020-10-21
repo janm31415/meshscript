@@ -142,7 +142,9 @@ class view
 
     void cs_apply(uint32_t id);
     
-    void unzoom();
+    void force_redraw();
+
+    void unzoom();    
 
     void loop();
 
