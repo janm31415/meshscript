@@ -10,26 +10,47 @@ Meshscript is a scriptable interface for visualizing and editing 3d meshes and p
 Building
 --------
 
-Meshscript depends on [Intel's TBB library](https://software.intel.com/content/www/us/en/develop/tools/threading-building-blocks.html), and on [SDL2](https://www.libsdl.org/download-2.0.php). Both TBB and SDL2 are not delivered with the code and thus need to be installed by the user.
+Meshscript has two dependencies that are not delivered with this source code:
+  - [Intel's TBB library](https://software.intel.com/content/www/us/en/develop/tools/threading-building-blocks.html)
+  - [SDL2](https://www.libsdl.org/download-2.0.php)
+  
+While TBB is optional (see later), SDL2 is required.
 
-On Windows you can download TBB's binaries from its website, and install them, preferably, in 
-folder C:\Program Files\TBB. Another folder is also possible, but then you'll need to
-adapt the CMakeLists.txt file and make it point to the correct location.
-On Ubuntu you can simply run 
-  sudo apt install libtbb-dev 
-to install TBB.
+##### SDL2
+To install SDL2 on Windows, download its sources from its website, and build with CMake. Next install SDL2 to folder C:\Program Files\SDL2. Another folder is fine, but then you'll need to adapt this source codes CMakeLists.txt file as it assumes the location C:\Program Files\SDL2 for SDL2. 
 
-To install SDL2 on Windows, download its sources from its website, and build with cmake. Next install SDL2 to folder C:\Program Files\SDL2. Again, another folder is fine, but then you'll need to adapt the CMakeLists.txt file. On Ubuntu run
+On Ubuntu run
 
     sudo apt-get install libsdl2-dev
 
 to install SDL2.
 
-Next a solution file / makefile can be generated with CMake. Use Visual Studio or make to build the code.
+On MacOS download the SDL2 framework from the [SDL2](https://www.libsdl.org/) website and install in /Library/Frameworks/
 
-The scripting funcionality uses the [skiwi compiler](https://github.com/janm31415/skiwi), wich is a just in time scheme compiler. Some functionality still needs to be built by skiwi during startup. The code that skiwi needs resides in the scm subfolder of the libskiwi folder. The compiler expects that the environment variable SKIWI_MODULE_PATH exists and points to this folder. The scm folder can be placed anywhere on your harddrive as long as SKIWI_MODULE_PATH points to it. Make sure that you use only slashes (/) and not backslashes (\\) when entering the path in the SKIWI_MODULE_PATH variable. Also make sure that you end the path with a slash, e.g. "C:/skiwi/scm/".
+##### TBB
 
-As soon as SKIWI_MODULE_PATH is correctly initialised you are ready to go.
+TBB is only needed when the CMake variable JTK_THREADING is set to tbb. If you don't want to use tbb, you can set JTK_THREADING to std or ppl (Windows only).
+However, if you want to use TBB, you'll need to install it first.
+
+On Windows you can download TBB's binaries from its website, and install them, preferably, in 
+folder C:\Program Files\TBB. Another folder is also possible, but then you'll need to
+adapt the CMakeLists.txt file and make it point to the correct location.
+
+On Ubuntu you can simply run 
+
+    sudo apt install libtbb-dev 
+
+to install TBB.
+
+On MacOS you can run
+
+    brew install tbb
+    
+If this gives an error in the sense of `Cannot write to /usr/local/Cellar` then you can solve this probably by updating your write privileges in this folder with the command `sudo chmod a+w /usr/local/Cellar`, and then try `brew` again.
+
+##### Meshscript
+Use CMake to create a Visual Studio solution file on Windows, makefile on Ubuntu, or XCode project on MacOS.
+
 
 Glossary
 --------
