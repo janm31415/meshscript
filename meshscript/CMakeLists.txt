@@ -17,8 +17,8 @@ endif (UNIX)
 if (APPLE)
   set(SDL_INCLUDE_DIR "/Library/Frameworks/SDL2.framework/Headers/")
   set(SDL_LIBRARIES "/Library/Frameworks/SDL2.framework/SDL2")
-  set(TBB_INCLUDE_DIR "")
-  set(TBB_LIBRARIES "")
+  set(TBB_INCLUDE_DIR "/usr/local/include" "/usr/include")
+  set(TBB_LIBRARIES "/usr/local/lib/libtbb.dylib")
   set(OPENGL_LIBRARIES "/System/Library/Frameworks/OpenGL.framework/OpenGL")
 endif (APPLE)
 
@@ -117,17 +117,7 @@ add_definitions(-D_SCL_SECURE_NO_WARNINGS)
 add_definitions(-DMEMORY_LEAK_TRACKING)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
-if (${JTK_THREADING} STREQUAL "tbb")
-add_definitions(-D_ENABLE_TBB)
-endif (${JTK_THREADING} STREQUAL "tbb")
-
-if (${JTK_THREADING} STREQUAL "ppl")
-add_definitions(-D_ENABLE_PPL)
-endif (${JTK_THREADING} STREQUAL "ppl")
-
-if (${JTK_THREADING} STREQUAL "std")
-add_definitions(-D_ENABLE_THREADS)
-endif (${JTK_THREADING} STREQUAL "std")
+include ("../jtk/jtk/jtk.cmake")
 
 add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB} ${PLY} ${ICP})
 
