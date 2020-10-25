@@ -73,15 +73,16 @@ Let's start with an example. Suppose you want to visualize a PLY-file, then the 
 
     (load-mesh "D:/my_3d_files/rabbit.ply")
     
-will load the mesh. The return value is an integer or id that represents this mesh from now. If you want to change any properties of this mesh, you'll need this id. Therefore it's probably better to load a mesh as
+will load the mesh. The return value is an integer or id that represents this mesh. If you want to change any properties of the mesh, you'll need this id. Therefore it's probably better to load a mesh as
 
     (define id (load-mesh "D:/my_3d_files/rabbit.ply"))
     
-so that you can query properties of this mesh, e.g.
+so that you can query properties of this mesh. For instance
 
     (info id)
     
-If you want to visualize this mesh, you'll need to call
+shows the number of vertices and triangles and other properties of the mesh.
+If you want to visualize the mesh, you'll need to call
 
     (view-show!)
     
