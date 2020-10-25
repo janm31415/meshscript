@@ -93,7 +93,7 @@ in the REPL. If you want to keep the view, but hide your 3D model, you can call
 
     (hide! id)
     
-In this case we've been writing our code directly in the REPL. You can also write your script in a separate file, and then call meshscript with this script file as argument. Meshscript will start, compile the script, run the script, and then start the REPL. All functions or defines will be available in the REPL to further investigate.    
+In this case we've been writing our code directly in the REPL. You can also write your script in a separate file, and then call meshscript with this script file as argument. Meshscript will start, compile the script, run the script, and then start the REPL. All functions or defines from the script will be available in the REPL.    
 
 Glossary
 --------
