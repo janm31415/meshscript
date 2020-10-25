@@ -9,6 +9,9 @@ Meshscript is a scriptable interface for visualizing and editing 3d meshes and p
 
 Building
 --------
+First of all, meshscript uses submodules, so don't forget to also call
+
+     git submodule update --init
 
 Meshscript has two dependencies that are not delivered with this source code:
   - [Intel's TBB library](https://software.intel.com/content/www/us/en/develop/tools/threading-building-blocks.html)
@@ -51,6 +54,46 @@ If this gives an error in the sense of `Cannot write to /usr/local/Cellar` then 
 ##### Meshscript
 Use CMake to create a Visual Studio solution file on Windows, makefile on Ubuntu, or XCode project on MacOS.
 
+Basics
+------
+
+When you run meshscript you'll find yourself in a scheme REPL. I'm using my own [skiwi](https://github.com/janm31415/skiwi) compiler, which is a JIT compiler that translates scheme code to machine code and then executes the code. The scheme compiler is R4RS-compliant and almost R5RS-compliant.
+
+Apart from regular scheme syntax, you can also call meshscript related functions. They are described in more detail in the glossary below. By typing
+
+    ,external
+    
+in the scheme REPL you'll get an overview of all the meshscript related functionality. If you are looking for information on a function that starts with `load`, you can type
+
+    ,external load
+    
+in the REPL to find all meshscript functions that start with `load`.
+
+Let's start with an example. Suppose you want to visualize a PLY-file, then the following call
+
+    (load-mesh "D:/my_3d_files/rabbit.ply")
+    
+will load the mesh. The return value is an integer or id that represents this mesh from now. If you want to change any properties of this mesh, you'll need this id. Therefore it's probably better to load a mesh as
+
+    (define id (load-mesh "D:/my_3d_files/rabbit.ply"))
+    
+so that you can query properties of this mesh, e.g.
+
+    (info id)
+    
+If you want to visualize this mesh, you'll need to call
+
+    (view-show!)
+    
+to open up the 3D view. The mesh will be displayed. You can hide the view again by closing it with the mouse or by calling
+
+    (view-hide!)
+    
+in the REPL. If you want to keep the view, but hide your 3D model, you can call
+
+    (hide! id)
+    
+In this case we've been writing our code directly in the REPL. You can also write your script in a separate file, and then call meshscript with this script file as argument. Meshscript will start, compile the script, run the script, and then start the REPL. All functions or defines will be available in the REPL to further investigate.    
 
 Glossary
 --------
