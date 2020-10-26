@@ -1119,13 +1119,13 @@ void* register_functions(void*)
   using namespace skiwi;
   register_external_primitive("cs", (void*)&scm_get_coordinate_system, skiwi_scm, skiwi_int64, "(cs id) returns the coordinate system for the object with tag `id`.");
   register_external_primitive("cs-apply!", (void*)&scm_cs_apply, skiwi_void, skiwi_int64, "(cs-apply! id) transforms the vertices of object with tag `id` by its coordinate system, and sets its coordinate system to the world.");
-  register_external_primitive("cs-rotate!", (void*)&scm_rotate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-rotate! id x y z) rotates the object with tag `id` by `x` degrees over the x-axis, by `y` degrees over the y-axis, and by `z` degrees over the z_axis.");
+  register_external_primitive("cs-rotate!", (void*)&scm_rotate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-rotate! id x y z) rotates the object with tag `id` by `x` degrees over the x-axis, by `y` degrees over the y-axis, and by `z` degrees over the z-axis.");
   register_external_primitive("cs-set!", (void*)&scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for the object with tag `id`. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
-  register_external_primitive("cs-premultiply!", (void*)&scm_cs_premultiply, skiwi_void, skiwi_int64, skiwi_scm, "(cs-premultiply! id cs) premultiplies the coordinate system of the object with tag `id` by the input coordinate system.");
+  register_external_primitive("cs-premultiply!", (void*)&scm_cs_premultiply, skiwi_void, skiwi_int64, skiwi_scm, "(cs-premultiply! id cs) premultiplies the coordinate system of the object with tag `id` by the input coordinate system. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
 
 
-  register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed)");
+  register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed) returns a list with values that represent the distance between objects with tag `id1` and `id2`. For each vertex of object `id1` there is exactly one distance in the list. The distance can be signed or unsigned, depending on the boolean value that is given to `bool-signed`.");
 
   register_external_primitive("ear-right-detect", (void*)&scm_right_ear_detect, skiwi_scm, "(ear-right-detect) runs the ear detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the right ear starting in corner (x,y) and with sizes (w,h).");
 
@@ -1133,66 +1133,66 @@ void* register_functions(void*)
 
   register_external_primitive("face-detect", (void*)&scm_face_detect, skiwi_scm, "(face-detect) runs the face detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the face starting in corner (x,y) and with sizes (w,h).");
 
-  register_external_primitive("force-redraw", (void*)&scm_force_redraw, skiwi_void, "(force-redraw) redraws the canvas. This is useful if you want to use view-position.");
+  register_external_primitive("force-redraw", (void*)&scm_force_redraw, skiwi_void, "(force-redraw) redraws the canvas. This is useful if you want to use view-position in your script, as view-position uses the data of the last render of the view.");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
-  register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of iterative closest point as coordinate system.");
+  register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
   register_external_primitive("info", (void*)&info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
-  register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list of values between 0 and 1 and returns a list of lists with (r g b) values.");
+  register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list `lst` of values between 0 and 1 and returns a list of lists with (r g b) values.");
 
-  register_external_primitive("load-mesh", (void*)&load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
-  register_external_primitive("load-morphable-model", (void*)&load_morphable_model, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the stl file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an obj file and returns the id.");
-  register_external_primitive("load-pointcloud", (void*)&load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the ply file as point cloud and returns an id.");
-  register_external_primitive("load-shape-predictor", (void*)&scm_load_shape_predictor, skiwi_int64, skiwi_char_pointer, "(load-shape-predictor \"filename\") initializes the shape predictor with the data given by \"filename\" and returns the id.");
+  register_external_primitive("load-mesh", (void*)&load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the STL file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an OBJ file and returns the id. Other input mesh formats that are implemented are PLY and OFF.");
+  register_external_primitive("load-morphable-model", (void*)&load_morphable_model, skiwi_int64, skiwi_char_pointer, "(load-morphable-model \"model2019_fullHead.h5\") loads morphable models following the hdf5 file format as used by the Basel Face Model project (https://faces.dmi.unibas.ch/bfm/bfm2019.html). The other file format that can be read is meshscripts own binary morphable model file format with extension SSM.");
+  register_external_primitive("load-pointcloud", (void*)&load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the PLY file as point cloud and returns an id. Other file formats are not yet supported.");
+  register_external_primitive("load-shape-predictor", (void*)&scm_load_shape_predictor, skiwi_int64, skiwi_char_pointer, "(load-shape-predictor \"filename\") initializes the shape predictor with the data given by \"filename\" and returns the id. This is the dlib shape predictor (http://dlib.net). The 68 points facial landmarks predictor data can be downloaded from https://github.com/davisking/dlib-models");
 
-  register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) plots the mesh with given vertices and triangles, and returns the id of the plotted object. Vertices should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and triangles should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
-  register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with bb of the form ((min_x max_x) (min_y max_y) (min_z max_z)), dim of the form (width height depth), isovalue a flonum, fun a lambda function accepting (x y z) values and returning a distance.");
-  register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id.");
+  register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) creates the mesh with given `vertices` and `triangles`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and `triangles` should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
+  register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with `bb` representing the bounding box of the form ((min_x max_x) (min_y max_y) (min_z max_z)), `dim` representing the dimensions of the form (width height depth), `isovalue` a flonum representing the signed distance requested, and `fun` representing the distance functions as a lambda function accepting (x y z) values and returning a distance.");
+  register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id. Currently the matcaps in meshscript are hardcoded. There are 4 available matcaps with ids 0, 1, 2, 3.");
 
-  register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "");
+  register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "(mesh-texture->vertexcolors id) will return a list of lists of the form ((r g b) (r g b) ... ). Each vertex of the object with tag `id` has a corresponding (r g b) value. This (r g b) value is obtained from the texture of `id`, if available.");
 
 
-  register_external_primitive("morphable-model-coefficients-size", (void*)&mm_coeff_size, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-shape-size", (void*)&mm_shape_size, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-sigma", (void*)&mm_sigma, skiwi_double, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-coefficients", (void*)&mm_coeff, skiwi_scm, skiwi_int64, "");
-  register_external_primitive("morphable-model-basic-shape-coefficients", (void*)&mm_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-coefficients-set!", (void*)&mm_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
-  register_external_primitive("morphable-model->mesh", (void*)&mm_to_mesh, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coefficients-size", (void*)&mm_color_coeff_size, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-shape-size", (void*)&mm_color_shape_size, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-sigma", (void*)&mm_color_sigma, skiwi_double, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coefficients", (void*)&mm_color_coeff, skiwi_scm, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-basic-shape-coefficients", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "");
-  register_external_primitive("morphable-model-color-coefficients-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "");
+  register_external_primitive("morphable-model-coefficients-size", (void*)&mm_coeff_size, skiwi_int64, skiwi_int64, "(morphable-model-coefficients-size mm_id) returns the number of coefficients for the morphable model with tag `mm_id`.");
+  register_external_primitive("morphable-model-shape-size", (void*)&mm_shape_size, skiwi_int64, skiwi_int64, "(morphable-model-shape_size mm_id) returns the shape size for the morphable model with tag `mm_id`. This is equal to the number of rows in the U matrix, where a shape S is represented as S = mu + U*c, with mu the average shape, and c the coefficients vector.");
+  register_external_primitive("morphable-model-sigma", (void*)&mm_sigma, skiwi_double, skiwi_int64, skiwi_int64, "(morphable-model-sigma mm_id idx) returns sigma for the morphable model with tag `mm_id` at coefficient index `idx`.");
+  register_external_primitive("morphable-model-coefficients", (void*)&mm_coeff, skiwi_scm, skiwi_int64, "(morphable-model-coefficients mm_id) returns the list of coefficients for the morphable model with tag `mm_id`.");
+  register_external_primitive("morphable-model-basic-shape-coefficients", (void*)&mm_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "(morphable-model-basic-shape-coefficients mm_id idx) returns the list of coefficients of the `idx`-th shape that was used to generate this morphable model. Not all morphable models have this data. For instance the Basel shape model does not contain this data.");
+  register_external_primitive("morphable-model-coefficients-set!", (void*)&mm_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "(morphable-model-coefficients-set! mm_id coeff) sets the list of coefficients for the morphable model with tag `mm_id`. Here `coeff` is a list of coefficient values, and its size should equal (morphable-model-coefficients-size mm_id).");
+  register_external_primitive("morphable-model->mesh", (void*)&mm_to_mesh, skiwi_int64, skiwi_int64, "(morphable-model->mesh mm_id) converts the morphable model with tag `mm_id` to a mesh and returns the new id.");
+  register_external_primitive("morphable-model-color-coefficients-size", (void*)&mm_color_coeff_size, skiwi_int64, skiwi_int64, "(morphable-model-color-coefficients-size mm_id) returns the number of color coefficients for the morphable model with tag `mm_id`.");
+  register_external_primitive("morphable-model-color-shape-size", (void*)&mm_color_shape_size, skiwi_int64, skiwi_int64, "(morphable-model-color-shape_size mm_id) returns the shape size for the color part of the morphable model with tag `mm_id`. This is equal to the number of rows in the U_color matrix, where a the shape colors S_color are represented as S_color = mu_color + U_color*c, with mu_color the average shape colors, and c the color coefficients vector.");
+  register_external_primitive("morphable-model-color-sigma", (void*)&mm_color_sigma, skiwi_double, skiwi_int64, skiwi_int64, "(morphable-model-color-sigma mm_id idx) returns sigma for the colors of the morphable model with tag `mm_id` at color coefficient index `idx`.");
+  register_external_primitive("morphable-model-color-coefficients", (void*)&mm_color_coeff, skiwi_scm, skiwi_int64, "(morphable-model-color-coefficients mm_id) returns the list of color coefficients for the morphable model with tag `mm_id`.");
+  register_external_primitive("morphable-model-color-basic-shape-coefficients", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "(morphable-model-color-basic-shape-coefficients mm_id idx) returns the list of color coefficients of the `idx`-th color shape that was used to generate this morphable model. Not all morphable models have this data. For instance the Basel shape model does not contain this data.");
+  register_external_primitive("morphable-model-color-coefficients-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "(morphable-model-color-coefficients-set! mm_id coeff) sets the list of color coefficients for the morphable model with tag `mm_id`. Here `coeff` is a list of color coefficient values, and its size should equal (morphable-model-color-coefficients-size mm_id).");
 
   
   register_external_primitive("morphable-model-fit-indices!", (void*)&mm_fit_indices, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, "(morphable-model-fit-indices! mm_id indices positions)");
   register_external_primitive("morphable-model-fit!", (void*)&mm_fit, skiwi_void, skiwi_int64, skiwi_int64, "(morphable-model-fit! mm_id mesh_id)");
 
 
-  register_external_primitive("npoint", (void*)&npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "npoint");
+  register_external_primitive("npoint", (void*)&npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "(npoint from to) computes the npoint-registration of the set of 3d points in `from` to the set of 3d points in `to`. The result is a 4x4 transformation matrix. Here `from` and `to` are lists of lists of the form ((x y z) (x y z) ...) and `from` and `to` should have the same amount of 3d points.");
 
-  register_external_primitive("poisson", (void*)&scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth)");
+  register_external_primitive("poisson", (void*)&scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth) applies Poisson surface reconstruction to the pointcloud with tag `pc_id`. This is the screened Poisson surface reconstruction algorithm by M. Kazhdan and H. Hoppe. You have to provide the parameter `depth` which represents the depth of the octree during Poisson surface reconstruction.");
 
-  register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\")"); // don't use write: gives naming conflict with slib
+  register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\") writes the object with tag `id` to file. The filetype is determined by the extension that is given. You can export meshes to STL or PLY, pointclouds still todo, morphable models to SSM."); // don't use write: gives naming conflict with slib
 
-  register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_int64, skiwi_scm, "(shape-predict sp_id (x y w h)) or (shape-predict sp_id ((x y w h) ...)) runs the shape predictor with tag sp_id on the region defined by (x y w h) or on the regions defined by ((x y w h) ...) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
-  register_external_primitive("shape-predictor-horizontal-flip-set!", (void*)&scm_shape_predictor_horizontal_flip_set, skiwi_void, skiwi_int64, skiwi_bool, "(shape-predictor-horizontal-flip-set! id #t/#f) toggles horizontal flipping of the shape predictor given by tag id.");
-  register_external_primitive("shape-predictor-link-to-face-detector", (void*)&scm_sp_link_to_face, skiwi_void, skiwi_int64, "(shape-predictor-link-to-face-detector id) links the shape predictor given by tag id to the face detector");
-  register_external_primitive("shape-predictor-link-to-ear-right-detector", (void*)&scm_sp_link_to_ear_right, skiwi_void, skiwi_int64, "(shape-predictor-link-to-ear-right-detector id) links the shape predictor given by tag id to the ear right detector");
-  register_external_primitive("shape-predictor-link-to-ear-left-detector", (void*)&scm_sp_link_to_ear_left, skiwi_void, skiwi_int64, "(shape-predictor-link-to-ear-left-detector id) links the shape predictor given by tag id to the ear left detector");
-  register_external_primitive("shape-predictor-unlink", (void*)&scm_sp_link_remove, skiwi_void, skiwi_int64, "(shape-predictor-unlink id) unlinks the shape predictor given by tag id.");
+  register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_int64, skiwi_scm, "(shape-predict sp_id (x y w h)) or (shape-predict sp_id ((x y w h) ...)) runs the shape predictor with tag `sp_id` on the region defined by (x y w h) or on the regions defined by ((x y w h) ...) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
+  register_external_primitive("shape-predictor-horizontal-flip-set!", (void*)&scm_shape_predictor_horizontal_flip_set, skiwi_void, skiwi_int64, skiwi_bool, "(shape-predictor-horizontal-flip-set! id #t/#f) toggles horizontal flipping of the shape predictor given by tag `id`.");
+  register_external_primitive("shape-predictor-link-to-ear-left-detector", (void*)&scm_sp_link_to_ear_left, skiwi_void, skiwi_int64, "(shape-predictor-link-to-ear-left-detector id) links the shape predictor given by tag `id` to the ear left detector. The result of this operation is that the shape predictor is rendered automatically when the left ear detector's automatic rendering is on. You can turn on/off automatic rendering of the left ear detector with the command (view-ear-left-detector-set! #t/#f).");
+  register_external_primitive("shape-predictor-link-to-ear-right-detector", (void*)&scm_sp_link_to_ear_right, skiwi_void, skiwi_int64, "(shape-predictor-link-to-ear-right-detector id) links the shape predictor given by tag `id` to the ear right detector. The result of this operation is that the shape predictor is rendered automatically when the right ear detector's automatic rendering is on. You can turn on/off automatic rendering of the right ear detector with the command (view-ear-right-detector-set! #t/#f).");
+  register_external_primitive("shape-predictor-link-to-face-detector", (void*)&scm_sp_link_to_face, skiwi_void, skiwi_int64, "(shape-predictor-link-to-face-detector id) links the shape predictor given by tag `id` to the face detector. The result of this operation is that the shape predictor is rendered automatically when the face detector's automatic rendering is on. You can turn on/off automatic rendering of the face detector with the command (view-face-detector-set! #t/#f).");
+  register_external_primitive("shape-predictor-unlink", (void*)&scm_sp_link_remove, skiwi_void, skiwi_int64, "(shape-predictor-unlink id) unlinks the shape predictor given by tag `id`, see shape-predictor-link-to-face-detector, shape-predictor-link-to-ear-right-detector, or shape-predictor-link-to-ear-left-detector.");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
-  register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id)");
+  register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id) returns the triangles of object with tag `id` as a list of lists of the form ((v0 v1 v2) (v3 v4 v4) ...) where each sublist (v0 v1 v2) contain the indices of the vertices that form a triangle. The actual vertex positions can be obtained with the command (vertices id).");
   register_external_primitive("triangles->csv", (void*)&triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of the object with tag `id` to a csv file.");
   register_external_primitive("vertexcolors-set!", (void*)&scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(vertexcolors-set! id clrlst) sets vertex colors for the object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
-  register_external_primitive("vertices", (void*)&scm_vertices, skiwi_scm, skiwi_int64, "(vertices id)");
+  register_external_primitive("vertices", (void*)&scm_vertices, skiwi_scm, skiwi_int64, "(vertices id) returns the vertices of object with tag `id` as a list of lists of the form ((x y z) (x y z) ...) where each sublist (x y z) is a 3d point representing the position of that vertex.");
   register_external_primitive("vertices->csv", (void*)&vertices_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(vertices->csv id \"file.csv\") exports the vertices of the object with tag `id` to a csv file.");
   register_external_primitive("view-bg-set!", (void*)&scm_set_bg_color, skiwi_void, skiwi_int64, skiwi_int64, skiwi_int64, "(view-bg-set! r g b) changes the background color to (r g b).");
   register_external_primitive("view-cs", (void*)&scm_get_view_coordinate_system, skiwi_scm, "(view-cs) returns the coordinate system of the view camera.");
-  register_external_primitive("view-cs-set!", (void*)&scm_set_view_coordinate_system, skiwi_void, skiwi_scm, "(view-cs-set! cs) sets the coordinate system of the view camera.");
+  register_external_primitive("view-cs-set!", (void*)&scm_set_view_coordinate_system, skiwi_void, skiwi_scm, "(view-cs-set! cs) sets the coordinate system of the view camera. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("view-edges-set!", (void*)&scm_set_edges, skiwi_void, skiwi_bool, "(view-edges-set! #t/#f) turns on/off rendering of edges.");
   register_external_primitive("view-export", (void*)&scm_export_image, skiwi_void, skiwi_char_pointer, "(view-export \"image-file.png\") exports the current view to a png image.");
 
@@ -1202,9 +1202,9 @@ void* register_functions(void*)
 
   register_external_primitive("view-hide!", (void*)&scm_hide_view, skiwi_void, "(view-hide!) hides the 3d view.");
   register_external_primitive("view-onebit-set!", (void*)&scm_set_one_bit, skiwi_void, skiwi_bool, "(view-onebit-set! #t/#f) turns on/off one-bit rendering.");
-  register_external_primitive("view-position", (void*)&scm_get_position, skiwi_scm, skiwi_scm, skiwi_scm, "(view-position x y) returns the 3D position of coordinate (x,y).");
-  register_external_primitive("view-index", (void*)&scm_get_index, skiwi_scm, skiwi_scm, skiwi_scm, "(view-index x y) returns the vertex index of coordinate (x,y).");
-  register_external_primitive("view-id", (void*)&scm_get_id, skiwi_scm, skiwi_scm, skiwi_scm, "(view-id x y) returns the id of the object at coordinate (x,y).");
+  register_external_primitive("view-position", (void*)&scm_get_position, skiwi_scm, skiwi_scm, skiwi_scm, "(view-position x y) returns the 3d position of the vertex in the last render of the 3d view at coordinate (x,y) .");
+  register_external_primitive("view-index", (void*)&scm_get_index, skiwi_scm, skiwi_scm, skiwi_scm, "(view-index x y) returns the vertex index of the vertex in the last render of the 3d view at coordinate (x,y).");
+  register_external_primitive("view-id", (void*)&scm_get_id, skiwi_scm, skiwi_scm, skiwi_scm, "(view-id x y) returns the id of the object in the last render of the 3d view at coordinate (x,y).");
 
   register_external_primitive("view-shading-set!", (void*)&scm_set_shading, skiwi_void, skiwi_bool, "(view-shading-set! #t/#f) turns on/off lighting.");
   register_external_primitive("view-shadow-set!", (void*)&scm_set_shadow, skiwi_void, skiwi_bool, "(view-shadow-set! #t/#f) turns on/off rendering of shadow.");
@@ -1215,7 +1215,7 @@ void* register_functions(void*)
   register_external_primitive("view-unzoom!", (void*)&scm_unzoom, skiwi_void, "(view-unzoom!) sets the camera to its initial position.");
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");  
 
-  register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript.");
+  register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");
   return nullptr;
   }
 
