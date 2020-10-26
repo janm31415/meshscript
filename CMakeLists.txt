@@ -16,6 +16,14 @@ set(BUILD_TESTING OFF)
 
 add_subdirectory(dlib)
 add_subdirectory(hdf5)
+
+if (WIN32)
+set(CMAKE_C_FLAGS_DEBUG "/W4 /MP /GF /RTCu /Od /MDd /Zi")
+set(CMAKE_CXX_FLAGS_DEBUG "/W4 /MP /GF /RTCu /Od /MDd /Zi")
+set(CMAKE_C_FLAGS_RELEASE "/W4 /MP /GF /O2 /Ob2 /Oi /Ot /MD /Zi /DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "/W4 /MP /GF /O2 /Ob2 /Oi /Ot /MD /Zi /DNDEBUG")
+endif (WIN32)
+
 add_subdirectory(jtk)
 add_subdirectory(libpoisson)
 add_subdirectory(meshscript)
