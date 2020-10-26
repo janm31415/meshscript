@@ -170,6 +170,35 @@ void view::prepare_window()
   gl_check_error("glTexImage2D in view.cpp");
   }
 
+int64_t view::mesh_to_pointcloud(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh(id);
+  if (m)
+    {
+    pc* db_pc;
+    uint32_t id_out;
+    _db.create_pc(db_pc, id_out);
+
+    std::vector<vec3<float>> triangle_normals, vertex_normals;
+    compute_triangle_normals(triangle_normals, m->vertices.data(), m->triangles.data(), m->triangles.size());
+    compute_vertex_normals(vertex_normals, triangle_normals.data(), m->vertices.data(), m->vertices.size(), m->triangles.data(), m->triangles.size());
+    db_pc->vertices = m->vertices;       
+    db_pc->vertex_colors = convert_vertex_colors(m->vertex_colors);   
+    db_pc->normals = vertex_normals;
+    db_pc->cs = m->cs;
+    db_pc->visible = true;
+    _matcap.map_db_id_to_matcap[id_out] = (id_out % _matcap.matcaps.size());
+    if (db_pc->visible)
+      add_object(id_out, _scene, _db);
+    prepare_scene(_scene);
+    ::unzoom(_scene);
+    _refresh = true;
+    return id_out;
+    }
+  return -1;
+  }
+
 int64_t view::load_mesh_from_file(const char* filename)
   {
   std::scoped_lock lock(_mut);
@@ -1221,6 +1250,9 @@ void view::info(uint32_t id)
   mm* morph = _db.get_mm(id);
   if (morph)
     ::info(*morph);
+  sp* shape_pred = _db.get_sp(id);
+  if (shape_pred)
+    ::info(*shape_pred);
   }
 
 void view::cs_apply(uint32_t id)

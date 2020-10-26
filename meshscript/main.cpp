@@ -60,6 +60,12 @@ int64_t load_mesh(const char* filename)
   return id;
   }
 
+int64_t scm_mesh_to_pointcloud(int64_t id)
+  {
+  int64_t id_out = g_view->mesh_to_pointcloud((uint32_t)id);
+  return id_out;
+  }
+
 int64_t load_morphable_model(const char* filename)
   {
   int64_t id = g_view->load_morphable_model_from_file(filename);
@@ -1104,7 +1110,7 @@ int64_t scm_poisson(int64_t id, int64_t depth)
   return g_view->poisson((uint32_t)id, (uint32_t)depth);
   }
 
-void info(int64_t id)
+void scm_info(int64_t id)
   {
   return g_view->info((uint32_t)id);
   }
@@ -1137,7 +1143,7 @@ void* register_functions(void*)
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
-  register_external_primitive("info", (void*)&info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
+  register_external_primitive("info", (void*)&scm_info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list `lst` of values between 0 and 1 and returns a list of lists with (r g b) values.");
 
   register_external_primitive("load-mesh", (void*)&load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the STL file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an OBJ file and returns the id. Other input mesh formats that are implemented are PLY and OFF.");
@@ -1149,6 +1155,7 @@ void* register_functions(void*)
   register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with `bb` representing the bounding box of the form ((min_x max_x) (min_y max_y) (min_z max_z)), `dim` representing the dimensions of the form (width height depth), `isovalue` a flonum representing the signed distance requested, and `fun` representing the distance functions as a lambda function accepting (x y z) values and returning a distance.");
   register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id. Currently the matcaps in meshscript are hardcoded. There are 4 available matcaps with ids 0, 1, 2, 3.");
 
+  register_external_primitive("mesh->pointcloud", (void*)&scm_mesh_to_pointcloud, skiwi_int64, skiwi_int64, "(mesh->pointcloud id) converts the mesh with tag `id` to a pointcloud.");
   register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "(mesh-texture->vertexcolors id) will return a list of lists of the form ((r g b) (r g b) ... ). Each vertex of the object with tag `id` has a corresponding (r g b) value. This (r g b) value is obtained from the texture of `id`, if available.");
 
 
@@ -1175,7 +1182,7 @@ void* register_functions(void*)
 
   register_external_primitive("poisson", (void*)&scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth) applies Poisson surface reconstruction to the pointcloud with tag `pc_id`. This is the screened Poisson surface reconstruction algorithm by M. Kazhdan and H. Hoppe. You have to provide the parameter `depth` which represents the depth of the octree during Poisson surface reconstruction.");
 
-  register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\") writes the object with tag `id` to file. The filetype is determined by the extension that is given. You can export meshes to STL or PLY, pointclouds still todo, morphable models to SSM."); // don't use write: gives naming conflict with slib
+  register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\") writes the object with tag `id` to file. The filetype is determined by the extension that is given. You can export meshes to STL or PLY, pointclouds to PLY, morphable models to SSM."); // don't use write: gives naming conflict with slib
 
   register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_int64, skiwi_scm, "(shape-predict sp_id (x y w h)) or (shape-predict sp_id ((x y w h) ...)) runs the shape predictor with tag `sp_id` on the region defined by (x y w h) or on the regions defined by ((x y w h) ...) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
   register_external_primitive("shape-predictor-horizontal-flip-set!", (void*)&scm_shape_predictor_horizontal_flip_set, skiwi_void, skiwi_int64, skiwi_bool, "(shape-predictor-horizontal-flip-set! id #t/#f) toggles horizontal flipping of the shape predictor given by tag `id`.");

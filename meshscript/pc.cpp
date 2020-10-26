@@ -2,6 +2,7 @@
 #include "io.h"
 
 #include <jtk/file_utils.h>
+#include <jtk/geometry.h>
 #include <iostream>
 
 #include <algorithm>
@@ -44,12 +45,25 @@ bool vertices_to_csv(const pc& m, const std::string& filename)
 
 bool write_to_file(const pc& p, const std::string& filename)
   {
+  std::string ext = jtk::get_extension(filename);
+  if (ext.empty())
+    return false;
+  if (ext == "ply")
+    {
+    if (p.normals.empty() && p.vertex_colors.empty())
+      return jtk::write_ply(filename.c_str(), p.vertices);
+    else if (p.vertex_colors.empty())
+      return jtk::write_ply(filename.c_str(), p.vertices, p.normals);
+    else
+      return jtk::write_ply(filename.c_str(), p.vertices, p.normals, p.vertex_colors);
+    }
   return false;
   }
 
 void info(const pc& p)
   {
   std::cout << "---------------------------------------" << std::endl;
+  std::cout << "POINTCLOUD" << std::endl;
   std::cout << "Vertices: " << p.vertices.size() << std::endl;
   std::cout << "Coordinate system: " << std::endl;
   for (int i = 0; i < 4; ++i)

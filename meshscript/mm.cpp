@@ -355,6 +355,7 @@ void fit_to_mesh(mm& morph, const mesh& m)
 void info(const mm& morph)
   {
   std::cout << "---------------------------------------" << std::endl;
+  std::cout << "MORPHABLE MODEL" << std::endl;
   std::cout << "Triangles: " << morph.shape.triangles.size() << std::endl;
   std::cout << "Vertices: " << morph.vertices.size() << std::endl;
   std::cout << "Coordinate system: " << std::endl;

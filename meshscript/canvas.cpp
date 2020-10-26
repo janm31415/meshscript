@@ -955,7 +955,7 @@ void canvas::render_pointclouds_on_image(const scene* s, const jtk::image<pixel>
       ob.normals = _settings.shading ? (const float*)pc.p_normals->data() : nullptr;
       ob.colors = _settings.one_bit ? nullptr : (const uint32_t*)pc.p_vertex_colors->data();
       bind(_rd, ob);
-      present(_rd, 0xffffff, [&](uint32_t vertex_id, const __m128i& index, const __m128i& mask)
+      present(_rd, 0xffffffff, [&](uint32_t vertex_id, const __m128i& index, const __m128i& mask)
         {
         if (_mm_extract_epi32(mask, 0) != 0)
           {

@@ -54,10 +54,10 @@ void compute_bb(vec3<float>& min, vec3<float>& max, uint32_t nr_of_vertices, con
     max[1] = std::max<float>(max[1], vertices[i][1]);
     max[2] = std::max<float>(max[2], vertices[i][2]);
     }
-  }  
+  }
 
 bool read_from_file(mesh& m, const std::string& filename)
-  {  
+  {
   std::string ext = jtk::get_extension(filename);
   if (ext.empty())
     return false;
@@ -75,15 +75,7 @@ bool read_from_file(mesh& m, const std::string& filename)
       return false;
     if (!vertex_colors.empty())
       {
-      m.vertex_colors.clear();
-      m.vertex_colors.reserve(vertex_colors.size());
-      for (uint32_t clr : vertex_colors)
-        {
-        uint32_t red = clr & 255;
-        uint32_t green = (clr >> 8) & 255;
-        uint32_t blue = (clr >> 16) & 255;
-        m.vertex_colors.emplace_back((float)red / 255.f, (float)green / 255.f, (float)blue / 255.f);
-        }
+      m.vertex_colors = convert_vertex_colors(vertex_colors);     
       }
     }
   else if (ext == "off")
@@ -97,7 +89,7 @@ bool read_from_file(mesh& m, const std::string& filename)
     if (!read_obj(mtl_filename, m.vertices, m.triangles, m.uv_coordinates, filename.c_str()))
       return false;
     if (!mtl_filename.empty())
-      {      
+      {
       if (!file_exists(mtl_filename))
         {
         mtl_filename = get_folder(filename) + "/" + mtl_filename;
@@ -156,6 +148,36 @@ bool triangles_to_csv(const mesh& m, const std::string& filename)
   return csv_write(data, filename.c_str(), ",");
   }
 
+std::vector<uint32_t> convert_vertex_colors(const std::vector<jtk::vec3<float>>& vertex_colors)
+  {
+  std::vector<uint32_t> colors;
+  colors.reserve(vertex_colors.size());
+  for (auto& clr : vertex_colors)
+    {
+    uint32_t r = (uint32_t)(clr[0] * 255.f);
+    uint32_t g = (uint32_t)(clr[1] * 255.f);
+    uint32_t b = (uint32_t)(clr[2] * 255.f);
+    r = r > 255 ? 255 : r;
+    g = g > 255 ? 255 : g;
+    b = b > 255 ? 255 : b;
+    colors.push_back(0xff000000 | (b << 16) | (g << 8) | r);
+    }
+  return colors;
+  }
+
+std::vector<jtk::vec3<float>> convert_vertex_colors(const std::vector<uint32_t>& vertex_colors)
+  {
+  std::vector<jtk::vec3<float>> out;
+  out.reserve(vertex_colors.size());
+  for (uint32_t clr : vertex_colors)
+    {
+    uint32_t red = clr & 255;
+    uint32_t green = (clr >> 8) & 255;
+    uint32_t blue = (clr >> 16) & 255;
+    out.emplace_back((float)red / 255.f, (float)green / 255.f, (float)blue / 255.f);
+    }
+  return out;
+  }
 
 bool write_to_file(const mesh& m, const std::string& filename)
   {
@@ -173,18 +195,7 @@ bool write_to_file(const mesh& m, const std::string& filename)
       return jtk::write_ply(filename.c_str(), m.vertices, m.triangles);
     else
       {
-      std::vector<uint32_t> colors;
-      colors.reserve(m.vertex_colors.size());
-      for (auto& clr : m.vertex_colors)
-        {
-        uint32_t r = (uint32_t)(clr[0] * 255.f);
-        uint32_t g = (uint32_t)(clr[1] * 255.f);
-        uint32_t b = (uint32_t)(clr[2] * 255.f);
-        r = r > 255 ? 255 : r;
-        g = g > 255 ? 255 : g;
-        b = b > 255 ? 255 : b;
-        colors.push_back(0xff000000 | (b << 16) | (g << 8) | r);
-        }
+      std::vector<uint32_t> colors = convert_vertex_colors(m.vertex_colors);     
       return jtk::write_ply(filename.c_str(), m.vertices, colors, m.triangles);
       }
     }
@@ -194,6 +205,7 @@ bool write_to_file(const mesh& m, const std::string& filename)
 void info(const mesh& m)
   {
   std::cout << "---------------------------------------" << std::endl;
+  std::cout << "MESH" << std::endl;
   std::cout << "Triangles: " << m.triangles.size() << std::endl;
   std::cout << "Vertices: " << m.vertices.size() << std::endl;
   std::cout << "Coordinate system: " << std::endl;

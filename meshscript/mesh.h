@@ -20,6 +20,9 @@ struct mesh
   bool visible;
   };
 
+std::vector<uint32_t> convert_vertex_colors(const std::vector<jtk::vec3<float>>& vertex_colors);
+std::vector<jtk::vec3<float>> convert_vertex_colors(const std::vector<uint32_t>& vertex_colors);
+
 void compute_bb(jtk::vec3<float>& min, jtk::vec3<float>& max, uint32_t nr_of_vertices, const jtk::vec3<float>* vertices);
 bool read_from_file(mesh& m, const std::string& filename);
 
