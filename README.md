@@ -119,7 +119,7 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(cs-rotate! id x y z) rotates the object with tag `id`
     	by `x` degrees over the x-axis, by `y` degrees over
-    	the y-axis, and by `z` degrees over the z_axis.
+    	the y-axis, and by `z` degrees over the z-axis.
     
     NAME
     	cs-set!
@@ -140,12 +140,19 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(cs-premultiply! id cs) premultiplies the coordinate
     	system of the object with tag `id` by the input coordinate
-    	system.
+    	system. The coordinate system `cs` can be given as
+    	a vector of size 16 in column major format or as a
+    	list of lists in row major format.
     
     NAME
     	distance-map
     DESCRIPTION
-    	(distance-map id1 id2 bool-signed)
+    	(distance-map id1 id2 bool-signed) returns a list with
+    	values that represent the distance between objects
+    	with tag `id1` and `id2`. For each vertex of object
+    	`id1` there is exactly one distance in the list. The
+    	distance can be signed or unsigned, depending on the
+    	boolean value that is given to `bool-signed`.
     
     NAME
     	ear-right-detect
@@ -177,7 +184,8 @@ Below follows a dump of all the meshscript methods so far.
     	force-redraw
     DESCRIPTION
     	(force-redraw) redraws the canvas. This is useful if
-    	you want to use view-position.
+    	you want to use view-position in your script, as view-position
+    	uses the data of the last render of the view.
     
     NAME
     	hide!
@@ -188,7 +196,11 @@ Below follows a dump of all the meshscript methods so far.
     	icp
     DESCRIPTION
     	(icp id1 id2 inlier-distance) returns the result of
-    	iterative closest point as coordinate system.
+    	the iterative closest point algorithm between objects
+    	with tag `id1` and `id2`. This result is always a 4x4
+    	transformation matrix. The iterative closest point
+    	algorithm will only use correspondences between `id1`
+    	and `id2` if their distance is smaller than `inlier-distance`.
     
     NAME
     	info
@@ -198,91 +210,188 @@ Below follows a dump of all the meshscript methods so far.
     NAME
     	jet
     DESCRIPTION
-    	(jet lst) takes a list of values between 0 and 1 and
-    	returns a list of lists with (r g b) values.
+    	(jet lst) takes a list `lst` of values between 0 and
+    	1 and returns a list of lists with (r g b) values.
     
     NAME
     	load-mesh
     DESCRIPTION
-    	(load-mesh "stlfile.stl") loads the stl file and returns
+    	(load-mesh "stlfile.stl") loads the STL file and returns
     	an id. Similarly (load-mesh "objfile.obj") loads an
-    	obj file and returns the id.
+    	OBJ file and returns the id. Other input mesh formats
+    	that are implemented are PLY and OFF.
     
     NAME
     	load-morphable-model
     DESCRIPTION
-    	(load-mesh "stlfile.stl") loads the stl file and returns
-    	an id. Similarly (load-mesh "objfile.obj") loads an
-    	obj file and returns the id.
+    	(load-morphable-model "model2019_fullHead.h5") loads
+    	morphable models following the hdf5 file format as
+    	used by the Basel Face Model project (https://faces.dmi.unibas.ch/bfm/bfm2019.html).
+    	The other file format that can be read is meshscripts
+    	own binary morphable model file format with extension
+    	SSM.
     
     NAME
     	load-pointcloud
     DESCRIPTION
-    	(load-pointcloud "pointcloud.ply") loads the ply file
-    	as point cloud and returns an id.
+    	(load-pointcloud "pointcloud.ply") loads the PLY file
+    	as point cloud and returns an id. Other file formats
+    	are not yet supported.
     
     NAME
     	load-shape-predictor
     DESCRIPTION
     	(load-shape-predictor "filename") initializes the shape
     	predictor with the data given by "filename" and returns
-    	the id.
+    	the id. This is the dlib shape predictor (http://dlib.net).
+    	The 68 points facial landmarks predictor data can be
+    	downloaded from https://github.com/davisking/dlib-models
     
     NAME
     	make-mesh
     DESCRIPTION
-    	(make-mesh vertices triangles) plots the mesh with given
-    	vertices and triangles, and returns the id of the plotted
-    	object. Vertices should be a list of lists of the form
-    	((x y z) (x y z) ...) with x,y,z floating point values,
-    	and triangles should be a list of lists of the form
-    	((a b c) (d e f) ...) with a,b... fixnums referring
-    	to the vertex indices.
+    	(make-mesh vertices triangles) creates the mesh with
+    	given `vertices` and `triangles`, and returns the id
+    	of the created object. `vertices` should be a list
+    	of lists of the form ((x y z) (x y z) ...) with x,y,z
+    	floating point values, and `triangles` should be a
+    	list of lists of the form ((a b c) (d e f) ...) with
+    	a,b... fixnums referring to the vertex indices.
     
     NAME
     	marching-cubes
     DESCRIPTION
-    	(marching-cubes bb dim isovalue fun) with bb of the
-    	form ((min_x max_x) (min_y max_y) (min_z max_z)), dim
-    	of the form (width height depth), isovalue a flonum,
-    	fun a lambda function accepting (x y z) values and
-    	returning a distance.
+    	(marching-cubes bb dim isovalue fun) with `bb` representing
+    	the bounding box of the form ((min_x max_x) (min_y
+    	max_y) (min_z max_z)), `dim` representing the dimensions
+    	of the form (width height depth), `isovalue` a flonum
+    	representing the signed distance requested, and `fun`
+    	representing the distance functions as a lambda function
+    	accepting (x y z) values and returning a distance.
     
     NAME
     	matcap-set!
     DESCRIPTION
     	(matcap-set! id matcap-id) changes the matcap of the
     	object with tag `id`. The matcap is given by its id
-    	matcap-id.
+    	matcap-id. Currently the matcaps in meshscript are
+    	hardcoded. There are 4 available matcaps with ids 0,
+    	1, 2, 3.
     
     NAME
     	mesh-texture->vertexcolors
+    DESCRIPTION
+    	(mesh-texture->vertexcolors id) will return a list of
+    	lists of the form ((r g b) (r g b) ... ). Each vertex
+    	of the object with tag `id` has a corresponding (r
+    	g b) value. This (r g b) value is obtained from the
+    	texture of `id`, if available.
+    
     NAME
     	morphable-model-coefficients-size
+    DESCRIPTION
+    	(morphable-model-coefficients-size mm_id) returns the
+    	number of coefficients for the morphable model with
+    	tag `mm_id`.
+    
     NAME
     	morphable-model-shape-size
+    DESCRIPTION
+    	(morphable-model-shape_size mm_id) returns the shape
+    	size for the morphable model with tag `mm_id`. This
+    	is equal to the number of rows in the U matrix, where
+    	a shape S is represented as S = mu + U*c, with mu the
+    	average shape, and c the coefficients vector.
+    
     NAME
     	morphable-model-sigma
+    DESCRIPTION
+    	(morphable-model-sigma mm_id idx) returns sigma for
+    	the morphable model with tag `mm_id` at coefficient
+    	index `idx`.
+    
     NAME
     	morphable-model-coefficients
+    DESCRIPTION
+    	(morphable-model-coefficients mm_id) returns the list
+    	of coefficients for the morphable model with tag `mm_id`.
+    
     NAME
     	morphable-model-basic-shape-coefficients
+    DESCRIPTION
+    	(morphable-model-basic-shape-coefficients mm_id idx)
+    	returns the list of coefficients of the `idx`-th shape
+    	that was used to generate this morphable model. Not
+    	all morphable models have this data. For instance the
+    	Basel shape model does not contain this data.
+    
     NAME
     	morphable-model-coefficients-set!
+    DESCRIPTION
+    	(morphable-model-coefficients-set! mm_id coeff) sets
+    	the list of coefficients for the morphable model with
+    	tag `mm_id`. Here `coeff` is a list of coefficient
+    	values, and its size should equal (morphable-model-coefficients-size
+    	mm_id).
+    
     NAME
     	morphable-model->mesh
+    DESCRIPTION
+    	(morphable-model->mesh mm_id) converts the morphable
+    	model with tag `mm_id` to a mesh and returns the new
+    	id.
+    
     NAME
     	morphable-model-color-coefficients-size
+    DESCRIPTION
+    	(morphable-model-color-coefficients-size mm_id) returns
+    	the number of color coefficients for the morphable
+    	model with tag `mm_id`.
+    
     NAME
     	morphable-model-color-shape-size
+    DESCRIPTION
+    	(morphable-model-color-shape_size mm_id) returns the
+    	shape size for the color part of the morphable model
+    	with tag `mm_id`. This is equal to the number of rows
+    	in the U_color matrix, where a the shape colors S_color
+    	are represented as S_color = mu_color + U_color*c,
+    	with mu_color the average shape colors, and c the color
+    	coefficients vector.
+    
     NAME
     	morphable-model-color-sigma
+    DESCRIPTION
+    	(morphable-model-color-sigma mm_id idx) returns sigma
+    	for the colors of the morphable model with tag `mm_id`
+    	at color coefficient index `idx`.
+    
     NAME
     	morphable-model-color-coefficients
+    DESCRIPTION
+    	(morphable-model-color-coefficients mm_id) returns the
+    	list of color coefficients for the morphable model
+    	with tag `mm_id`.
+    
     NAME
     	morphable-model-color-basic-shape-coefficients
+    DESCRIPTION
+    	(morphable-model-color-basic-shape-coefficients mm_id
+    	idx) returns the list of color coefficients of the
+    	`idx`-th color shape that was used to generate this
+    	morphable model. Not all morphable models have this
+    	data. For instance the Basel shape model does not contain
+    	this data.
+    
     NAME
     	morphable-model-color-coefficients-set!
+    DESCRIPTION
+    	(morphable-model-color-coefficients-set! mm_id coeff)
+    	sets the list of color coefficients for the morphable
+    	model with tag `mm_id`. Here `coeff` is a list of color
+    	coefficient values, and its size should equal (morphable-model-color-coefficients-size
+    	mm_id).
+    
     NAME
     	morphable-model-fit-indices!
     DESCRIPTION
@@ -296,24 +405,37 @@ Below follows a dump of all the meshscript methods so far.
     NAME
     	npoint
     DESCRIPTION
-    	npoint
+    	(npoint from to) computes the npoint-registration of
+    	the set of 3d points in `from` to the set of 3d points
+    	in `to`. The result is a 4x4 transformation matrix.
+    	Here `from` and `to` are lists of lists of the form
+    	((x y z) (x y z) ...) and `from` and `to` should have
+    	the same amount of 3d points.
     
     NAME
     	poisson
     DESCRIPTION
-    	(poisson pc_id depth)
+    	(poisson pc_id depth) applies Poisson surface reconstruction
+    	to the pointcloud with tag `pc_id`. This is the screened
+    	Poisson surface reconstruction algorithm by M. Kazhdan
+    	and H. Hoppe. You have to provide the parameter `depth`
+    	which represents the depth of the octree during Poisson
+    	surface reconstruction.
     
     NAME
     	save
     DESCRIPTION
-    	(save id "file.ext")
+    	(save id "file.ext") writes the object with tag `id`
+    	to file. The filetype is determined by the extension
+    	that is given. You can export meshes to STL or PLY,
+    	pointclouds still todo, morphable models to SSM.
     
     NAME
     	shape-predict
     DESCRIPTION
     	(shape-predict sp_id (x y w h)) or (shape-predict sp_id
     	((x y w h) ...)) runs the shape predictor with tag
-    	sp_id on the region defined by (x y w h) or on the
+    	`sp_id` on the region defined by (x y w h) or on the
     	regions defined by ((x y w h) ...) in the current view
     	and returns the coordinates of the landmarks as a list
     	of lists. The predictor should be initialized with
@@ -324,33 +446,49 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(shape-predictor-horizontal-flip-set! id #t/#f) toggles
     	horizontal flipping of the shape predictor given by
-    	tag id.
-    
-    NAME
-    	shape-predictor-link-to-face-detector
-    DESCRIPTION
-    	(shape-predictor-link-to-face-detector id) links the
-    	shape predictor given by tag id to the face detector
-    
-    NAME
-    	shape-predictor-link-to-ear-right-detector
-    DESCRIPTION
-    	(shape-predictor-link-to-ear-right-detector id) links
-    	the shape predictor given by tag id to the ear right
-    	detector
+    	tag `id`.
     
     NAME
     	shape-predictor-link-to-ear-left-detector
     DESCRIPTION
     	(shape-predictor-link-to-ear-left-detector id) links
-    	the shape predictor given by tag id to the ear left
-    	detector
+    	the shape predictor given by tag `id` to the ear left
+    	detector. The result of this operation is that the
+    	shape predictor is rendered automatically when the
+    	left ear detector's automatic rendering is on. You
+    	can turn on/off automatic rendering of the left ear
+    	detector with the command (view-ear-left-detector-set!
+    	#t/#f).
+    
+    NAME
+    	shape-predictor-link-to-ear-right-detector
+    DESCRIPTION
+    	(shape-predictor-link-to-ear-right-detector id) links
+    	the shape predictor given by tag `id` to the ear right
+    	detector. The result of this operation is that the
+    	shape predictor is rendered automatically when the
+    	right ear detector's automatic rendering is on. You
+    	can turn on/off automatic rendering of the right ear
+    	detector with the command (view-ear-right-detector-set!
+    	#t/#f).
+    
+    NAME
+    	shape-predictor-link-to-face-detector
+    DESCRIPTION
+    	(shape-predictor-link-to-face-detector id) links the
+    	shape predictor given by tag `id` to the face detector.
+    	The result of this operation is that the shape predictor
+    	is rendered automatically when the face detector's
+    	automatic rendering is on. You can turn on/off automatic
+    	rendering of the face detector with the command (view-face-detector-set!
+    	#t/#f).
     
     NAME
     	shape-predictor-unlink
     DESCRIPTION
     	(shape-predictor-unlink id) unlinks the shape predictor
-    	given by tag id.
+    	given by tag `id`, see shape-predictor-link-to-face-detector,
+    	shape-predictor-link-to-ear-right-detector, or shape-predictor-link-to-ear-left-detector.
     
     NAME
     	show!
@@ -360,7 +498,12 @@ Below follows a dump of all the meshscript methods so far.
     NAME
     	triangles
     DESCRIPTION
-    	(triangles id)
+    	(triangles id) returns the triangles of object with
+    	tag `id` as a list of lists of the form ((v0 v1 v2)
+    	(v3 v4 v4) ...) where each sublist (v0 v1 v2) contain
+    	the indices of the vertices that form a triangle. The
+    	actual vertex positions can be obtained with the command
+    	(vertices id).
     
     NAME
     	triangles->csv
@@ -378,7 +521,10 @@ Below follows a dump of all the meshscript methods so far.
     NAME
     	vertices
     DESCRIPTION
-    	(vertices id)
+    	(vertices id) returns the vertices of object with tag
+    	`id` as a list of lists of the form ((x y z) (x y z)
+    	...) where each sublist (x y z) is a 3d point representing
+    	the position of that vertex.
     
     NAME
     	vertices->csv
@@ -402,7 +548,9 @@ Below follows a dump of all the meshscript methods so far.
     	view-cs-set!
     DESCRIPTION
     	(view-cs-set! cs) sets the coordinate system of the
-    	view camera.
+    	view camera. The coordinate system `cs` can be given
+    	as a vector of size 16 in column major format or as
+    	a list of lists in row major format.
     
     NAME
     	view-edges-set!
@@ -446,20 +594,21 @@ Below follows a dump of all the meshscript methods so far.
     NAME
     	view-position
     DESCRIPTION
-    	(view-position x y) returns the 3D position of coordinate
-    	(x,y).
+    	(view-position x y) returns the 3d position of the vertex
+    	in the last render of the 3d view at coordinate (x,y)
+    	.
     
     NAME
     	view-index
     DESCRIPTION
-    	(view-index x y) returns the vertex index of coordinate
-    	(x,y).
+    	(view-index x y) returns the vertex index of the vertex
+    	in the last render of the 3d view at coordinate (x,y).
     
     NAME
     	view-id
     DESCRIPTION
-    	(view-id x y) returns the id of the object at coordinate
-    	(x,y).
+    	(view-id x y) returns the id of the object in the last
+    	render of the 3d view at coordinate (x,y).
     
     NAME
     	view-shading-set!
@@ -502,6 +651,6 @@ Below follows a dump of all the meshscript methods so far.
     NAME
     	exit
     DESCRIPTION
-    	(exit) can be used in the input script to end meshscript.
+    	(exit) can be used in the input script to end meshscript,
+    	so the REPL is skipped.
     
- 
