@@ -188,7 +188,6 @@ int64_t view::mesh_to_pointcloud(uint32_t id)
     db_pc->normals = vertex_normals;
     db_pc->cs = m->cs;
     db_pc->visible = true;
-    _matcap.map_db_id_to_matcap[id_out] = (id_out % _matcap.matcaps.size());
     if (db_pc->visible)
       add_object(id_out, _scene, _db);
     prepare_scene(_scene);
