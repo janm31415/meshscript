@@ -2,15 +2,16 @@
 #include "io.h"
 
 #include <jtk/file_utils.h>
+#include <jtk/fitting.h>
 #include <jtk/geometry.h>
 #include <jtk/mat.h>
 #include <iostream>
 
 #include <algorithm>
 
-#include <icp/point_tree.h>
+#include <jtk/point_tree.h>
 
-#include "hashed_heap.h"
+#include <jtk/containers.h>
 
 using namespace jtk;
 
@@ -119,46 +120,7 @@ namespace
     typedef float value_type;
     enum { dimension = 3 };
     typedef tree_point point_type;
-    };
-  
-  template <class iterator>
-  typename iterator::value_type centroid(iterator first, iterator last)
-    {
-    auto denom = std::distance(first, last);
-    typename iterator::value_type pt((*first)[0], (*first)[1], (*first)[2]);
-    ++first;
-    for (; first != last; ++first)
-      {
-      pt[0] += ((*first)[0]);
-      pt[1] += ((*first)[1]);
-      pt[2] += ((*first)[2]);
-      }
-    pt[0] /= denom;
-    pt[1] /= denom;
-    pt[2] /= denom;
-    return pt;
-    }
-
-  template <class T>
-  void fit_plane(jtk::vec3<T>& origin, jtk::vec3<T>& normal, T& smallest_eigenvalue, const std::vector<jtk::vec3<T>>& pts)
-    {
-    origin = centroid(pts.begin(), pts.end());
-    jtk::matrix<T, std::array<T, 9>> eigenvectors = jtk::zeros(3, 3);
-    for (size_t k = 0; k < pts.size(); ++k)
-      for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-          eigenvectors[i][j] += (pts[k][i] - origin[i])*(pts[k][j] - origin[j]);
-    jtk::matrix<T, std::array<T, 9>> v(3, 3);
-    jtk::matrix<T, std::array<T, 9>> eigenvalues(3, 1);
-    svd(eigenvectors, eigenvalues, v);
-    int smallest_eig = 0;
-    if (std::abs(eigenvalues(1)) < std::abs(eigenvalues(smallest_eig)))
-      smallest_eig = 1;
-    if (std::abs(eigenvalues(2)) < std::abs(eigenvalues(smallest_eig)))
-      smallest_eig = 2;
-    smallest_eigenvalue = eigenvalues(smallest_eig);
-    normal = jtk::vec3<T>(eigenvectors[0][smallest_eig], eigenvectors[1][smallest_eig], eigenvectors[2][smallest_eig]);       
-    }
+    };   
 
   uint64_t make_edge(uint32_t v0, uint32_t v1)
     {
@@ -208,13 +170,13 @@ std::vector<jtk::vec3<float>> estimate_normals(const pc& p, uint32_t k)
     raw_pts.reserve(pts.size());
     for (auto p : pts)
       raw_pts.push_back(p.pt);
-    fit_plane(origin, normal, eig, raw_pts);
+    jtk::fit_plane(origin, normal, eig, raw_pts);
     normals.push_back(normal);
     }
 
   std::vector<bool> treated(p.vertices.size(), false);
 
-  hashed_heap<uint64_t, float> heap;
+  jtk::hashed_heap<uint64_t, float> heap;
 
   uint32_t v = 0;
   while (true)

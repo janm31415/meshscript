@@ -42,7 +42,6 @@ set(ICP
 ../icp/icp_point_to_plane.cpp
 ../icp/icp_point_to_point.h
 ../icp/icp_point_to_point.cpp
-../icp/point_tree.h
 )
 
 set(HDRS
@@ -52,7 +51,6 @@ db.h
 distance_map.h
 ear_detector.h
 face_detector.h
-hashed_heap.h
 hdf5aux.h
 io.h
 jet.h

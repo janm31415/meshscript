@@ -4,7 +4,7 @@
 #include <jtk/vec.h>
 #include <vector>
 
-#include "point_tree.h"
+#include <jtk/point_tree.h>
 
 
 namespace jtk
