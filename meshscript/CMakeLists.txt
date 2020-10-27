@@ -52,6 +52,7 @@ db.h
 distance_map.h
 ear_detector.h
 face_detector.h
+hashed_heap.h
 hdf5aux.h
 io.h
 jet.h

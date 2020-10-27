@@ -275,6 +275,11 @@ uint64_t scm_get_view_coordinate_system()
   return make_list(lst);
   }
 
+void scm_pointcloud_normals_estimate(int64_t id, int64_t neighbours)
+  {
+  g_view->pointcloud_estimate_normals((uint32_t)id, (uint32_t)neighbours);
+  }
+
 namespace
   {
 
@@ -353,6 +358,34 @@ int64_t scm_marching_cubes(uint64_t bb64, uint64_t dim64, uint64_t iso64, uint64
     std::cout << "error: marching-cubes: invalid input type\n";
     }
   skiwi::restore_compiler_data();
+  return -1;
+  }
+
+int64_t make_pointcloud(uint64_t scm_vertices_64)
+  {
+  skiwi::scm_type scm_vertices(scm_vertices_64);
+  try
+    {
+    std::vector<vec3<float>> vertices;
+
+    {
+    auto vert = scm_vertices.get_list();
+    vertices.reserve(vert.size());
+    for (auto& v : vert)
+      {
+      auto vertex = v.get_list();
+      if (vertex.size() != 3)
+        throw std::runtime_error("error: make-mesh: invalid vertex size (should have 3 float values)");
+      vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number(), (float)vertex[2].get_number());
+      }
+    }
+    int64_t id = g_view->load_pointcloud(vertices);
+    return id;
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << e.what() << "\n";
+    }
   return -1;
   }
 
@@ -1152,6 +1185,7 @@ void* register_functions(void*)
   register_external_primitive("load-shape-predictor", (void*)&scm_load_shape_predictor, skiwi_int64, skiwi_char_pointer, "(load-shape-predictor \"filename\") initializes the shape predictor with the data given by \"filename\" and returns the id. This is the dlib shape predictor (http://dlib.net). The 68 points facial landmarks predictor data can be downloaded from https://github.com/davisking/dlib-models");
 
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) creates the mesh with given `vertices` and `triangles`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and `triangles` should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
+  register_external_primitive("make-pointcloud", (void*)&make_pointcloud, skiwi_int64, skiwi_scm, "(make-pointcloud vertices) creates the pointcloud with given `vertices`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values.");
   register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with `bb` representing the bounding box of the form ((min_x max_x) (min_y max_y) (min_z max_z)), `dim` representing the dimensions of the form (width height depth), `isovalue` a flonum representing the signed distance requested, and `fun` representing the distance functions as a lambda function accepting (x y z) values and returning a distance.");
   register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id. Currently the matcaps in meshscript are hardcoded. There are 4 available matcaps with ids 0, 1, 2, 3.");
 
@@ -1179,6 +1213,8 @@ void* register_functions(void*)
 
 
   register_external_primitive("npoint", (void*)&npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "(npoint from to) computes the npoint-registration of the set of 3d points in `from` to the set of 3d points in `to`. The result is a 4x4 transformation matrix. Here `from` and `to` are lists of lists of the form ((x y z) (x y z) ...) and `from` and `to` should have the same amount of 3d points.");
+
+  register_external_primitive("pointcloud-normals-estimate!", (void*)&scm_pointcloud_normals_estimate, skiwi_void, skiwi::skiwi_int64, skiwi::skiwi_int64, "(pointcloud-normals-estimate! id k) creates vertex normals for the pointcloud with tag `id` by taking the `k` nearest neighbours of each vertex, fit a least squares plane through these points, and use the normal of this plane as estimate.");
 
   register_external_primitive("poisson", (void*)&scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth) applies Poisson surface reconstruction to the pointcloud with tag `pc_id`. This is the screened Poisson surface reconstruction algorithm by M. Kazhdan and H. Hoppe. You have to provide the parameter `depth` which represents the depth of the octree during Poisson surface reconstruction.");
 
@@ -1209,7 +1245,7 @@ void* register_functions(void*)
 
   register_external_primitive("view-hide!", (void*)&scm_hide_view, skiwi_void, "(view-hide!) hides the 3d view.");
   register_external_primitive("view-onebit-set!", (void*)&scm_set_one_bit, skiwi_void, skiwi_bool, "(view-onebit-set! #t/#f) turns on/off one-bit rendering.");
-  register_external_primitive("view-position", (void*)&scm_get_position, skiwi_scm, skiwi_scm, skiwi_scm, "(view-position x y) returns the 3d position of the vertex in the last render of the 3d view at coordinate (x,y) .");
+  register_external_primitive("view-position", (void*)&scm_get_position, skiwi_scm, skiwi_scm, skiwi_scm, "(view-position x y) returns the 3d position of the vertex in the last render of the 3d view at coordinate (x,y).");
   register_external_primitive("view-index", (void*)&scm_get_index, skiwi_scm, skiwi_scm, skiwi_scm, "(view-index x y) returns the vertex index of the vertex in the last render of the 3d view at coordinate (x,y).");
   register_external_primitive("view-id", (void*)&scm_get_id, skiwi_scm, skiwi_scm, skiwi_scm, "(view-id x y) returns the id of the object in the last render of the 3d view at coordinate (x,y).");
 

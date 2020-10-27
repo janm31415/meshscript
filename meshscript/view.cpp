@@ -296,6 +296,22 @@ int64_t view::load_mesh(const std::vector<vec3<float>>& vertices, const std::vec
   return (int64_t)id;
   }
 
+int64_t view::load_pointcloud(const std::vector<vec3<float>>& vertices)
+  {
+  std::scoped_lock lock(_mut);
+  pc* db_pc;
+  uint32_t id;
+  _db.create_pc(db_pc, id);
+  db_pc->vertices = vertices;
+  db_pc->cs = get_identity();
+  db_pc->visible = true;
+  add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return (int64_t)id;
+  }
+
 void view::set_coordinate_system(uint32_t id, const float4x4& cs)
   {
   std::scoped_lock lock(_mut);
@@ -819,6 +835,20 @@ int64_t view::marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width
   ::unzoom(_scene);
   _refresh = true;
   return (int64_t)id;
+  }
+
+void view::pointcloud_estimate_normals(uint32_t id, uint32_t k)
+  {
+  std::scoped_lock lock(_mut);
+  pc* p = _db.get_pc(id);
+  if (p)
+    {
+    p->normals = estimate_normals(*p, k);
+    remove_object(id, _scene);
+    if (p->visible)
+      add_object(id, _scene, _db);
+    _refresh = true;
+    }
   }
 
 bool view::write(uint32_t id, const char* filename)

@@ -3,9 +3,14 @@
 
 #include <jtk/file_utils.h>
 #include <jtk/geometry.h>
+#include <jtk/mat.h>
 #include <iostream>
 
 #include <algorithm>
+
+#include <icp/point_tree.h>
+
+#include "hashed_heap.h"
 
 using namespace jtk;
 
@@ -91,4 +96,174 @@ void cs_apply(pc& p)
     v[2] = V[2];
     }
   p.cs = jtk::get_identity();
+  }
+
+namespace
+  {
+  struct tree_point
+    {
+    jtk::vec3<float> pt;
+    uint32_t idx;
+    float operator [](int i) const
+      {
+      return pt[i];
+      }
+    float& operator [](int i)
+      {
+      return pt[i];
+      }
+    };
+
+  struct point_tree_traits
+    {
+    typedef float value_type;
+    enum { dimension = 3 };
+    typedef tree_point point_type;
+    };
+  
+  template <class iterator>
+  typename iterator::value_type centroid(iterator first, iterator last)
+    {
+    auto denom = std::distance(first, last);
+    typename iterator::value_type pt((*first)[0], (*first)[1], (*first)[2]);
+    ++first;
+    for (; first != last; ++first)
+      {
+      pt[0] += ((*first)[0]);
+      pt[1] += ((*first)[1]);
+      pt[2] += ((*first)[2]);
+      }
+    pt[0] /= denom;
+    pt[1] /= denom;
+    pt[2] /= denom;
+    return pt;
+    }
+
+  template <class T>
+  void fit_plane(jtk::vec3<T>& origin, jtk::vec3<T>& normal, T& smallest_eigenvalue, const std::vector<jtk::vec3<T>>& pts)
+    {
+    origin = centroid(pts.begin(), pts.end());
+    jtk::matrix<T, std::array<T, 9>> eigenvectors = jtk::zeros(3, 3);
+    for (size_t k = 0; k < pts.size(); ++k)
+      for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+          eigenvectors[i][j] += (pts[k][i] - origin[i])*(pts[k][j] - origin[j]);
+    jtk::matrix<T, std::array<T, 9>> v(3, 3);
+    jtk::matrix<T, std::array<T, 9>> eigenvalues(3, 1);
+    svd(eigenvectors, eigenvalues, v);
+    int smallest_eig = 0;
+    if (std::abs(eigenvalues(1)) < std::abs(eigenvalues(smallest_eig)))
+      smallest_eig = 1;
+    if (std::abs(eigenvalues(2)) < std::abs(eigenvalues(smallest_eig)))
+      smallest_eig = 2;
+    smallest_eigenvalue = eigenvalues(smallest_eig);
+    normal = jtk::vec3<T>(eigenvectors[0][smallest_eig], eigenvectors[1][smallest_eig], eigenvectors[2][smallest_eig]);       
+    }
+
+  uint64_t make_edge(uint32_t v0, uint32_t v1)
+    {
+    uint64_t e = v0;
+    e <<= 32;
+    e |= (uint64_t)v1;
+    return e;
+    }
+
+  uint32_t edge_to_v0(uint64_t e)
+    {
+    e >>= 32;
+    return (uint32_t)(e & 0xffffffff);
+    }
+
+  uint32_t edge_to_v1(uint64_t e)
+    {
+    return (uint32_t)(e & 0xffffffff);
+    }
+  }
+
+std::vector<jtk::vec3<float>> estimate_normals(const pc& p, uint32_t k)
+  {
+  std::vector<jtk::vec3<float>> normals;
+  normals.reserve(p.vertices.size());
+
+  point_tree<point_tree_traits> tree;
+  std::vector<tree_point> vert;
+  vert.reserve(p.vertices.size());
+  for (uint32_t v = 0; v < p.vertices.size(); ++v)
+    {
+    tree_point pt;
+    pt.pt = p.vertices[v];
+    pt.idx = v;
+    vert.push_back(pt);
+    }
+  tree.efficient_build_tree(vert.begin(), vert.end());
+
+  for (uint32_t v = 0; v < p.vertices.size(); ++v)
+    {
+    tree_point tp;
+    tp.pt = p.vertices[v];;
+    std::vector < tree_point > pts = tree.find_k_nearest((int)k, tp);
+    jtk::vec3<float> origin, normal;
+    float eig;
+    std::vector<jtk::vec3<float>> raw_pts;
+    raw_pts.reserve(pts.size());
+    for (auto p : pts)
+      raw_pts.push_back(p.pt);
+    fit_plane(origin, normal, eig, raw_pts);
+    normals.push_back(normal);
+    }
+
+  std::vector<bool> treated(p.vertices.size(), false);
+
+  hashed_heap<uint64_t, float> heap;
+
+  uint32_t v = 0;
+  while (true)
+    {
+    while (v < p.vertices.size() && treated[v])
+      ++v;
+    if (v == p.vertices.size())
+      break;
+
+    treated[v] = true;
+
+    tree_point tp;
+    tp.pt = p.vertices[v];
+    std::vector < tree_point > pts = tree.find_k_nearest((int)k, tp);
+    for (const auto& pt : pts)
+      {
+      if (pt.idx != v && !treated[pt.idx])
+        {
+        float score = fabs(dot(normals[v], normals[pt.idx]));        
+        heap.push(std::pair<uint64_t, float>(make_edge(v, pt.idx), score));
+        }
+      }
+
+    while (!heap.empty())
+      {
+      auto top_element = heap.top();
+      heap.pop();
+      uint32_t v0 = edge_to_v0(top_element.first);
+      uint32_t v1 = edge_to_v1(top_element.first);
+      if (!treated[v1])
+        {
+        treated[v1] = true;
+        if (dot(normals[v0], normals[v1]) < 0.f)
+          normals[v1] = -normals[v1];
+
+        tp.pt = p.vertices[v1];
+        std::vector < tree_point > pts = tree.find_k_nearest((int)k, tp);
+        for (const auto& pt : pts)
+          {
+          if (pt.idx != v1 && !treated[pt.idx])
+            {
+            float score = fabs(dot(normals[v1], normals[pt.idx]));
+            heap.push(std::pair<uint64_t, float>(make_edge(v1, pt.idx), score));
+            }
+          }
+
+        }
+      }
+    }
+
+  return normals;
   }

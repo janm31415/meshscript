@@ -26,3 +26,5 @@ bool write_to_file(const pc& p, const std::string& filename);
 void info(const pc& p);
 
 void cs_apply(pc& p);
+
+std::vector<jtk::vec3<float>> estimate_normals(const pc& p, uint32_t k);

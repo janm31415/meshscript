@@ -34,7 +34,11 @@ class view
 
     int64_t load_mesh(const std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles);
 
+    int64_t load_pointcloud(const std::vector<jtk::vec3<float>>& vertices);
+
     int64_t mesh_to_pointcloud(uint32_t id);
+
+    void pointcloud_estimate_normals(uint32_t id, uint32_t k);
 
     void set_coordinate_system(uint32_t id, const jtk::float4x4& cs);
 
