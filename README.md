@@ -259,6 +259,15 @@ Below follows a dump of all the meshscript methods so far.
     	a,b... fixnums referring to the vertex indices.
     
     NAME
+    	make-pointcloud
+    DESCRIPTION
+    	(make-pointcloud vertices) creates the pointcloud with
+    	given `vertices`, and returns the id of the created
+    	object. `vertices` should be a list of lists of the
+    	form ((x y z) (x y z) ...) with x,y,z floating point
+    	values.
+    
+    NAME
     	marching-cubes
     DESCRIPTION
     	(marching-cubes bb dim isovalue fun) with `bb` representing
@@ -277,6 +286,12 @@ Below follows a dump of all the meshscript methods so far.
     	matcap-id. Currently the matcaps in meshscript are
     	hardcoded. There are 4 available matcaps with ids 0,
     	1, 2, 3.
+    
+    NAME
+    	mesh->pointcloud
+    DESCRIPTION
+    	(mesh->pointcloud id) converts the mesh with tag `id`
+    	to a pointcloud.
     
     NAME
     	mesh-texture->vertexcolors
@@ -413,6 +428,15 @@ Below follows a dump of all the meshscript methods so far.
     	the same amount of 3d points.
     
     NAME
+    	pointcloud-normals-estimate!
+    DESCRIPTION
+    	(pointcloud-normals-estimate! id k) creates vertex normals
+    	for the pointcloud with tag `id` by taking the `k`
+    	nearest neighbours of each vertex, fit a least squares
+    	plane through these points, and use the normal of this
+    	plane as estimate.
+    
+    NAME
     	poisson
     DESCRIPTION
     	(poisson pc_id depth) applies Poisson surface reconstruction
@@ -428,7 +452,7 @@ Below follows a dump of all the meshscript methods so far.
     	(save id "file.ext") writes the object with tag `id`
     	to file. The filetype is determined by the extension
     	that is given. You can export meshes to STL or PLY,
-    	pointclouds still todo, morphable models to SSM.
+    	pointclouds to PLY, morphable models to SSM.
     
     NAME
     	shape-predict
@@ -595,8 +619,7 @@ Below follows a dump of all the meshscript methods so far.
     	view-position
     DESCRIPTION
     	(view-position x y) returns the 3d position of the vertex
-    	in the last render of the 3d view at coordinate (x,y)
-    	.
+    	in the last render of the 3d view at coordinate (x,y).
     
     NAME
     	view-index
@@ -653,6 +676,7 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(exit) can be used in the input script to end meshscript,
     	so the REPL is skipped.
+    
     
 Credits
 --------
