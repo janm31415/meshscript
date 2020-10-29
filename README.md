@@ -654,3 +654,13 @@ Below follows a dump of all the meshscript methods so far.
     	(exit) can be used in the input script to end meshscript,
     	so the REPL is skipped.
     
+Credits
+--------
+- Image file formats: https://github.com/nothings/stb
+- Iterative closest point: http://www.cvlibs.net/software/libicp/
+- Marching cubes: http://paulbourke.net/geometry/polygonise/
+- Morphable models: https://faces.dmi.unibas.ch/bfm/bfm2019.html
+- Ply file import/export: http://w3.impa.br/~diego/software/rply/
+- Poisson surface reconstruction: https://github.com/mkazhdan/PoissonRecon
+- Shape detection and prediction: http://dlib.net/
+- Software rendering (qbvh): https://www.embree.org/
