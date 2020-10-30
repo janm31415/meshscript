@@ -373,7 +373,7 @@ The following script will load `vertices.csv` as vertex data, `triangles.csv` as
 
 ### Compare scans
 
-![](images/compare_scans.png)
+![](images/scan_compare.png)
 
 Glossary
 --------
