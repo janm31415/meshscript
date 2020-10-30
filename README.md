@@ -13,6 +13,7 @@ Content
      - [Make funny faces](#make-funny-faces)
      - [Map vertex values to colors](#map-vertex-values-to-colors)
      - [Compare facial scans](#compare-facial-scans)
+     - [Convert obj to ply](#convert-obj-to-ply)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -464,6 +465,23 @@ Furthermore this example uses two scans of myself taken at a different time. Rep
     
     (vertexcolors-set! id1 colors) ; set the vertex colors on the first scan
     
+### Convert Obj to Ply
+
+![](images/obj2ply.png)
+
+For this example I've downloaded an obj file with texture from https://free3d.com/nl/3d-model/skull-v3--785914.html.
+
+    (define id (load-mesh "D:/stl/obj/skull/12140_Skull_v3_L2.obj")) ; load an obj with texture
+    
+    (view-show!) ; show the 3d view
+    
+    (view-edges-set! #f) ; don't render the edges
+    
+    (define vertexclrs (mesh-texture->vertexcolors id)) ; get the colors per vertex from the texture
+    
+    (vertexcolors-set! id vertexclrs) ; set vertexcolors for this mesh
+    
+    (save id "D:/stl/obj/skull/skull.ply") ; save as ply with vertex colors
     
 Glossary
 --------
