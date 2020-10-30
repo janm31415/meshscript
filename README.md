@@ -14,6 +14,7 @@ Content
      - [Map vertex values to colors](#map-vertex-values-to-colors)
      - [Compare facial scans](#compare-facial-scans)
      - [Convert obj to ply](#convert-obj-to-ply)
+     - [Pointcloud to mesh with Poisson surface reconstruction](#pointcloud-to-mesh-with-poisson-surface-reconstruction)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -483,6 +484,10 @@ For this example I've downloaded an obj file with texture from https://free3d.co
     
     (save id "D:/stl/obj/skull/skull.ply") ; save as ply with vertex colors
     
+### Pointcloud to mesh with Poisson surface reconstruction
+
+![](images/poisson.png)
+
 Glossary
 --------
 
