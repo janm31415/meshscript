@@ -96,6 +96,38 @@ in the REPL. If you want to keep the view, but hide your 3D model, you can call
     
 In this case we've been writing our code directly in the REPL. You can also write your script in a separate file, and then call meshscript with this script file as argument. Meshscript will start, compile the script, run the script, and then start the REPL. All functions or defines from the script will be available in the REPL.    
 
+Examples
+--------
+
+### One bit render of 3D mesh to png
+![](images/porsche.png)
+For this example I've used a free model of a Porsche 911 available via the link https://www.thingiverse.com/thing:2946486
+
+    ; porsche 911 race car: https://www.thingiverse.com/thing:2946486
+    
+    ; load the mesh
+    (define id (load-mesh "D:/stl/porsche/complete.stl"))
+    
+    ; set view properties
+    (view-onebit-set! #t)
+    (view-size-set! 1920 1024)
+    (view-bg-set! 0 0 0)
+    (view-shadow-set! #t)
+    
+    ; set coordinate system for the view
+    (define cs '((0.593359 -0.220264 0.774216 11.876) (0.803842 0.212337 -0.555654 -2.86377) (-0.0420054 0.952049 0.303049 5.89276) (0 0 0 1)))
+    (view-cs-set! cs)
+    
+    ; show the view window
+    (view-show!)
+    
+    ; save the view as png image
+    (view-export "D:/stl/porsche/porsche.png")
+
+
+
+
+
 Glossary
 --------
 
