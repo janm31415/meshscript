@@ -8,6 +8,7 @@ Content
 * [Basics](#basics)
 * [Examples](#examples)
      - [One bit render of 3D mesh to png](#one-bit-render-of-3d-mesh-to-png)
+     - [Gyroid with marching cubes](#gyroid-with-marching-cubes)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -135,9 +136,25 @@ For this example I've used a free model of a Porsche 911 available via the link 
     (view-export "D:/stl/porsche/porsche.png")
 
 
+### Gyroid with marching cubes
+![](images/gyroid.png)
 
+    (define gyroid_a 1)
 
+    (define gyroid 
+                (lambda (x y z)
+                        (/ (abs
+                                (+ (* (sin x) (cos y)) (* (sin y) (cos z)) (* (sin z) (cos x))) )
+                           gyroid_a )))
+           
+    (define bb '((-3.15 3.15) (-3.15 3.15) (-3.15 3.15)))          
+    (define dim `(100 100 100))          
+    
+    (define id (marching-cubes bb dim 1.0 gyroid))
 
+    (view-edges-set! #f)
+    (view-show!)
+    
 Glossary
 --------
 
