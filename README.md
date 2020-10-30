@@ -488,6 +488,74 @@ For this example I've downloaded an obj file with texture from https://free3d.co
 
 ![](images/poisson.png)
 
+    
+    (define xsteps 100)
+    (define ysteps 100)
+    (define pi 3.1415926535)
+    
+    (define rad 15)
+    
+    (define (cylinder1 x y) ; parametric representation of the first cylinder
+      (list (* rad (sin x)) (* rad (cos x)) (- y (/ ysteps 2)))
+    )
+    
+    (define (cylinder2 x y) ; parametric representation of the second cylinder
+      (list (* rad (sin x)) (- y (/ ysteps 2)) (* rad (cos x)))
+    )
+    
+    (define (inside-cylinder1 pos) ; returns #t if pos is inside the first cylinder
+      (let ((x (list-ref pos 0)) (y (list-ref pos 1)) (z (list-ref pos 2)))
+        (let ((r (+ (* x x) (* y y))))
+          (if (< r (* rad rad))
+              #t
+              #f
+          )
+        )
+      )
+    )
+    
+    (define (inside-cylinder2 pos) ; returns #t if pos is inside the second cylinder
+      (let ((x (list-ref pos 0)) (y (list-ref pos 1)) (z (list-ref pos 2)))
+        (let ((r (+ (* x x) (* z z))))
+          (if (< r (* rad rad))
+              #t
+              #f
+          )
+        )
+      )
+    )
+    
+    (define vertices '())
+    
+    (let loop1 ((x 0)) ; loop over the first parameter
+      (if (eq? x xsteps)
+          vertices
+          (begin
+            (let loop2 ((y 0)) ; loop over the second parameter
+              (if (eq? y ysteps)
+                  vertices
+                  (begin
+                    (let* ((a (/ (* x 2.0 pi) xsteps)) (pos1 (cylinder1 a y)) (pos2 (cylinder2 a y)))
+                      (if (not (inside-cylinder2 pos1))  
+                        (set! vertices (append vertices (list pos1)))
+                      )
+                      (if (not (inside-cylinder1 pos2))  
+                        (set! vertices (append vertices (list pos2)))
+                      )
+                    )
+                    (loop2 (+ y 1))      
+                  )))      
+            (loop1 (+ x 1))
+          )))
+    
+    (define id (make-pointcloud vertices)) ; make a pointcloud from the vertices
+    
+    (pointcloud-normals-estimate! id 10) ; estimate normals for the pointcloud
+    
+    (define id2 (poisson id 5)) ; poisson surface reconstruction
+    
+    (view-show!) ; show the 3d view
+    
 Glossary
 --------
 
