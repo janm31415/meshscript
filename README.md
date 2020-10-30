@@ -328,12 +328,12 @@ The following script will load `vertices.csv` as vertex data, `triangles.csv` as
 
     (import 'csv) ; functionality for reading csv files
     
-    (define vertices (csv->numbers (read-csv "D:/test/colorplot/vertices.csv"))) ; load vertices
-    (define triangles (csv->numbers (read-csv "D:/test/colorplot/triangles.csv"))) ; load triangles
+    (define vertices (csv->numbers (read-csv "D:/colorplot/vertices.csv"))) ; load vertices
+    (define triangles (csv->numbers (read-csv "D:/colorplot/triangles.csv"))) ; load triangles
     
     (define id (make-mesh vertices triangles)) ; make a mesh
     
-    (define values (csv->numbers (read-csv "D:/test/colorplot/values.csv"))) ; load values
+    (define values (csv->numbers (read-csv "D:/colorplot/values.csv"))) ; load values
     
     (set! values (map car values)) ; unmap the list of lists to a simple list of values
     
