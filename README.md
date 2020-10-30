@@ -10,6 +10,7 @@ Content
      - [One bit render of 3D mesh to png](#one-bit-render-of-3d-mesh-to-png)
      - [Gyroid with marching cubes](#gyroid-with-marching-cubes)
      - [68 landmarks for Basel face model](#68-landmarks-for-basel-face-model)
+     - [Make funny faces](#make-funny-faces)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -214,7 +215,71 @@ If you're interested in the vertex indices computed automatically, this is the o
     Type ,? for help.
     ms>
 
+### Make funny faces
 
+![](images/funny_face.png)
+
+For this script you need to get the Basel face model (2019) from https://faces.dmi.unibas.ch/bfm/bfm2019.html.
+
+    (import 'srfi-27) ; random number generation
+    
+    (define sigma-factor 5) ; set to 1 for normal faces, 5 for funny faces
+    
+    ; load the basel face model
+    (define id (load-morphable-model "D:/_Development/basel_face_model/model2019_fullHead.h5"))
+    
+    ; get the coefficient vector and color coefficient vector
+    (define coeff (list->vector (morphable-model-coefficients id)))
+    (define color-coeff (list->vector (morphable-model-color-coefficients id)))
+    
+    ; set a random value at index i in the coefficient vector
+    (define (set-random-coeff i)
+      (let ((r (- (* 2 (random-real)) 1)))    
+        (let ((c (* (morphable-model-sigma id i) sigma-factor r)))
+          (vector-set! coeff i c)
+        )
+      )
+    )
+    
+    ; set a random value at index i in the color coefficient vector
+    (define (set-random-color-coeff i)
+      (let ((r (- (* 2 (random-real)) 1)))    
+        (let ((c (* (morphable-model-color-sigma id i) sigma-factor r)))
+          (vector-set! color-coeff i c)
+        )
+      )
+    )
+    
+    ; loop over all coefficients and set random values
+    (define (random-face)
+      (let loop ((times 0))
+        (if (eq? times (morphable-model-coefficients-size id))
+            #t
+            (begin
+              (set-random-coeff times)
+              (set-random-color-coeff times)
+              (loop (+ times 1))
+            )
+        )
+      )
+      (morphable-model-coefficients-set! id (vector->list coeff))
+      (morphable-model-color-coefficients-set! id (vector->list color-coeff))
+    )
+    
+    (view-edges-set! #f) ; turn of rendering of edges
+    (view-show!) ; show the 3d view
+    
+    ; render 1000 different arbitrary faces
+    (let loop ((times 0))
+      (if (eq? times 1000)
+          #t
+          (begin
+            (random-face)
+            (loop (+ times 1))
+          )
+      )
+    )
+    
 Glossary
 --------
 
