@@ -145,15 +145,15 @@ For this example I've used a free model of a Porsche 911 available via the link 
                 (lambda (x y z)
                         (/ (abs
                                 (+ (* (sin x) (cos y)) (* (sin y) (cos z)) (* (sin z) (cos x))) )
-                           gyroid_a )))
+                           gyroid_a ))) ; implicit function for the gyroid
            
-    (define bb '((-3.15 3.15) (-3.15 3.15) (-3.15 3.15)))          
-    (define dim `(100 100 100))          
+    (define bb '((-3.15 3.15) (-3.15 3.15) (-3.15 3.15))) ; bounding box
+    (define dim `(100 100 100)) ; dimensions
     
-    (define id (marching-cubes bb dim 1.0 gyroid))
+    (define id (marching-cubes bb dim 1.0 gyroid)) ; making a mesh with marching cubes
 
-    (view-edges-set! #f)
-    (view-show!)
+    (view-edges-set! #f) ; view properties
+    (view-show!) ; show the 3d view
     
 Glossary
 --------
