@@ -1,6 +1,14 @@
 # meshscript
 Visualize 3d meshes via scripting in scheme.
 
+Content
+-------
+* [Introduction](#introduction)
+* [Building](#building)
+* [Examples](#examples)
+* [Glossary](#glossary)
+* [Credits](#credits)
+
 Introduction
 ------------
 
