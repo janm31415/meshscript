@@ -9,6 +9,7 @@ Content
 * [Examples](#examples)
      - [One bit render of 3D mesh to png](#one-bit-render-of-3d-mesh-to-png)
      - [Gyroid with marching cubes](#gyroid-with-marching-cubes)
+     - [68 landmarks for Basel face model](#68-landmarks-for-basel-face-model)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -155,6 +156,45 @@ For this example I've used a free model of a Porsche 911 available via the link 
     (view-edges-set! #f) ; view properties
     (view-show!) ; show the 3d view
     
+### 68 landmarks for Basel face model
+![](images/basel_face_landmarks.png)
+
+For this script you need to get the Basel face model (2019) from https://faces.dmi.unibas.ch/bfm/bfm2019.html and the dlib 68 facial landmarks predictor from https://github.com/davisking/dlib-models.
+
+    (view-edges-set! #f) ; view render properties
+    (view-show!) ; load the 3d view
+    
+    ; load the basel face model (https://faces.dmi.unibas.ch/bfm/bfm2019.html)
+    (define basel (load-morphable-model "D:/basel_face_model/model2019_fullHead.h5"))
+    
+    ; load the dlib 68 face landmarks predictor (https://github.com/davisking/dlib-models)
+    (define sp (load-shape-predictor "D:/neural_networks/shape_predictor_68_face_landmarks.dat"))
+    
+    ; set the view coordinate system so that the basel face model is aligned nicely
+    (view-cs-set! '((1 0 0 0.253426) (0 1 0 16.3451) (0 0 1 520.029) (0 0 0 1)))
+    
+    ; get the landmarks
+    (define landmarks (shape-predict sp (face-detect)))
+    
+    ; compute the corresponding vertex indices of the landmarks
+    (define indices '())
+    (let loop ((times 0))
+      (if (eq? times (length landmarks))
+          indices
+          (begin
+            (set! indices (append indices (list (view-index (list-ref (list-ref landmarks times) 0) (list-ref (list-ref landmarks times) 1)))))
+            (loop (+ times 1))
+          )
+      )
+    )
+    
+    ; visualize the face detector and predictor
+    (view-face-detector-set! #t)
+    (shape-predictor-link-to-face-detector sp)
+    
+    ; show the indices in the repl
+    indices
+
 Glossary
 --------
 
