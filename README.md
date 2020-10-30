@@ -375,6 +375,8 @@ The following script will load `vertices.csv` as vertex data, `triangles.csv` as
 
 ![](images/scan_compare.png)
 
+For this script you need to get the dlib 68 facial landmarks predictor from https://github.com/davisking/dlib-models.
+Furthermore this example uses two scans of myself taken at a different time. Replace `jan1.obj` and `jan2.obj` by two facial scans with texture that you have at your disposal.
     
     ; load dlib 68 face landmarks shape predictor
     (define sp (load-shape-predictor "D:/neural_networks/shape_predictor_68_face_landmarks.dat"))
