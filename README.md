@@ -11,6 +11,7 @@ Content
      - [Gyroid with marching cubes](#gyroid-with-marching-cubes)
      - [68 landmarks for Basel face model](#68-landmarks-for-basel-face-model)
      - [Make funny faces](#make-funny-faces)
+     - [Map vertex values to colors](#map-vertex-values-to-colors)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -280,6 +281,95 @@ For this script you need to get the Basel face model (2019) from https://faces.d
       )
     )
     
+### Map vertex values to colors    
+    
+![](images/colorplot.png)
+
+This example uses three csv (comma separated value) files with data. These files have the following content:
+
+`vertices.csv` :
+
+    -1, -1,  1
+     1, -1,  1
+     1,  1,  1
+    -1,  1,  1
+    -1, -1, -1
+     1, -1, -1
+     1,  1, -1
+    -1,  1, -1
+    
+`triangles.csv` :
+
+    0, 1, 2
+    0, 2, 3
+    7, 6, 5
+    7, 5, 4
+    1, 0, 4
+    1, 4, 5
+    2, 1, 5
+    2, 5, 6
+    3, 2, 6
+    3, 6, 7
+    0, 3, 7
+    0, 7, 4 
+
+`values.csv` :
+
+    100
+    -80
+    76
+    -25
+    30
+    50
+    0
+    -60
+
+The following script will load `vertices.csv` as vertex data, `triangles.csv` as triangle indices data, and `values.csv` as values assigned to the corresponding vertex. Next we plot the mesh, and map a color code to the vertex values.
+
+    (import 'csv) ; functionality for reading csv files
+    
+    (define vertices (csv->numbers (read-csv "D:/test/colorplot/vertices.csv"))) ; load vertices
+    (define triangles (csv->numbers (read-csv "D:/test/colorplot/triangles.csv"))) ; load triangles
+    
+    (define id (make-mesh vertices triangles)) ; make a mesh
+    
+    (define values (csv->numbers (read-csv "D:/test/colorplot/values.csv"))) ; load values
+    
+    (set! values (map car values)) ; unmap the list of lists to a simple list of values
+    
+    (define (max-list xs)
+      (if 
+        (equal? (cdr xs) '()) 
+                (car xs)
+                (max (car xs) (max-list (cdr xs)))))
+    
+    (define (min-list xs)
+      (if 
+        (equal? (cdr xs) '()) 
+                (car xs)
+                (min (car xs) (min-list (cdr xs)))))
+                
+          
+    (define minimum (min-list values)) ; compute the minimum value
+    (define maximum (max-list values)) ; compute the maximum value
+    
+    
+    (define (rescale x)
+      ( / (- x minimum) (- maximum minimum) )
+    )      
+           
+           
+    (define rescaled (map rescale values)) ; rescale all values between 0 and 1
+                
+    (define colors (jet rescaled)) ; map the values to colors
+    
+    (vertexcolors-set! id colors) ; set the vertex colors
+    
+    (view-edges-set! #f) ; don't render edges
+    (view-size-set! 1000 1000) ; increase the view
+    
+    (view-show!) ; show the view
+
 Glossary
 --------
 
