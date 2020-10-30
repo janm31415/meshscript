@@ -12,7 +12,7 @@ Content
      - [68 landmarks for Basel face model](#68-landmarks-for-basel-face-model)
      - [Make funny faces](#make-funny-faces)
      - [Map vertex values to colors](#map-vertex-values-to-colors)
-     - [Compare scans](#compare-scans)
+     - [Compare facial scans](#compare-facial-scans)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -371,7 +371,7 @@ The following script will load `vertices.csv` as vertex data, `triangles.csv` as
     
     (view-show!) ; show the view
 
-### Compare scans
+### Compare facial scans
 
 ![](images/scan_compare.png)
 
