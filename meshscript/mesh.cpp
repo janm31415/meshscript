@@ -199,6 +199,11 @@ bool write_to_file(const mesh& m, const std::string& filename)
       return jtk::write_ply(filename.c_str(), m.vertices, colors, m.triangles);
       }
     }
+  else if (ext == "off")
+    {
+    return jtk::write_off((uint32_t)m.vertices.size(), m.vertices.data(), (uint32_t)m.triangles.size(), m.triangles.data(), filename.c_str());
+    }
+    
   return false;
   }
 
