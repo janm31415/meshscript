@@ -223,6 +223,8 @@ If you're interested in the vertex indices computed automatically, this is the o
 
 ![](images/funny_face.png)
 
+[Video on YouTube](https://www.youtube.com/watch?v=E0i4JgXI2Y4)
+
 For this script you need to get the Basel face model (2019) from https://faces.dmi.unibas.ch/bfm/bfm2019.html.
 
     (import 'srfi-27) ; random number generation
