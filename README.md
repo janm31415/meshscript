@@ -375,6 +375,94 @@ The following script will load `vertices.csv` as vertex data, `triangles.csv` as
 
 ![](images/scan_compare.png)
 
+    
+    ; load dlib 68 face landmarks shape predictor
+    (define sp (load-shape-predictor "D:/neural_networks/shape_predictor_68_face_landmarks.dat"))
+    
+    (define id1 (load-mesh "D:/scans/jan1.obj")) ; the first scan
+    (define id2 (load-mesh "D:/scans/jan2.obj")) ; the second scan
+    
+    (cs-rotate! id1 -90 0 0) ; rotate the scan so that the front faces the camera
+    (cs-rotate! id2 -90 0 0) ; rotate the scan so that the front faces the camera
+    
+    (hide! id1) ; don't render the first scan
+    (hide! id2) ; don't render the second scan
+    
+    (view-show!) ; open the 3d view
+    
+    ; zoom out a bit to have the full scan visible
+    (view-cs-set! '((1 0 0 2.841) (0 1 0 49.722) (0 0 1 770.457) (0 0 0 1)))
+    
+    (view-edges-set! #f); don't render edges
+    
+    (show! id1) ; render the first scan
+    
+    ; compute the 68 facial landmarks for the first scan
+    (define landmarks1 (shape-predict sp (face-detect)))
+    
+    ; compute the corresponding 3d positions of the 68 facial landmarks for the first scan
+    (define positions1 '())
+    (let loop ((times 0))
+      (if (eq? times (length landmarks1))
+          positions1
+          (begin
+            (set! positions1 (append positions1 (list (view-position (list-ref (list-ref landmarks1 times) 0) (list-ref (list-ref landmarks1 times) 1)))))
+            (loop (+ times 1))
+          )
+      )
+    )
+    
+    (hide! id1) ; hide the first scan
+    (show! id2) ; render the second scan
+    
+    ; compute the 68 facial landmarks for the second scan
+    (define landmarks2 (shape-predict sp (face-detect)))
+    
+    ; compute the corresponding 3d positions of the 68 facial landmarks for the second scan
+    (define positions2 '())
+    (let loop ((times 0))
+      (if (eq? times (length landmarks2))
+          positions2
+          (begin
+            (set! positions2 (append positions2 (list (view-position (list-ref (list-ref landmarks2 times) 0) (list-ref (list-ref landmarks2 times) 1)))))
+            (loop (+ times 1))
+          )
+      )
+    )
+    
+    ; n-point registration of the 68 landmark points of the two scans
+    (define transformation_npoint (npoint positions1 positions2))
+    (cs-premultiply! id1 transformation_npoint)
+    
+    ; iterative closest point between the two scans
+    (define transformation_icp (icp id1 id2 5))
+    (cs-premultiply! id1 transformation_icp)
+    
+    (show! id1) ; render the first scan
+    (hide! id2) ; hide the second scan
+    
+    (define dm (distance-map id1 id2 #f)) ; compute the distance map between the two scans     
+    
+    (define (clamp x minimum maximum) ; clamps a value x to the interval [minimum;maximum]
+      (if (< x minimum)
+         minimum
+         (if (> x maximum)
+             maximum
+             x
+         )))
+         
+    (define maximum-distance 10) ; 10 mm
+    
+    (define (rescale x)
+      ( / (clamp x 0 maximum-distance) maximum-distance )
+    )      
+    
+    (define rescaled (map rescale dm)) ; rescale all values of the distance map to [0;1]            
+    (define colors (jet rescaled)) ; map the values to colors
+    
+    (vertexcolors-set! id1 colors) ; set the vertex colors on the first scan
+    
+    
 Glossary
 --------
 
