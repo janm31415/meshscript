@@ -92,14 +92,14 @@ bool read_from_file(mesh& m, const std::string& filename)
       {
       if (!file_exists(mtl_filename))
         {
-        mtl_filename = get_folder(filename) + "/" + mtl_filename;
+        mtl_filename = get_folder(filename) + mtl_filename;
         }
       std::string texture_filename;
       if (read_texture_filename_from_mtl(texture_filename, mtl_filename.c_str()))
         {
         if (!file_exists(texture_filename))
           {
-          texture_filename = get_folder(mtl_filename) + "/" + texture_filename;
+          texture_filename = get_folder(mtl_filename) + texture_filename;
           }
         int w, h, nr_of_channels;
         unsigned char* im = stbi_load(texture_filename.c_str(), &w, &h, &nr_of_channels, 4);
