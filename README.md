@@ -382,8 +382,8 @@ The following script will load `vertices.csv` as vertex data, `triangles.csv` as
     (define id1 (load-mesh "D:/scans/jan1.obj")) ; the first scan
     (define id2 (load-mesh "D:/scans/jan2.obj")) ; the second scan
     
-    (cs-rotate! id1 -90 0 0) ; rotate the scan so that the front faces the camera
-    (cs-rotate! id2 -90 0 0) ; rotate the scan so that the front faces the camera
+    (cs-rotate! id1 -90 0 0) ; rotate the first scan so that the front faces the camera
+    (cs-rotate! id2 -90 0 0) ; rotate the second scan so that the front faces the camera
     
     (hide! id1) ; don't render the first scan
     (hide! id2) ; don't render the second scan
