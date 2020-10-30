@@ -5,6 +5,7 @@ Content
 -------
 * [Introduction](#introduction)
 * [Building](#building)
+* [Basics](#basics)
 * [Examples](#examples)
      - [One bit render of 3D mesh to png](#one-bit-render-of-3d-mesh-to-png)
 * [Glossary](#glossary)
