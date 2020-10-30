@@ -157,6 +157,9 @@ For this example I've used a free model of a Porsche 911 available via the link 
     (view-show!) ; show the 3d view
     
 ### 68 landmarks for Basel face model
+
+The Basel face model is a morphable model containing shape and color information of 200 subjects. The following script will automatically compute the vertex indices corresponding with the 68 facial landmark points as defined by https://ibug.doc.ic.ac.uk/resources/300-W/.
+
 ![](images/basel_face_landmarks.png)
 
 For this script you need to get the Basel face model (2019) from https://faces.dmi.unibas.ch/bfm/bfm2019.html and the dlib 68 facial landmarks predictor from https://github.com/davisking/dlib-models.
