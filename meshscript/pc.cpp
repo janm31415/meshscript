@@ -51,6 +51,21 @@ bool read_from_file(pc& point_cloud, const std::string& filename)
     if (point_cloud.vertices.empty())
       return false;
     }
+  else if (ext == "pts")
+    {
+    std::vector<int> intensity;
+    if (!read_pts(filename.c_str(), point_cloud.vertices, intensity, point_cloud.vertex_colors))
+      return false;
+    if (point_cloud.vertices.empty())
+      return false;
+    }
+  else if (ext == "xyz")
+    {
+    if (!read_xyz(filename.c_str(), point_cloud.vertices))
+      return false;
+    if (point_cloud.vertices.empty())
+      return false;
+    }
   point_cloud.cs = get_identity();
   point_cloud.visible = true;
   return true;
@@ -93,6 +108,15 @@ bool write_to_file(const pc& p, const std::string& filename)
     std::vector<jtk::vec3<jtk::vec2<float>>> uv;
     jtk::image<uint32_t> texture;
     return write_obj(filename.c_str(), p.vertices, p.normals, p.vertex_colors, triangles, uv, texture);
+    }
+  else if (ext == "pts")
+    {
+    std::vector<int> intensity;
+    return write_pts(filename.c_str(), p.vertices, intensity, p.vertex_colors);
+    }
+  else if (ext == "xyz")
+    {
+    return write_xyz(filename.c_str(), p.vertices);
     }
   return false;
   }

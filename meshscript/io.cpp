@@ -1041,3 +1041,151 @@ bool write_obj(const char* filename, const std::vector<jtk::vec3<float>>& vertic
 
   return true;
   }
+
+
+bool read_pts(const char* filename, std::vector<jtk::vec3<float>>& vertices, std::vector<int>& intensity, std::vector<uint32_t>& clrs)
+  {
+  vertices.clear();
+  intensity.clear();
+  clrs.clear();
+
+  FILE* f = nullptr;
+  f = fopen(filename, "r");
+  if (!f)
+    return false;
+
+  char buffer[1024];
+  uint64_t nr_of_points = 0;
+
+  while (fgets(buffer, 1024, f) != nullptr)
+    {
+    int first_non_whitespace_index = 0;
+    while (first_non_whitespace_index < 250 && (buffer[first_non_whitespace_index] == ' ' || buffer[first_non_whitespace_index] == '\t'))
+      ++first_non_whitespace_index;
+
+    float x, y, z;
+    int in;
+    uint32_t r, g, b;    
+
+    auto err = sscanf(buffer + first_non_whitespace_index, "%f %f %f %d %d %d %d\n", &x, &y, &z, &in, &r, &g, &b);
+    if (err == 7)
+      {
+      vertices.emplace_back(x, y, z);
+      intensity.push_back(in);
+      uint32_t clr = 0xff000000 | (b << 16) | (g << 8) | r;
+      clrs.push_back(clr);
+      }
+    else
+      {
+      err = sscanf(buffer + first_non_whitespace_index, "%f %f %f\n", &x, &y, &z);
+      if (err == 3)
+        {
+        vertices.emplace_back(x, y, z);
+        }
+      else
+        {
+        err = sscanf(buffer + first_non_whitespace_index, "%d\n", &nr_of_points);
+        if (err != 1)
+          {
+          std::cout << "Invalid pts file\n";
+          return false;
+          }
+        }
+      }
+    }
+
+  if (nr_of_points && vertices.size() != nr_of_points)
+    {
+    std::cout << "Invalid pts file\n";
+    return false;
+    }
+
+  return true;
+  }
+
+
+bool write_pts(const char* filename, const std::vector<jtk::vec3<float>>& vertices, const std::vector<int>& intensity, const std::vector<uint32_t>& clrs)
+  {
+  std::ofstream out;
+
+  out.open(filename, std::ios::out);
+  if (out.fail())
+    return false;
+  if (out.bad())
+    return false;
+  if (out.is_open())
+    {
+    out << vertices.size() << std::endl;
+    for (size_t i = 0; i < vertices.size(); ++i)
+      {
+      float x = vertices[i][0];
+      float y = vertices[i][1];
+      float z = vertices[i][2];
+      int in = 0;
+      if (intensity.size() == vertices.size())
+        in = intensity[i];
+      uint32_t clr = 0;
+      if (clrs.size() == vertices.size())
+        clr = clrs[i];
+      uint32_t r = clr & 255;
+      uint32_t g = (clr >> 8) & 255;
+      uint32_t b = (clr >> 16) & 255;
+      out << x << " " << y << " " << z << " " << in << " " << r << " " << g << " " << b << std::endl;
+      }
+    out.close();
+    }
+  return true;
+  }
+
+bool read_xyz(const char* filename, std::vector<jtk::vec3<float>>& vertices)
+  {
+  vertices.clear();
+  std::ifstream in(filename, std::ios::in);
+
+  if (in.fail())
+    return false;
+  if (in.bad())
+    return false;
+  if (in.is_open())
+    {
+    while (!in.eof())
+      {
+      std::string line;
+      std::getline(in, line);
+      if (!line.empty())
+        {
+        std::stringstream str;
+        str << line;
+        float x, y, z;
+        str >> x >> y >> z;
+        vertices.emplace_back(x, y, z);
+        }
+      }
+    in.close();
+    }
+  return true;
+  }
+
+bool write_xyz(const char* filename, const std::vector<jtk::vec3<float>>& vertices)
+  {
+  std::ofstream out;
+
+  out.open(filename, std::ios::out);
+  if (out.fail())
+    return false;
+  if (out.bad())
+    return false;
+  if (out.is_open())
+    {
+    out << vertices.size() << std::endl;
+    for (size_t i = 0; i < vertices.size(); ++i)
+      {
+      float x = vertices[i][0];
+      float y = vertices[i][1];
+      float z = vertices[i][2];     
+      out << x << " " << y << " " << z << std::endl;
+      }
+    out.close();
+    }
+  return true;
+  }
