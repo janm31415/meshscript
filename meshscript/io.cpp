@@ -496,3 +496,73 @@ bool read_ply(const char* filename, std::vector<jtk::vec3<float>>& vertices, std
   }
 
   */
+
+
+bool write_ply(const char* filename, const std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<float>>& normals, const std::vector<uint32_t>& clrs, const std::vector<jtk::vec3<uint32_t>>& triangles, const std::vector<jtk::vec3<jtk::vec2<float>>>& uv)
+  {
+  if (vertices.empty())
+    return false;
+  FILE* fp = fopen(filename, "wb");
+
+  if (!fp)
+    return false;
+
+  fprintf(fp, "ply\n");
+  int n = 1;
+  if (*(char *)&n == 1)
+    fprintf(fp, "format binary_little_endian 1.0\n");
+  else
+    fprintf(fp, "format binary_big_endian 1.0\n");
+
+  fprintf(fp, "element vertex %d\n", (uint32_t)vertices.size());
+  fprintf(fp, "property float x\n");
+  fprintf(fp, "property float y\n");
+  fprintf(fp, "property float z\n");
+
+  if (!normals.empty())
+    {
+    fprintf(fp, "property float nx\n");
+    fprintf(fp, "property float ny\n");
+    fprintf(fp, "property float nz\n");
+    }
+
+  if (!clrs.empty())
+    {
+    fprintf(fp, "property uchar red\n");
+    fprintf(fp, "property uchar green\n");
+    fprintf(fp, "property uchar blue\n");
+    fprintf(fp, "property uchar alpha\n");
+    }
+
+  if (!triangles.empty())
+    {
+    fprintf(fp, "element face %d\n", (uint32_t)triangles.size());
+    fprintf(fp, "property list uchar int vertex_indices\n");
+    if (!uv.empty())
+      fprintf(fp, "property list uchar float texcoord\n");
+    }
+  fprintf(fp, "end_header\n");
+
+  for (uint32_t i = 0; i < (uint32_t)vertices.size(); ++i)
+    {
+    fwrite((float*)vertices.data() + 3 * i, sizeof(float), 3, fp);
+    if (!normals.empty())
+      fwrite((float*)normals.data() + 3 * i, sizeof(float), 3, fp);
+    if (!clrs.empty())
+      fwrite((uint32_t*)clrs.data() + i, sizeof(uint32_t), 1, fp);
+    }
+  const unsigned char tria_size = 3;
+  const unsigned char texcoord_size = 6;
+  for (uint32_t i = 0; i < (uint32_t)triangles.size(); ++i)
+    {
+    fwrite(&tria_size, 1, 1, fp);
+    fwrite((uint32_t*)triangles.data() + 3 * i, sizeof(uint32_t), 3, fp);
+    if (!uv.empty())
+      {
+      fwrite(&texcoord_size, 1, 1, fp);
+      fwrite((float*)uv.data() + 6 * i, sizeof(float), 6, fp);
+      }
+    }
+  fclose(fp);
+  return 1;
+  }

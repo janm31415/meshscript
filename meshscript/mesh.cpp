@@ -78,31 +78,9 @@ namespace
     return true;
     }
 
-#ifdef _WIN32
-  static inline long long fsize(const char *filename)
-    {
-    struct _stat64 st;
-
-    if (_stat64(filename, &st) == 0)
-      return st.st_size;
-
-    return -1;
-    }
-#else
-  static inline long long fsize(const char *filename)
-    {
-    struct stat st;
-
-    if (stat(filename, &st) == 0)
-      return st.st_size;
-
-    return -1;
-    }
-#endif
-
   bool read_trc(mesh& m, std::string filename)
     {
-    long long size = fsize(filename.c_str());
+    long long size = jtk::file_size(filename.c_str());
     if (size < 0)
       {
       std::cout << "There was an error reading file " << filename << std::endl;   
@@ -370,6 +348,10 @@ bool write_to_file(const mesh& m, const std::string& filename)
     }
   else if (ext == "ply")
     {
+    std::vector<uint32_t> colors = convert_vertex_colors(m.vertex_colors);
+    std::vector<jtk::vec3<float>> normals;
+    return write_ply(filename.c_str(), m.vertices, normals, colors, m.triangles, m.uv_coordinates);
+    /*
     if (m.vertex_colors.empty())
       return jtk::write_ply(filename.c_str(), m.vertices, m.triangles);
     else
@@ -377,6 +359,7 @@ bool write_to_file(const mesh& m, const std::string& filename)
       std::vector<uint32_t> colors = convert_vertex_colors(m.vertex_colors);     
       return jtk::write_ply(filename.c_str(), m.vertices, colors, m.triangles);
       }
+    */
     }
   else if (ext == "off")
     {
