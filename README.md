@@ -913,8 +913,9 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(save id "file.ext") writes the object with tag `id`
     	to file. The filetype is determined by the extension
-    	that is given. You can export meshes to STL or PLY,
-    	pointclouds to PLY, morphable models to SSM.
+    	that is given. You can export meshes to STL, PLY, OBJ, 
+        or TRC, pointclouds to PLY, OBJ, or TRC, morphable models 
+        to SSM.
     
     NAME
     	shape-predict
