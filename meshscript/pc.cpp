@@ -41,6 +41,16 @@ bool read_from_file(pc& point_cloud, const std::string& filename)
     if (point_cloud.vertices.empty())
       return false;
     }
+  else if (ext == "obj")
+    {
+    std::vector<jtk::vec3<uint32_t>> triangles;
+    std::vector<jtk::vec3<jtk::vec2<float>>> uv;
+    jtk::image<uint32_t> texture;
+    if (!read_obj(filename.c_str(), point_cloud.vertices, point_cloud.normals, point_cloud.vertex_colors, triangles, uv, texture))
+      return false;
+    if (point_cloud.vertices.empty())
+      return false;
+    }
   point_cloud.cs = get_identity();
   point_cloud.visible = true;
   return true;
@@ -67,24 +77,22 @@ bool write_to_file(const pc& p, const std::string& filename)
     return false;
   if (ext == "ply")
     {
-    /*
-    if (p.normals.empty() && p.vertex_colors.empty())
-      return jtk::write_ply(filename.c_str(), p.vertices);
-    else if (p.vertex_colors.empty())
-      return jtk::write_ply(filename.c_str(), p.vertices, p.normals);
-    else
-      return jtk::write_ply(filename.c_str(), p.vertices, p.normals, p.vertex_colors);
-    */
     std::vector<jtk::vec3<uint32_t>> triangles;
     std::vector<jtk::vec3<jtk::vec2<float>>> uv;
     return write_ply(filename.c_str(), p.vertices, p.normals, p.vertex_colors, triangles, uv);
     }
   else if (ext == "trc")
     {
-    //return write_trc(p, filename);
     std::vector<jtk::vec3<uint32_t>> triangles;
     std::vector<jtk::vec3<jtk::vec2<float>>> uv;
     return write_trc(filename.c_str(), p.vertices, p.normals, p.vertex_colors, triangles, uv);
+    }
+  else if (ext == "obj")
+    {
+    std::vector<jtk::vec3<uint32_t>> triangles;
+    std::vector<jtk::vec3<jtk::vec2<float>>> uv;
+    jtk::image<uint32_t> texture;
+    return write_obj(filename.c_str(), p.vertices, p.normals, p.vertex_colors, triangles, uv, texture);
     }
   return false;
   }

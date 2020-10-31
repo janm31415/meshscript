@@ -86,36 +86,17 @@ bool read_from_file(mesh& m, const std::string& filename)
     }
   else if (ext == "obj")
     {
-    std::string mtl_filename;
-    if (!read_obj(mtl_filename, m.vertices, m.triangles, m.uv_coordinates, filename.c_str()))
+    std::vector<jtk::vec3<float>> vertex_normals;
+    std::vector<uint32_t> vertex_colors;
+    if (!read_obj(filename.c_str(), m.vertices, vertex_normals, vertex_colors, m.triangles, m.uv_coordinates, m.texture))
       return false;
-    if (!mtl_filename.empty())
+    if (!vertex_colors.empty())
       {
-      if (!file_exists(mtl_filename))
-        {
-        mtl_filename = get_folder(filename) + mtl_filename;
-        }
-      std::string texture_filename;
-      if (read_texture_filename_from_mtl(texture_filename, mtl_filename.c_str()))
-        {
-        if (!file_exists(texture_filename))
-          {
-          texture_filename = get_folder(mtl_filename) + texture_filename;
-          }
-        int w, h, nr_of_channels;
-        unsigned char* im = stbi_load(texture_filename.c_str(), &w, &h, &nr_of_channels, 4);
-        if (im)
-          {
-          m.texture = jtk::span_to_image(w, h, w, (const uint32_t*)im);
-          stbi_image_free(im);
-          }
-        }
+      m.vertex_colors = convert_vertex_colors(vertex_colors);
       }
     }
   else if (ext == "trc")
     {
-    //if (!read_trc(m, filename))
-    //  return false;
     std::vector<jtk::vec3<float>> vertex_normals;
     std::vector<uint32_t> vertex_colors;
     if (!read_trc(filename.c_str(), m.vertices, vertex_normals, vertex_colors, m.triangles, m.uv_coordinates))
@@ -208,15 +189,6 @@ bool write_to_file(const mesh& m, const std::string& filename)
     std::vector<uint32_t> colors = convert_vertex_colors(m.vertex_colors);
     std::vector<jtk::vec3<float>> normals;
     return write_ply(filename.c_str(), m.vertices, normals, colors, m.triangles, m.uv_coordinates);
-    /*
-    if (m.vertex_colors.empty())
-      return jtk::write_ply(filename.c_str(), m.vertices, m.triangles);
-    else
-      {
-      std::vector<uint32_t> colors = convert_vertex_colors(m.vertex_colors);     
-      return jtk::write_ply(filename.c_str(), m.vertices, colors, m.triangles);
-      }
-    */
     }
   else if (ext == "off")
     {
@@ -227,7 +199,12 @@ bool write_to_file(const mesh& m, const std::string& filename)
     std::vector<uint32_t> colors = convert_vertex_colors(m.vertex_colors);
     std::vector<jtk::vec3<float>> normals;
     return write_trc(filename.c_str(), m.vertices, normals, colors, m.triangles, m.uv_coordinates);
-    //return write_trc(m, filename);
+    }
+  else if (ext == "obj")
+    {
+    std::vector<uint32_t> colors = convert_vertex_colors(m.vertex_colors);
+    std::vector<jtk::vec3<float>> normals;
+    return write_obj(filename.c_str(), m.vertices, normals, colors, m.triangles, m.uv_coordinates, m.texture);
     }
     
   return false;
