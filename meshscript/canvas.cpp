@@ -771,21 +771,7 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
         p_canvas_line->db_id = db_ids[two_level_index];
         p_canvas_line->mark = 0;
 
-        if (vertex_colors[two_level_index] != nullptr)
-          {
-          const uint32_t v0 = triangles[two_level_index][object_id][0];
-          const uint32_t v1 = triangles[two_level_index][object_id][1];
-          const uint32_t v2 = triangles[two_level_index][object_id][2];
-          const auto& c0 = vertex_colors[two_level_index][v0];
-          const auto& c1 = vertex_colors[two_level_index][v1];
-          const auto& c2 = vertex_colors[two_level_index][v2];
-          const auto c = c0 * (1.f - hit.u - hit.v) + hit.u*c1 + hit.v*c2;
-          p_canvas_line->r = (uint8_t)(c[0] * 255.f);
-          p_canvas_line->g = (uint8_t)(c[1] * 255.f);
-          p_canvas_line->b = (uint8_t)(c[2] * 255.f);
-          p_canvas_line->mark |= 2;
-          }
-        else if (_settings.textured && uv_coordinates[two_level_index] != nullptr)
+        if (_settings.textured && uv_coordinates[two_level_index] != nullptr)
           {
           const auto& uvcoords = uv_coordinates[two_level_index][object_id];
           auto coord = (1.f - hit.u - hit.v)*uvcoords[0] + hit.u*uvcoords[1] + hit.v*uvcoords[2];
@@ -799,6 +785,20 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
           p_canvas_line->b = (color & 0x00ff0000) >> 16;
           p_canvas_line->mark |= 2;
           }
+        else if (vertex_colors[two_level_index] != nullptr)
+          {
+          const uint32_t v0 = triangles[two_level_index][object_id][0];
+          const uint32_t v1 = triangles[two_level_index][object_id][1];
+          const uint32_t v2 = triangles[two_level_index][object_id][2];
+          const auto& c0 = vertex_colors[two_level_index][v0];
+          const auto& c1 = vertex_colors[two_level_index][v1];
+          const auto& c2 = vertex_colors[two_level_index][v2];
+          const auto c = c0 * (1.f - hit.u - hit.v) + hit.u*c1 + hit.v*c2;
+          p_canvas_line->r = (uint8_t)(c[0] * 255.f);
+          p_canvas_line->g = (uint8_t)(c[1] * 255.f);
+          p_canvas_line->b = (uint8_t)(c[2] * 255.f);
+          p_canvas_line->mark |= 2;
+          }       
 
         if (_settings.shadow)
           {

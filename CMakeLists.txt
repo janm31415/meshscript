@@ -28,6 +28,7 @@ add_subdirectory(jtk)
 add_subdirectory(libpoisson)
 add_subdirectory(meshscript)
 add_subdirectory(skiwi)
+add_subdirectory(trico/lz4)
 add_subdirectory(trico/trico)
 
 
@@ -48,6 +49,7 @@ set_target_properties (jtk PROPERTIES FOLDER jtk)
 set_target_properties (jtk.tests PROPERTIES FOLDER jtk)
 
 set_target_properties (trico PROPERTIES FOLDER trico)
+set_target_properties (lz4 PROPERTIES FOLDER trico)
 
 set_target_properties (hdf5-shared PROPERTIES FOLDER hdf5)
 set_target_properties (hdf5-static PROPERTIES FOLDER hdf5)

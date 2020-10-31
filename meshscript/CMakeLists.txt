@@ -142,6 +142,7 @@ target_link_libraries(meshscript
     dlib
     libpoisson
     libskiwi	
+    trico
     hdf5-shared
     )	
 
