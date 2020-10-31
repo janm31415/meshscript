@@ -17,134 +17,6 @@
 
 using namespace jtk;
 
-namespace
-  {
-
-  bool write_trc(const pc& p, const std::string& filename)
-    {
-    void* arch = trico_open_archive_for_writing(1024 * 1024);
-    if (!trico_write_vertices(arch, (float*)p.vertices.data(), (uint32_t)p.vertices.size()))
-      {
-      std::cout << "Something went wrong when writing the vertices\n";
-      return false;
-      }
-    if (!p.vertex_colors.empty() && !trico_write_vertex_colors(arch, (uint32_t*)p.vertex_colors.data(), (uint32_t)p.vertex_colors.size()))
-      {
-      std::cout << "Something went wrong when writing the vertex colors\n";
-      return false;
-      }
-    if (!p.normals.empty() && !trico_write_vertex_normals(arch, (float*)p.normals.data(), (uint32_t)p.normals.size()))
-      {
-      std::cout << "Something went wrong when writing the normals\n";
-      return false;
-      }
-
-    FILE* f = fopen(filename.c_str(), "wb");
-    if (!f)
-      {
-      std::cout << "Cannot write to file " << filename << std::endl;
-      return false;
-      }
-
-    fwrite((const void*)trico_get_buffer_pointer(arch), trico_get_size(arch), 1, f);
-    fclose(f);
-
-    trico_close_archive(arch);
-
-    return true;
-    }
-
-  bool read_trc(pc& p, const std::string& filename)
-    {
-    long long size = jtk::file_size(filename.c_str());
-    if (size < 0)
-      {
-      std::cout << "There was an error reading file " << filename << std::endl;
-      return false;
-      }
-    FILE* f = fopen(filename.c_str(), "rb");
-    if (!f)
-      {
-      std::cout << "Cannot open file: " << filename << std::endl;
-      return false;
-      }
-    char* buffer = (char*)malloc(size);
-    long long fl = (long long)fread(buffer, 1, size, f);
-    if (fl != size)
-      {
-      std::cout << "There was an error reading file " << filename << std::endl;
-      fclose(f);
-      return false;
-      }
-    fclose(f);
-
-    void* arch = trico_open_archive_for_reading((const uint8_t*)buffer, size);
-    if (!arch)
-      {
-      std::cout << "The input file " << filename << " is not a trico archive." << std::endl;
-      return false;
-      }
-
-    enum trico_stream_type st = trico_get_next_stream_type(arch);
-    while (!st == trico_empty)
-      {
-      switch (st)
-        {
-        case trico_vertex_float_stream:
-        {
-        p.vertices.resize(trico_get_number_of_vertices(arch));
-        float* vertices = (float*)p.vertices.data();
-        if (!trico_read_vertices(arch, &vertices))
-          {
-          std::cout << "Something went wrong reading the vertices" << std::endl;
-          trico_close_archive(arch);
-          free(buffer);
-          return false;
-          }
-        break;
-        }        
-        case trico_vertex_color_stream:
-        {       
-        p.vertex_colors.resize(trico_get_number_of_colors(arch));
-        uint32_t* vertex_colors = (uint32_t*)p.vertex_colors.data();
-        if (!trico_read_vertex_colors(arch, &vertex_colors))
-          {
-          std::cout << "Something went wrong reading the vertex colors" << std::endl;
-          trico_close_archive(arch);
-          free(buffer);
-          return false;
-          }
-        break;
-        }
-        case trico_vertex_normal_float_stream:
-        {
-        p.normals.resize(trico_get_number_of_normals(arch));
-        float* normals = (float*)p.normals.data();
-        if (!trico_read_vertex_normals(arch, &normals))
-          {
-          std::cout << "Something went wrong reading the normals" << std::endl;
-          trico_close_archive(arch);
-          free(buffer);
-          return false;
-          }        
-        break;
-        }
-        default:
-        {
-        trico_skip_next_stream(arch);
-        break;
-        }
-        }
-      st = trico_get_next_stream_type(arch);
-      }
-
-    trico_close_archive(arch);
-    free(buffer);
-
-    return true;
-    }
-  }
-
 bool read_from_file(pc& point_cloud, const std::string& filename)
   {
   std::string ext = jtk::get_extension(filename);
@@ -162,7 +34,11 @@ bool read_from_file(pc& point_cloud, const std::string& filename)
     }
   else if (ext == "trc")
     {
-    if (!read_trc(point_cloud, filename))
+    std::vector<jtk::vec3<uint32_t>> triangles;
+    std::vector<jtk::vec3<jtk::vec2<float>>> uv;
+    if (!read_trc(filename.c_str(), point_cloud.vertices, point_cloud.normals, point_cloud.vertex_colors, triangles, uv))
+      return false;
+    if (point_cloud.vertices.empty())
       return false;
     }
   point_cloud.cs = get_identity();
@@ -205,7 +81,10 @@ bool write_to_file(const pc& p, const std::string& filename)
     }
   else if (ext == "trc")
     {
-    return write_trc(p, filename);
+    //return write_trc(p, filename);
+    std::vector<jtk::vec3<uint32_t>> triangles;
+    std::vector<jtk::vec3<jtk::vec2<float>>> uv;
+    return write_trc(filename.c_str(), p.vertices, p.normals, p.vertex_colors, triangles, uv);
     }
   return false;
   }

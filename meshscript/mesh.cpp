@@ -34,157 +34,6 @@ namespace
       }
     return im;
     }
-
-  bool write_trc(const mesh& m, const std::string& filename)
-    {
-    void* arch = trico_open_archive_for_writing(1024 * 1024);
-    if (!trico_write_vertices(arch, (float*)m.vertices.data(), (uint32_t)m.vertices.size()))
-      {
-      std::cout << "Something went wrong when writing the vertices\n";
-      return false;
-      }
-    if (!trico_write_triangles(arch, (uint32_t*)m.triangles.data(), (uint32_t)m.triangles.size()))
-      {
-      std::cout << "Something went wrong when writing the triangles\n";
-      return false;
-      }
-    if (!m.vertex_colors.empty())
-      {
-      auto vc = convert_vertex_colors(m.vertex_colors);
-      if (!trico_write_vertex_colors(arch, (uint32_t*)vc.data(), (uint32_t)vc.size()))
-        {
-        std::cout << "Something went wrong when writing the vertex colors\n";
-        return false;
-        }
-      }
-    if (!m.uv_coordinates.empty() && !trico_write_uv_per_triangle(arch, (float*)m.uv_coordinates.data(), (uint32_t)m.uv_coordinates.size()))
-      {
-      std::cout << "Something went wrong when writing the uv positions\n";
-      return false;
-      }
-
-    FILE* f = fopen(filename.c_str(), "wb");
-    if (!f)
-      {
-      std::cout << "Cannot write to file " << filename << std::endl;
-      return false;
-      }
-
-    fwrite((const void*)trico_get_buffer_pointer(arch), trico_get_size(arch), 1, f);
-    fclose(f);
-
-    trico_close_archive(arch);
-
-    return true;
-    }
-
-  bool read_trc(mesh& m, std::string filename)
-    {
-    long long size = jtk::file_size(filename.c_str());
-    if (size < 0)
-      {
-      std::cout << "There was an error reading file " << filename << std::endl;   
-      return false;
-      }
-    FILE* f = fopen(filename.c_str(), "rb");
-    if (!f)
-      {
-      std::cout << "Cannot open file: " << filename << std::endl;
-      return false;
-      }
-    char* buffer = (char*)malloc(size);
-    long long fl = (long long)fread(buffer, 1, size, f);
-    if (fl != size)
-      {
-      std::cout << "There was an error reading file " << filename << std::endl;
-      fclose(f);
-      return false;
-      }
-    fclose(f);
-
-    void* arch = trico_open_archive_for_reading((const uint8_t*)buffer, size);
-    if (!arch)
-      {
-      std::cout << "The input file " << filename << " is not a trico archive." << std::endl;
-      return false;
-      }
-
-    enum trico_stream_type st = trico_get_next_stream_type(arch);
-    while (!st == trico_empty)
-      {
-      switch (st)
-        {
-        case trico_vertex_float_stream:
-        {
-        m.vertices.resize(trico_get_number_of_vertices(arch));       
-        float* vertices = (float*)m.vertices.data();
-        if (!trico_read_vertices(arch, &vertices))
-          {          
-          std::cout << "Something went wrong reading the vertices" << std::endl;
-          trico_close_archive(arch);
-          free(buffer);
-          return false;
-          }
-        break;
-        }
-        case trico_triangle_uint32_stream:
-        {
-        m.triangles.resize(trico_get_number_of_triangles(arch));
-        uint32_t* triangles = (uint32_t*)m.triangles.data();
-        if (!trico_read_triangles(arch, &triangles))
-          {
-          std::cout << "Something went wrong reading the triangles" << std::endl;
-          trico_close_archive(arch);
-          free(buffer);
-          return false;
-          }
-        break;
-        }
-        case trico_vertex_color_stream:
-        {
-        std::vector<uint32_t> vc;
-        vc.resize(trico_get_number_of_colors(arch));
-        uint32_t* vertex_colors = (uint32_t*)vc.data();
-        if (!trico_read_vertex_colors(arch, &vertex_colors))
-          {
-          std::cout << "Something went wrong reading the vertex colors" << std::endl;
-          trico_close_archive(arch);
-          free(buffer);
-          return false;
-          }
-        m.vertex_colors = convert_vertex_colors(vc);
-        break;
-        }
-        case trico_uv_per_triangle_float_stream:
-        {
-        m.uv_coordinates.resize(trico_get_number_of_uvs(arch)/3);
-        float* uvs = (float*)m.uv_coordinates.data();
-        if (!trico_read_uv_per_triangle(arch, &uvs))
-          {
-          std::cout << "Something went wrong reading the uv coordinates" << std::endl;
-          trico_close_archive(arch);
-          free(buffer);
-          return false;
-          }
-        break;
-        }
-        default:
-        {
-        trico_skip_next_stream(arch);
-        break;
-        }
-        }
-
-
-      st = trico_get_next_stream_type(arch);
-      }
-
-
-    trico_close_archive(arch);
-    free(buffer);
-
-    return true;
-    }
   }
 
 void compute_bb(vec3<float>& min, vec3<float>& max, uint32_t nr_of_vertices, const vec3<float>* vertices)
@@ -265,8 +114,16 @@ bool read_from_file(mesh& m, const std::string& filename)
     }
   else if (ext == "trc")
     {
-    if (!read_trc(m, filename))
+    //if (!read_trc(m, filename))
+    //  return false;
+    std::vector<jtk::vec3<float>> vertex_normals;
+    std::vector<uint32_t> vertex_colors;
+    if (!read_trc(filename.c_str(), m.vertices, vertex_normals, vertex_colors, m.triangles, m.uv_coordinates))
       return false;
+    if (!vertex_colors.empty())
+      {
+      m.vertex_colors = convert_vertex_colors(vertex_colors);
+      }
     }
   else
     return false;
@@ -367,7 +224,10 @@ bool write_to_file(const mesh& m, const std::string& filename)
     }
   else if (ext == "trc")
     {
-    return write_trc(m, filename);
+    std::vector<uint32_t> colors = convert_vertex_colors(m.vertex_colors);
+    std::vector<jtk::vec3<float>> normals;
+    return write_trc(filename.c_str(), m.vertices, normals, colors, m.triangles, m.uv_coordinates);
+    //return write_trc(m, filename);
     }
     
   return false;
