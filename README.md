@@ -617,6 +617,12 @@ Below follows a dump of all the meshscript methods so far.
     	boolean value that is given to `bool-signed`.
     
     NAME
+    	duplicate
+    DESCRIPTION
+    	(duplicate id) makes a duplicate of the object with
+    	tag `id`.
+    
+    NAME
     	ear-right-detect
     DESCRIPTION
     	(ear-right-detect) runs the ear detector on the current
@@ -681,7 +687,7 @@ Below follows a dump of all the meshscript methods so far.
     	(load-mesh "stlfile.stl") loads the STL file and returns
     	an id. Similarly (load-mesh "objfile.obj") loads an
     	OBJ file and returns the id. Other input mesh formats
-    	that are implemented are PLY and OFF.
+    	that are implemented are PLY, OFF, and TRC.
     
     NAME
     	load-morphable-model
@@ -698,7 +704,7 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(load-pointcloud "pointcloud.ply") loads the PLY file
     	as point cloud and returns an id. Other file formats
-    	are not yet supported.
+    	allowed are OBJ, TRC, PTS, or XYZ.
     
     NAME
     	load-shape-predictor
@@ -708,6 +714,13 @@ Below follows a dump of all the meshscript methods so far.
     	the id. This is the dlib shape predictor (http://dlib.net).
     	The 68 points facial landmarks predictor data can be
     	downloaded from https://github.com/davisking/dlib-models
+    
+    NAME
+    	load-image
+    DESCRIPTION
+    	(load-image "image.png") loads the PNG file as image
+    	and returns an id. Other well known image formats can
+    	also be loaded.
     
     NAME
     	make-mesh
@@ -745,15 +758,21 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(matcap-set! id matcap-id) changes the matcap of the
     	object with tag `id`. The matcap is given by its id
-    	matcap-id. Currently the matcaps in meshscript are
-    	hardcoded. There are 4 available matcaps with ids 0,
-    	1, 2, 3.
+    	`matcap-id`. There are 4 hard-coded matcaps with ids
+    	0, 1, 2, 3. You can also provide an image id as `matcap-id`,
+    	see load-image.
     
     NAME
     	mesh->pointcloud
     DESCRIPTION
     	(mesh->pointcloud id) converts the mesh with tag `id`
     	to a pointcloud.
+    
+    NAME
+    	mesh-texture->image
+    DESCRIPTION
+    	(mesh-texture->image id) converts the texture of the
+    	mesh with tag `id` to an image.
     
     NAME
     	mesh-texture->vertexcolors
@@ -763,6 +782,12 @@ Below follows a dump of all the meshscript methods so far.
     	of the object with tag `id` has a corresponding (r
     	g b) value. This (r g b) value is obtained from the
     	texture of `id`, if available.
+    
+    NAME
+    	mesh-texture-set!
+    DESCRIPTION
+    	(mesh-texture-set! id tex) sets the image with tag `tex`
+    	as texture for the mesh with tag `id`,
     
     NAME
     	morphable-model-coefficients-size
@@ -913,9 +938,9 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(save id "file.ext") writes the object with tag `id`
     	to file. The filetype is determined by the extension
-    	that is given. You can export meshes to STL, PLY, OBJ, 
-        or TRC, pointclouds to PLY, OBJ, or TRC, morphable models 
-        to SSM.
+    	that is given. You can export meshes to STL, PLY, OBJ,
+    	OFF, or TRC, pointclouds to PLY, OBJ, PTS, XYZ, or
+    	TRC, morphable models to SSM.
     
     NAME
     	shape-predict
@@ -983,6 +1008,13 @@ Below follows a dump of all the meshscript methods so far.
     	(show! id) makes the object with tag `id` visible.
     
     NAME
+    	trianglenormals
+    DESCRIPTION
+    	(trianglenormals id) returns the triangle normals of
+    	object with tag `id`. The triangle normals are given
+    	as a list of lists with (x y z) values.
+    
+    NAME
     	triangles
     DESCRIPTION
     	(triangles id) returns the triangles of object with
@@ -997,6 +1029,20 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(triangles->csv id "file.csv") exports the triangles
     	of the object with tag `id` to a csv file.
+    
+    NAME
+    	vertexcolors
+    DESCRIPTION
+    	(vertexcolors id) returns the vertex colors of object
+    	with tag `id`. The vertex colors are given as a list
+    	of lists with (r g b) values.
+    
+    NAME
+    	vertexnormals
+    DESCRIPTION
+    	(vertexnormals id) returns the vertex normals of object
+    	with tag `id`. The vertex normals are given as a list
+    	of lists with (x y z) values.
     
     NAME
     	vertexcolors-set!
@@ -1127,6 +1173,12 @@ Below follows a dump of all the meshscript methods so far.
     	view-unzoom!
     DESCRIPTION
     	(view-unzoom!) sets the camera to its initial position.
+    
+    NAME
+    	view-vertexcolors-set!
+    DESCRIPTION
+    	(view-vertexcolors-set! #t/#f) turns on/off rendering
+    	of vertex colors.
     
     NAME
     	view-wireframe-set!
