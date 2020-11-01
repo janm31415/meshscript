@@ -3,6 +3,7 @@
 #include "mm.h"
 #include "pc.h"
 #include "sp.h"
+#include "im.h"
 #include "ear_detector.h"
 #include "face_detector.h"
 #include "view.h"
@@ -278,6 +279,21 @@ int64_t view::load_pc_from_file(const char* filename)
   return (int64_t)id;
   }
 
+int64_t view::load_image_from_file(const char* filename)
+  {
+  std::scoped_lock lock(_mut);
+  im image;
+  std::string f(filename);
+  bool res = read_from_file(image, f);
+  if (!res)
+    return -1;
+  im* db_image;
+  uint32_t id;
+  _db.create_image(db_image, id);
+  db_image->texture.swap(image.texture);  
+  return (int64_t)id;
+  }
+
 int64_t view::load_mesh(const std::vector<vec3<float>>& vertices, const std::vector<vec3<uint32_t>>& triangles)
   {
   std::scoped_lock lock(_mut);
@@ -549,6 +565,21 @@ void view::premultiply_coordinate_system(uint32_t id, const jtk::float4x4& cs)
   if (m || p || mo)
     {
     prepare_scene(_scene);
+    _refresh = true;
+    }
+  }
+
+void view::mesh_texture_set(uint32_t id, uint32_t tex)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh(id);
+  im* i = _db.get_image(tex);
+  if (m && i)
+    {
+    m->texture = i->texture;
+    remove_object(id, _scene);
+    if (m->visible)
+      add_object(id, _scene, _db);
     _refresh = true;
     }
   }
@@ -868,6 +899,11 @@ bool view::write(uint32_t id, const char* filename)
   if (mo)
     {
     return write_to_file(*mo, filename);
+    }
+  im* image = _db.get_image((uint32_t)id);
+  if (image)
+    {
+    return write_to_file(*image, filename);
     }
   return false;
   }
@@ -1282,6 +1318,9 @@ void view::info(uint32_t id)
   sp* shape_pred = _db.get_sp(id);
   if (shape_pred)
     ::info(*shape_pred);
+  im* image = _db.get_image(id);
+  if (image)
+    ::info(*image);
   }
 
 void view::cs_apply(uint32_t id)

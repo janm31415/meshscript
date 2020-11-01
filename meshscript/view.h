@@ -32,11 +32,15 @@ class view
 
     int64_t load_pc_from_file(const char* filename);
 
+    int64_t load_image_from_file(const char* filename);
+
     int64_t load_mesh(const std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles);
 
     int64_t load_pointcloud(const std::vector<jtk::vec3<float>>& vertices);
 
     int64_t mesh_to_pointcloud(uint32_t id);
+
+    void mesh_texture_set(uint32_t id, uint32_t tex);
 
     void pointcloud_estimate_normals(uint32_t id, uint32_t k);
 

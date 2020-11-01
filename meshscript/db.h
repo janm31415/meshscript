@@ -10,11 +10,13 @@ struct mesh;
 struct pc;
 struct mm;
 struct sp;
+struct im;
 
 #define MESH_KEY 1 // mesh
 #define PC_KEY 2   // point cloud
 #define MM_KEY 3   // morphable model
 #define SP_KEY 4   // shape predictor
+#define IM_KEY 5   // image
 
 inline uint32_t get_db_key(uint32_t id)
   {
@@ -60,6 +62,10 @@ class db
     sp* get_sp(uint32_t id) const;
     bool is_sp(uint32_t id) const;
 
+    void create_image(im*& i, uint32_t& id);
+    im* get_image(uint32_t id) const;
+    bool is_image(uint32_t id) const;
+
     void delete_object(uint32_t id);
     void restore_object(uint32_t id);
     
@@ -69,12 +75,14 @@ class db
     const std::vector<std::pair<uint32_t, pc*>>& get_pcs() const { return pcs; }
     const std::vector<std::pair<uint32_t, mm*>>& get_mms() const { return mms; }
     const std::vector<std::pair<uint32_t, sp*>>& get_sps() const { return sps; }
+    const std::vector<std::pair<uint32_t, im*>>& get_images() const { return images; }
 
   private:
     std::vector<std::pair<uint32_t, mesh*>> meshes, meshes_deleted;
     std::vector<std::pair<uint32_t, pc*>> pcs, pcs_deleted;
     std::vector<std::pair<uint32_t, mm*>> mms, mms_deleted;
     std::vector<std::pair<uint32_t, sp*>> sps, sps_deleted;
+    std::vector<std::pair<uint32_t, im*>> images, images_deleted;
   };
 
 std::vector<jtk::vec3<float>>* get_vertices(const db& _db, uint32_t id);

@@ -52,6 +52,7 @@ distance_map.h
 ear_detector.h
 face_detector.h
 hdf5aux.h
+im.h
 io.h
 jet.h
 matcap.h
@@ -77,6 +78,7 @@ db.cpp
 distance_map.cpp
 ear_detector.cpp
 face_detector.cpp
+im.cpp
 io.cpp
 jet.cpp
 main.cpp

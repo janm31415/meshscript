@@ -78,6 +78,12 @@ int64_t load_pc(const char* filename)
   return id;
   }
 
+int64_t load_image(const char* filename)
+  {
+  int64_t id = g_view->load_image_from_file(filename);
+  return id;
+  }
+
 /*
 Input can be a vector of size 16 in column major format,
 or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
@@ -889,6 +895,11 @@ uint64_t scm_mesh_texture_to_vertexcolors(uint64_t id)
   return make_list(vertclrlist);
   }
 
+void scm_mesh_texture_set(uint64_t id, uint64_t tex)
+  {
+  return g_view->mesh_texture_set((uint32_t)id, (uint32_t)tex);
+  }
+
 int64_t scm_load_shape_predictor(const char* filename)
   {
   return g_view->load_shape_predictor(filename);
@@ -1183,6 +1194,7 @@ void* register_functions(void*)
   register_external_primitive("load-morphable-model", (void*)&load_morphable_model, skiwi_int64, skiwi_char_pointer, "(load-morphable-model \"model2019_fullHead.h5\") loads morphable models following the hdf5 file format as used by the Basel Face Model project (https://faces.dmi.unibas.ch/bfm/bfm2019.html). The other file format that can be read is meshscripts own binary morphable model file format with extension SSM.");
   register_external_primitive("load-pointcloud", (void*)&load_pc, skiwi_int64, skiwi_char_pointer, "(load-pointcloud \"pointcloud.ply\") loads the PLY file as point cloud and returns an id. Other file formats allowed are OBJ, TRC, PTS, or XYZ.");
   register_external_primitive("load-shape-predictor", (void*)&scm_load_shape_predictor, skiwi_int64, skiwi_char_pointer, "(load-shape-predictor \"filename\") initializes the shape predictor with the data given by \"filename\" and returns the id. This is the dlib shape predictor (http://dlib.net). The 68 points facial landmarks predictor data can be downloaded from https://github.com/davisking/dlib-models");
+  register_external_primitive("load-image", (void*)&load_image, skiwi_int64, skiwi_char_pointer, "(load-image \"image.png\") loads the PNG file as image and returns an id. Other well known image formats can also be loaded.");
 
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) creates the mesh with given `vertices` and `triangles`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and `triangles` should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
   register_external_primitive("make-pointcloud", (void*)&make_pointcloud, skiwi_int64, skiwi_scm, "(make-pointcloud vertices) creates the pointcloud with given `vertices`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values.");
@@ -1191,7 +1203,7 @@ void* register_functions(void*)
 
   register_external_primitive("mesh->pointcloud", (void*)&scm_mesh_to_pointcloud, skiwi_int64, skiwi_int64, "(mesh->pointcloud id) converts the mesh with tag `id` to a pointcloud.");
   register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "(mesh-texture->vertexcolors id) will return a list of lists of the form ((r g b) (r g b) ... ). Each vertex of the object with tag `id` has a corresponding (r g b) value. This (r g b) value is obtained from the texture of `id`, if available.");
-
+  register_external_primitive("mesh-texture-set!", (void*)&scm_mesh_texture_set, skiwi_void, skiwi_int64, skiwi_int64, "(mesh-texture-set! id tex) sets the image with tag `tex` as texture for the mesh with tag `id`,");
 
   register_external_primitive("morphable-model-coefficients-size", (void*)&mm_coeff_size, skiwi_int64, skiwi_int64, "(morphable-model-coefficients-size mm_id) returns the number of coefficients for the morphable model with tag `mm_id`.");
   register_external_primitive("morphable-model-shape-size", (void*)&mm_shape_size, skiwi_int64, skiwi_int64, "(morphable-model-shape_size mm_id) returns the shape size for the morphable model with tag `mm_id`. This is equal to the number of rows in the U matrix, where a shape S is represented as S = mu + U*c, with mu the average shape, and c the coefficients vector.");
