@@ -14,6 +14,8 @@ set(HDF5_INSTALL_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(HDF5_INSTALL_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set(BUILD_TESTING OFF)
 
+set(TRICO_SHARED "no")
+
 add_subdirectory(dlib)
 add_subdirectory(hdf5)
 
