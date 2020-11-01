@@ -5,6 +5,7 @@
 
 #include <jtk/file_utils.h>
 
+#include <algorithm>
 #include <iostream>
 
 bool read_from_file(im& i, const std::string& filename)
