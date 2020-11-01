@@ -40,6 +40,8 @@ class view
 
     int64_t mesh_to_pointcloud(uint32_t id);
 
+    int64_t duplicate(uint32_t id);
+
     void mesh_texture_set(uint32_t id, uint32_t tex);
 
     void pointcloud_estimate_normals(uint32_t id, uint32_t k);
@@ -73,6 +75,8 @@ class view
     void mm_color_coeff_set(uint32_t id, const std::vector<float>& coeff);
 
     std::vector<jtk::vec3<uint8_t>> mesh_texture_to_vertexcolors(uint32_t id);
+
+    int64_t mesh_texture_to_image(uint32_t id);
 
     int64_t mm_to_mesh(int32_t id);
 
@@ -123,6 +127,12 @@ class view
     std::vector<jtk::vec3<uint32_t>> triangles(uint32_t id);
 
     std::vector<jtk::vec3<float>> vertices(uint32_t id);
+
+    std::vector<jtk::vec3<float>> vertexnormals(uint32_t id);
+
+    std::vector<jtk::vec3<float>> trianglenormals(uint32_t id);
+
+    std::vector<uint32_t  > vertexcolors(uint32_t id);
 
     bool write(uint32_t id, const char* filename);
 

@@ -18,7 +18,7 @@ struct sp
     odl_ear_right
     };
 
-  std::unique_ptr<shape_predictor> p_shape_predictor;
+  std::shared_ptr<shape_predictor> p_shape_predictor;
   bool flip_horizontal;
   object_detector_link odl;
   };

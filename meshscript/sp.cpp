@@ -9,7 +9,8 @@ bool read_from_file(sp& shape_pred, const std::string& filename)
   shape_pred.odl = sp::odl_none;
   try
     {
-    shape_pred.p_shape_predictor.reset(new shape_predictor(filename));
+    //shape_pred.p_shape_predictor.reset(new shape_predictor(filename));
+    shape_pred.p_shape_predictor = std::make_shared< shape_predictor>(filename);
     }
   catch (...)
     {

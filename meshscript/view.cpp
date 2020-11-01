@@ -172,6 +172,90 @@ void view::prepare_window()
   gl_check_error("glTexImage2D in view.cpp");
   }
 
+int64_t view::duplicate(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh(id);
+  pc* p = _db.get_pc(id);
+  mm* m2 = _db.get_mm(id);
+  sp* s = _db.get_sp(id);
+  im* i = _db.get_image(id);
+  if (m)
+    {
+    mesh* new_object;
+    uint32_t id_out;
+    _db.create_mesh(new_object, id_out);
+    _matcap.map_db_id_to_matcap_id(id_out, _get_semirandom_matcap_id(id_out));
+    *new_object = *m;
+    if (new_object->visible)
+      add_object(id_out, _scene, _db);
+    prepare_scene(_scene);    
+    _refresh = true;
+    return id_out;
+    }
+  if (p)
+    {
+    pc* new_object;
+    uint32_t id_out;
+    _db.create_pc(new_object, id_out);
+    *new_object = *p;
+    if (new_object->visible)
+      add_object(id_out, _scene, _db);
+    prepare_scene(_scene);
+    _refresh = true;
+    return id_out;
+    }
+  if (m2)
+    {
+    mm* new_object;
+    uint32_t id_out;
+    _db.create_mm(new_object, id_out);
+    _matcap.map_db_id_to_matcap_id(id_out, _get_semirandom_matcap_id(id_out));
+    *new_object = *m2;
+    if (new_object->visible)
+      add_object(id_out, _scene, _db);
+    prepare_scene(_scene);
+    _refresh = true;
+    return id_out;
+    }
+  if (s)
+    {
+    sp* new_object;
+    uint32_t id_out;
+    _db.create_sp(new_object, id_out);
+    *new_object = *s;   
+    return id_out;
+    }
+  if (i)
+    {
+    im* new_object;
+    uint32_t id_out;
+    _db.create_image(new_object, id_out);
+    *new_object = *i;
+    return id_out;
+    }
+  return -1;
+  }
+
+int64_t view::mesh_texture_to_image(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh(id);
+  if (m)
+    {
+    im* db_image;
+    uint32_t id;
+    _db.create_image(db_image, id);
+    db_image->texture = m->texture;
+    if (db_image->texture.width() == 0 || db_image->texture.height() == 0)
+      {
+      db_image->texture = make_dummy_texture(512, 512);
+      }
+    return id;
+    }
+  return -1;
+  }
+
 int64_t view::mesh_to_pointcloud(uint32_t id)
   {
   std::scoped_lock lock(_mut);
@@ -940,6 +1024,61 @@ std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
   if (mo)
     return mo->shape.triangles;
   return std::vector<jtk::vec3<uint32_t>>();
+  }
+
+std::vector<jtk::vec3<float>> view::vertexnormals(uint32_t id)
+  {
+  pc* p = _db.get_pc((uint32_t)id);
+  if (p)
+    return p->normals;
+  mesh* m = _db.get_mesh((uint32_t)id);
+  if (m)
+    {
+    std::vector<vec3<float>> triangle_normals, vertex_normals;
+    compute_triangle_normals(triangle_normals, m->vertices.data(), m->triangles.data(), m->triangles.size());
+    compute_vertex_normals(vertex_normals, triangle_normals.data(), m->vertices.data(), m->vertices.size(), m->triangles.data(), m->triangles.size());
+    return vertex_normals;
+    }
+  mm* m2 = _db.get_mm((uint32_t)id);
+  if (m2)
+    {
+    std::vector<vec3<float>> triangle_normals, vertex_normals;
+    compute_triangle_normals(triangle_normals, m2->vertices.data(), m2->shape.triangles.data(), m2->shape.triangles.size());
+    compute_vertex_normals(vertex_normals, triangle_normals.data(), m2->vertices.data(), m2->vertices.size(), m2->shape.triangles.data(), m2->shape.triangles.size());
+    return vertex_normals;
+    }
+  return std::vector<jtk::vec3<float>>();
+  }
+
+std::vector<jtk::vec3<float>> view::trianglenormals(uint32_t id)
+  {
+  mesh* m = _db.get_mesh((uint32_t)id);
+  if (m)
+    {
+    std::vector<vec3<float>> triangle_normals;
+    compute_triangle_normals(triangle_normals, m->vertices.data(), m->triangles.data(), m->triangles.size());    
+    return triangle_normals;
+    }
+  mm* m2 = _db.get_mm((uint32_t)id);
+  if (m2)
+    {
+    std::vector<vec3<float>> triangle_normals;
+    compute_triangle_normals(triangle_normals, m2->vertices.data(), m2->shape.triangles.data(), m2->shape.triangles.size());    
+    return triangle_normals;
+    }
+  return std::vector<jtk::vec3<float>>();
+  }
+
+std::vector<uint32_t> view::vertexcolors(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh((uint32_t)id);
+  if (m)
+    return convert_vertex_colors(m->vertex_colors);
+  pc* p = _db.get_pc((uint32_t)id);
+  if (p)
+    return p->vertex_colors;
+  return std::vector<uint32_t>();
   }
 
 std::vector<jtk::vec3<float>> view::vertices(uint32_t id)

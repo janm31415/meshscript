@@ -3,6 +3,8 @@
 #include <stb_image.h>
 #include <stb_image_write.h>
 
+#include <jtk/file_utils.h>
+
 #include <iostream>
 
 bool read_from_file(im& i, const std::string& filename)
@@ -20,8 +22,30 @@ bool read_from_file(im& i, const std::string& filename)
 
 bool write_to_file(const im& i, const std::string& filename)
   {
-  if (!stbi_write_png(filename.c_str(), i.texture.width(), i.texture.height(), 4, (void*)i.texture.data(), i.texture.stride() * 4))
+  std::string ext = jtk::get_extension(filename);
+  if (ext.empty())
     return false;
+  std::transform(ext.begin(), ext.end(), ext.begin(), [](char ch) {return (char)::tolower(ch); });
+  if (ext == "png")
+    {
+    if (!stbi_write_png(filename.c_str(), i.texture.width(), i.texture.height(), 4, (void*)i.texture.data(), i.texture.stride() * 4))
+      return false;
+    }
+  else if (ext == "jpg" || ext == "jpeg")
+    {
+    if (!stbi_write_jpg(filename.c_str(), i.texture.width(), i.texture.height(), 4, (void*)i.texture.data(), 80))
+      return false;
+    }
+  else if (ext == "bmp")
+    {
+    if (!stbi_write_bmp(filename.c_str(), i.texture.width(), i.texture.height(), 4, (void*)i.texture.data()))
+      return false;
+    }
+  else if (ext == "tga")
+    {
+    if (!stbi_write_tga(filename.c_str(), i.texture.width(), i.texture.height(), 4, (void*)i.texture.data()))
+      return false;
+    }
   return true;
   }
 

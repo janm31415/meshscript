@@ -66,6 +66,12 @@ int64_t scm_mesh_to_pointcloud(int64_t id)
   return id_out;
   }
 
+int64_t scm_mesh_texture_to_image(int64_t id)
+  {
+  int64_t id_out = g_view->mesh_texture_to_image((uint32_t)id);
+  return id_out;
+  }
+
 int64_t load_morphable_model(const char* filename)
   {
   int64_t id = g_view->load_morphable_model_from_file(filename);
@@ -250,6 +256,11 @@ uint64_t scm_icp(int64_t id1, int64_t id2, uint64_t inlier_distance)
     lst.push_back(make_list(row));
     }
   return make_list(lst);
+  }
+
+int64_t scm_duplicate(int64_t id)
+  {
+  return g_view->duplicate((uint32_t)id);
   }
 
 uint64_t scm_distance_map(int64_t id1, int64_t id2, bool sign)
@@ -879,6 +890,57 @@ uint64_t scm_vertices(int64_t id)
   return make_list(vertlist);
   }
 
+uint64_t scm_vertexcolors(int64_t id)
+  {
+  using namespace skiwi;
+  auto clrs = g_view->vertexcolors((uint32_t)id);
+  std::vector<scm_type> vertlist;
+  for (const auto& clr : clrs)
+    {
+    uint32_t r = clr & 255;
+    uint32_t g = (clr >> 8) & 255;
+    uint32_t b = (clr >> 16) & 255;
+    std::vector<scm_type> v;
+    v.push_back(make_flonum(r));
+    v.push_back(make_flonum(g));
+    v.push_back(make_flonum(b));
+    vertlist.push_back(make_list(v));
+    }
+  return make_list(vertlist);
+  }
+
+uint64_t scm_vertexnormals(int64_t id)
+  {
+  using namespace skiwi;
+  auto verts = g_view->vertexnormals((uint32_t)id);
+  std::vector<scm_type> vertlist;
+  for (const auto& vert : verts)
+    {
+    std::vector<scm_type> v;
+    v.push_back(make_flonum(vert[0]));
+    v.push_back(make_flonum(vert[1]));
+    v.push_back(make_flonum(vert[2]));
+    vertlist.push_back(make_list(v));
+    }
+  return make_list(vertlist);
+  }
+
+uint64_t scm_trianglenormals(int64_t id)
+  {
+  using namespace skiwi;
+  auto verts = g_view->trianglenormals((uint32_t)id);
+  std::vector<scm_type> vertlist;
+  for (const auto& vert : verts)
+    {
+    std::vector<scm_type> v;
+    v.push_back(make_flonum(vert[0]));
+    v.push_back(make_flonum(vert[1]));
+    v.push_back(make_flonum(vert[2]));
+    vertlist.push_back(make_list(v));
+    }
+  return make_list(vertlist);
+  }
+
 bool scm_write(int64_t id, const char* filename)
   {
   return g_view->write((uint32_t)id, filename);
@@ -1182,6 +1244,8 @@ void* register_functions(void*)
 
   register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed) returns a list with values that represent the distance between objects with tag `id1` and `id2`. For each vertex of object `id1` there is exactly one distance in the list. The distance can be signed or unsigned, depending on the boolean value that is given to `bool-signed`.");
 
+  register_external_primitive("duplicate", (void*)&scm_duplicate, skiwi_int64, skiwi_int64, "(duplicate id) makes a duplicate of the object with tag `id`.");
+
   register_external_primitive("ear-right-detect", (void*)&scm_right_ear_detect, skiwi_scm, "(ear-right-detect) runs the ear detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the right ear starting in corner (x,y) and with sizes (w,h).");
 
   register_external_primitive("ear-left-detect", (void*)&scm_left_ear_detect, skiwi_scm, "(ear-left-detect) runs the ear detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the left ear starting in corner (x,y) and with sizes (w,h).");
@@ -1207,6 +1271,7 @@ void* register_functions(void*)
   register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id `matcap-id`. There are 4 hard-coded matcaps with ids 0, 1, 2, 3. You can also provide an image id as `matcap-id`, see load-image.");
 
   register_external_primitive("mesh->pointcloud", (void*)&scm_mesh_to_pointcloud, skiwi_int64, skiwi_int64, "(mesh->pointcloud id) converts the mesh with tag `id` to a pointcloud.");
+  register_external_primitive("mesh-texture->image", (void*)&scm_mesh_texture_to_image, skiwi_int64, skiwi_int64, "(mesh-texture->image id) converts the texture of the mesh with tag `id` to an image.");
   register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "(mesh-texture->vertexcolors id) will return a list of lists of the form ((r g b) (r g b) ... ). Each vertex of the object with tag `id` has a corresponding (r g b) value. This (r g b) value is obtained from the texture of `id`, if available.");
   register_external_primitive("mesh-texture-set!", (void*)&scm_mesh_texture_set, skiwi_void, skiwi_int64, skiwi_int64, "(mesh-texture-set! id tex) sets the image with tag `tex` as texture for the mesh with tag `id`,");
 
@@ -1245,8 +1310,12 @@ void* register_functions(void*)
   register_external_primitive("shape-predictor-unlink", (void*)&scm_sp_link_remove, skiwi_void, skiwi_int64, "(shape-predictor-unlink id) unlinks the shape predictor given by tag `id`, see shape-predictor-link-to-face-detector, shape-predictor-link-to-ear-right-detector, or shape-predictor-link-to-ear-left-detector.");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
+
+  register_external_primitive("trianglenormals", (void*)&scm_trianglenormals, skiwi_scm, skiwi_int64, "(trianglenormals id) returns the triangle normals of object with tag `id`. The triangle normals are given as a list of lists with (x y z) values.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id) returns the triangles of object with tag `id` as a list of lists of the form ((v0 v1 v2) (v3 v4 v4) ...) where each sublist (v0 v1 v2) contain the indices of the vertices that form a triangle. The actual vertex positions can be obtained with the command (vertices id).");
   register_external_primitive("triangles->csv", (void*)&triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of the object with tag `id` to a csv file.");
+  register_external_primitive("vertexcolors", (void*)&scm_vertexcolors, skiwi_scm, skiwi_int64, "(vertexcolors id) returns the vertex colors of object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
+  register_external_primitive("vertexnormals", (void*)&scm_vertexnormals, skiwi_scm, skiwi_int64, "(vertexnormals id) returns the vertex normals of object with tag `id`. The vertex normals are given as a list of lists with (x y z) values.");
   register_external_primitive("vertexcolors-set!", (void*)&scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(vertexcolors-set! id clrlst) sets vertex colors for the object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
   register_external_primitive("vertices", (void*)&scm_vertices, skiwi_scm, skiwi_int64, "(vertices id) returns the vertices of object with tag `id` as a list of lists of the form ((x y z) (x y z) ...) where each sublist (x y z) is a 3d point representing the position of that vertex.");
   register_external_primitive("vertices->csv", (void*)&vertices_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(vertices->csv id \"file.csv\") exports the vertices of the object with tag `id` to a csv file.");

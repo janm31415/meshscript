@@ -15,26 +15,24 @@
 
 using namespace jtk;
 
-namespace
-  {
 
-  jtk::image<uint32_t> make_dummy_texture(int w, int h)
+jtk::image<uint32_t> make_dummy_texture(int w, int h)
+  {
+  jtk::image<uint32_t> im(w, h);
+  for (int y = 0; y < h; ++y)
     {
-    jtk::image<uint32_t> im(w, h);
-    for (int y = 0; y < h; ++y)
+    uint32_t* p_clr = im.row(y);
+    bool y_even = ((y / 32) & 1) == 1;
+    for (int x = 0; x < w; ++x, ++p_clr)
       {
-      uint32_t* p_clr = im.row(y);
-      bool y_even = ((y / 32) & 1) == 1;
-      for (int x = 0; x < w; ++x, ++p_clr)
-        {
-        bool x_even = ((x / 32) & 1) == 1;
-        bool black = (x_even && y_even) || (!x_even && !y_even);
-        *p_clr = black ? 0xff000000 : 0xffffffff;
-        }
+      bool x_even = ((x / 32) & 1) == 1;
+      bool black = (x_even && y_even) || (!x_even && !y_even);
+      *p_clr = black ? 0xff000000 : 0xffffffff;
       }
-    return im;
     }
+  return im;
   }
+
 
 void compute_bb(vec3<float>& min, vec3<float>& max, uint32_t nr_of_vertices, const vec3<float>* vertices)
   {
@@ -76,7 +74,7 @@ bool read_from_file(mesh& m, const std::string& filename)
       return false;
     if (!vertex_colors.empty())
       {
-      m.vertex_colors = convert_vertex_colors(vertex_colors);     
+      m.vertex_colors = convert_vertex_colors(vertex_colors);
       }
     }
   else if (ext == "off")
@@ -206,7 +204,7 @@ bool write_to_file(const mesh& m, const std::string& filename)
     std::vector<jtk::vec3<float>> normals;
     return write_obj(filename.c_str(), m.vertices, normals, colors, m.triangles, m.uv_coordinates, m.texture);
     }
-    
+
   return false;
   }
 
