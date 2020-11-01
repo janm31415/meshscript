@@ -20,6 +20,7 @@ class canvas
       bool wireframe;
       bool shading;
       bool textured;
+      bool vertexcolors;
       };
 
     canvas();

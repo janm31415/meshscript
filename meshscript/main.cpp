@@ -462,7 +462,7 @@ void hide(int64_t id)
 
 void set_matcap(int64_t id, int64_t clr_id)
   {
-  g_view->set_matcap(id, clr_id);
+  g_view->set_matcap((uint32_t)id, (uint32_t)clr_id);
   }
 
 void scm_unzoom()
@@ -644,6 +644,11 @@ void scm_set_edges(bool b)
 void scm_set_textured(bool b)
   {
   g_view->set_textured(b);
+  }
+
+void scm_set_vertexcolors(bool b)
+  {
+  g_view->set_vertexcolors(b);
   }
 
 void scm_set_shadow(bool b)
@@ -1199,7 +1204,7 @@ void* register_functions(void*)
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) creates the mesh with given `vertices` and `triangles`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and `triangles` should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
   register_external_primitive("make-pointcloud", (void*)&make_pointcloud, skiwi_int64, skiwi_scm, "(make-pointcloud vertices) creates the pointcloud with given `vertices`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values.");
   register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with `bb` representing the bounding box of the form ((min_x max_x) (min_y max_y) (min_z max_z)), `dim` representing the dimensions of the form (width height depth), `isovalue` a flonum representing the signed distance requested, and `fun` representing the distance functions as a lambda function accepting (x y z) values and returning a distance.");
-  register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id matcap-id. Currently the matcaps in meshscript are hardcoded. There are 4 available matcaps with ids 0, 1, 2, 3.");
+  register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id `matcap-id`. There are 4 hard-coded matcaps with ids 0, 1, 2, 3. You can also provide an image id as `matcap-id`, see load-image.");
 
   register_external_primitive("mesh->pointcloud", (void*)&scm_mesh_to_pointcloud, skiwi_int64, skiwi_int64, "(mesh->pointcloud id) converts the mesh with tag `id` to a pointcloud.");
   register_external_primitive("mesh-texture->vertexcolors", (void*)&scm_mesh_texture_to_vertexcolors, skiwi_scm, skiwi_int64, "(mesh-texture->vertexcolors id) will return a list of lists of the form ((r g b) (r g b) ... ). Each vertex of the object with tag `id` has a corresponding (r g b) value. This (r g b) value is obtained from the texture of `id`, if available.");
@@ -1268,6 +1273,7 @@ void* register_functions(void*)
   register_external_primitive("view-size-set!", (void*)&scm_set_image_size, skiwi_void, skiwi_scm, skiwi_scm, "(view-size-set! w h) resizes the plotted image to size (w, h).");
   register_external_primitive("view-textured-set!", (void*)&scm_set_textured, skiwi_void, skiwi_bool, "(view-textured-set! #t/#f) turns on/off rendering of texture.");
   register_external_primitive("view-unzoom!", (void*)&scm_unzoom, skiwi_void, "(view-unzoom!) sets the camera to its initial position.");
+  register_external_primitive("view-vertexcolors-set!", (void*)&scm_set_vertexcolors, skiwi_void, skiwi_bool, "(view-vertexcolors-set! #t/#f) turns on/off rendering of vertex colors.");
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");  
 
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");

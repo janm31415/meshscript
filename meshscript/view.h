@@ -90,13 +90,15 @@ class view
 
     void show();
 
-    void set_matcap(int64_t id, int64_t clr_id);
+    void set_matcap(uint32_t id, uint32_t clr_id);
 
     void set_shading(bool b);
 
     void set_edges(bool b);
 
     void set_textured(bool b);
+
+    void set_vertexcolors(bool b);
 
     void set_shadow(bool b);
 
@@ -161,6 +163,8 @@ class view
     void quit();
 
   private:
+
+    uint32_t _get_semirandom_matcap_id(uint32_t object_id) const;
 
     void poll_for_events();
 

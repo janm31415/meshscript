@@ -114,6 +114,7 @@ view::view() : _w(1600), _h(900), _window(nullptr)
   _settings.wireframe = false;
   _settings.shading = true;
   _settings.textured = true;
+  _settings.vertexcolors = true;
 
   _suspend = false;
   _resume = false;
@@ -217,7 +218,7 @@ int64_t view::load_mesh_from_file(const char* filename)
   db_mesh->vertex_colors.swap(m.vertex_colors);
   db_mesh->cs = m.cs;
   db_mesh->visible = m.visible;
-  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
   if (db_mesh->visible)
     add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -245,7 +246,7 @@ int64_t view::load_morphable_model_from_file(const char* filename)
   db_mm->vertex_colors.swap(m.vertex_colors);
   db_mm->cs = m.cs;
   db_mm->visible = m.visible;
-  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
   if (db_mm->visible)
     add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -270,7 +271,6 @@ int64_t view::load_pc_from_file(const char* filename)
   db_pc->vertex_colors.swap(point_cloud.vertex_colors);
   db_pc->cs = point_cloud.cs;
   db_pc->visible = point_cloud.visible;
-  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
   if (db_pc->visible)
     add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -303,7 +303,7 @@ int64_t view::load_mesh(const std::vector<vec3<float>>& vertices, const std::vec
   db_mesh->vertices = vertices;
   db_mesh->triangles = triangles;
   db_mesh->cs = get_identity();
-  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
   db_mesh->visible = true;
   add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -686,10 +686,20 @@ void view::show()
   _resume = true;
   }
 
-void view::set_matcap(int64_t id, int64_t clr_id)
+void view::set_matcap(uint32_t id, uint32_t clr_id)
   {
   std::scoped_lock lock(_mut);
-  _matcap.map_db_id_to_matcap[(uint32_t)id] = (uint32_t)(clr_id % _matcap.matcaps.size());
+  im* i = _db.get_image(clr_id);
+  if (i)
+    {
+    matcap new_matcap;
+    new_matcap.im = i->texture;
+    new_matcap.cavity_clr = i->texture(0, 0);
+    _matcap.make_new_matcap(clr_id, new_matcap);
+    _matcap.map_db_id_to_matcap_id(id, clr_id);
+    }
+  else
+    _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(clr_id));
   _refresh = true;
   }
 
@@ -734,6 +744,13 @@ void view::set_textured(bool b)
   {
   std::scoped_lock lock(_mut);
   _settings.textured = b;
+  _refresh = true;
+  }
+
+void view::set_vertexcolors(bool b)
+  {
+  std::scoped_lock lock(_mut);
+  _settings.vertexcolors = b;
   _refresh = true;
   }
 
@@ -848,6 +865,11 @@ void view::unzoom()
   _refresh = true;
   }
 
+uint32_t view::_get_semirandom_matcap_id(uint32_t object_id) const
+  {
+  return _matcap.get_semirandom_matcap_id_for_given_db_id(object_id);
+  }
+
 int64_t view::marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width, uint64_t height, uint64_t depth, float isovalue, double(*fun_ptr)(double, double, double))
   {
   std::scoped_lock lock(_mut);
@@ -859,7 +881,7 @@ int64_t view::marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width
     return fun_ptr(x, y, z);
     }, [](float) {return true; });
   db_mesh->cs = get_identity();
-  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
   db_mesh->visible = true;
   add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -1072,7 +1094,7 @@ int64_t view::mm_to_mesh(int32_t mm_id)
   db_mesh->vertex_colors = m->vertex_colors;
   db_mesh->cs = m->cs;
   db_mesh->visible = true;
-  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
   if (db_mesh->visible)
     add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -1294,7 +1316,7 @@ int64_t view::poisson(uint32_t pc_id, uint32_t depth)
     poisson_reconstruction_screened(db_mesh->vertices, db_mesh->triangles, db_mesh->vertex_colors, p->vertices, p->normals, p->vertex_colors, pars);
   db_mesh->cs = jtk::get_identity();
   db_mesh->visible = true;
-  _matcap.map_db_id_to_matcap[id] = (id % _matcap.matcaps.size());
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
   if (db_mesh->visible)
     add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -1489,6 +1511,12 @@ void view::poll_for_events()
         case SDLK_u:
         {
         ::unzoom(_scene);
+        _refresh = true;
+        break;
+        }
+        case SDLK_v:
+        {
+        _settings.vertexcolors = !_settings.vertexcolors;
         _refresh = true;
         break;
         }

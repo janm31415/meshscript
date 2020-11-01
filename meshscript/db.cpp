@@ -143,7 +143,7 @@ bool db::is_sp(uint32_t id) const
 void db::create_image(im*& new_im, uint32_t& id)
   {
   im* m = new im();
-  id = make_db_id(IM_KEY, (uint32_t)sps.size());
+  id = make_db_id(IM_KEY, (uint32_t)images.size());
   new_im = m;
   images.push_back(std::make_pair(id, m));
   images_deleted.push_back(std::make_pair(id, nullptr));

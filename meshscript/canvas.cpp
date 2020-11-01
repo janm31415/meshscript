@@ -785,7 +785,7 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
           p_canvas_line->b = (color & 0x00ff0000) >> 16;
           p_canvas_line->mark |= 2;
           }
-        else if (vertex_colors[two_level_index] != nullptr)
+        else if (_settings.vertexcolors && vertex_colors[two_level_index] != nullptr)
           {
           const uint32_t v0 = triangles[two_level_index][object_id][0];
           const uint32_t v1 = triangles[two_level_index][object_id][1];
