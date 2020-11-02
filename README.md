@@ -563,6 +563,58 @@ For this example I've downloaded an obj file with texture from https://free3d.co
 
 ![](images/klein.png)    
     
+    (define pi 3.1415926535897)
+    
+    (define (KleinX u v)
+      (if (< v pi)         
+          (* (- 2.5 (* 1.5 (cos v))) (cos u))
+          (if (< v (* 2.0 pi)) 
+              (* (- 2.5 (* 1.5 (cos v))) (cos u))
+              (if (< v (* 3.0 pi)) 
+                  (- (* (+ 2.0 (cos u)) (cos v)) 2.0)
+                  (- (* 2.0 (cos v)) 2.0 (cos u))
+              ))))
+    
+    (define (KleinY u v)
+      (if (< v pi)         
+          (* (- 2.5 (* 1.5 (cos v))) (sin u))
+      
+          (if (< v (* 2.0 pi)) 
+              (* (- 2.5 (* 1.5 (cos v))) (sin u))
+              (if (< v (* 3.0 pi)) 
+                  (sin u)
+                  (sin u)
+              ))))
+    
+    (define (KleinZ u v)
+      (if (< v pi)         
+          (* -2.5 (sin v))
+          (if (< v (* 2.0 pi)) 
+              (- (* 3.0 v)(* 3.0 pi))
+              (if (< v (* 3.0 pi)) 
+                  (+ (* (+ 2.0 (cos u))(sin v)) (* 3.0 pi))
+                  (- (* 12.0 pi) (* 3.0 v))
+              ))))
+    
+    (define (KleinBottle u v) ; parametric representation of the Klein bottle
+      (list (KleinX u v) (KleinY u v) (KleinZ u v))
+    )
+    
+    ; the domain as a list: min_u, max_u, step_u, min_v, max_v, step_v
+    (define domain (list 0.0 (* 2.0 pi) (/ pi 72.0) 0.0 (* 4.0 pi) (/ pi 72.0)))
+    
+    ; generate a mesh from the parametric representation
+    (define id (parametric KleinBottle domain))
+    
+    ; set a matcap for nice rendering
+    (define matcap (load-image "D:/my_matcaps/ceramic_lightbulb.png"))
+    (matcap-set! id matcap)
+    
+    (view-textured-set! #f) ; don't render the uv domain / texture
+    (view-edges-set! #f) ; don't render edges
+    
+    (view-show!) ; show the 3d view    
+    
 Glossary
 --------
 
