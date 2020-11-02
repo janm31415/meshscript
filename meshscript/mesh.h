@@ -20,7 +20,7 @@ struct mesh
   bool visible;
   };
 
-jtk::image<uint32_t> make_dummy_texture(int w, int h);
+jtk::image<uint32_t> make_dummy_texture(int w, int h, int block_size = 32);
 std::vector<uint32_t> convert_vertex_colors(const std::vector<jtk::vec3<float>>& vertex_colors);
 std::vector<jtk::vec3<float>> convert_vertex_colors(const std::vector<uint32_t>& vertex_colors);
 

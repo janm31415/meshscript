@@ -378,6 +378,77 @@ int64_t scm_marching_cubes(uint64_t bb64, uint64_t dim64, uint64_t iso64, uint64
   return -1;
   }
 
+namespace
+  {
+
+  jtk::combinable<void*> thread_specific_scheme_context_parametric_fun;
+
+  skiwi::skiwi_compiled_function_ptr parametric_fun = nullptr;
+
+  jtk::vec3<double> parametric_fun_scm(double u, double v)
+    {
+    bool exists;
+    void*& local_context = thread_specific_scheme_context_parametric_fun.local(exists);
+    if (!exists)
+      local_context = skiwi::skiwi_clone_context(skiwi::skiwi_get_context());
+    skiwi::scm_type res = skiwi::skiwi_run_raw(parametric_fun, local_context, u, v);
+    jtk::vec3<double> out(0.0, 0.0, 0.0);
+    out[0] = res.get_pair().first.get_number();
+    out[1] = res.get_pair().second.get_pair().first.get_number();
+    out[2] = res.get_pair().second.get_pair().second.get_pair().first.get_number();
+    return out;
+    }
+
+  }
+
+int64_t scm_parametric(uint64_t fun64, uint64_t dom64)
+  {
+  skiwi::scm_type dom(dom64);
+  skiwi::scm_type fun(fun64);
+
+  skiwi::save_compiler_data();
+
+  if (dom.is_pair() && fun.is_closure())
+    {
+    try
+      {
+      std::vector<skiwi::scm_type> dom_(6);
+      dom_[0] = dom.get_pair().first;
+      dom_[1] = dom.get_pair().second.get_pair().first;
+      dom_[2] = dom.get_pair().second.get_pair().second.get_pair().first;
+      dom_[3] = dom.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+      dom_[4] = dom.get_pair().second.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+      dom_[5] = dom.get_pair().second.get_pair().second.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+      std::array<double, 6> domain;
+      for (int i = 0; i < 6; ++i)
+        domain[i] = dom_[i].get_number();
+
+      std::string script = std::string("(c-input \"(double par_u, double par_v)\") (") + fun.get_closure_name() + std::string(" par_u par_v)");
+      parametric_fun = skiwi::skiwi_compile(script);
+      int64_t id = g_view->parametric(domain, &parametric_fun_scm);
+
+      thread_specific_scheme_context_parametric_fun.combine_each([](void* ctxt)
+        {
+        skiwi::skiwi_destroy_clone_context(ctxt);
+        });
+      thread_specific_scheme_context_parametric_fun.clear();
+      skiwi::restore_compiler_data();
+      return id;
+      }
+    catch (std::runtime_error e)
+      {
+      std::cout << e.what() << "\n";
+      }
+    }
+  else
+    {
+    std::cout << "error: parametric: invalid input type\n";
+    }
+
+  skiwi::restore_compiler_data();
+  return -1;
+  }
+
 int64_t make_pointcloud(uint64_t scm_vertices_64)
   {
   skiwi::scm_type scm_vertices(scm_vertices_64);
@@ -1158,7 +1229,7 @@ uint64_t npoint_scm(uint64_t src64, uint64_t tgt64)
         && !std::isnan(target(nr_rows, 0))
         && !std::isnan(target(nr_rows, 1))
         && !std::isnan(target(nr_rows, 2)))
-      ++nr_rows;
+        ++nr_rows;
       }
     source.resize(nr_rows, 3);
     target.resize(nr_rows, 3);
@@ -1212,7 +1283,7 @@ void mm_fit_indices(int64_t mm_id, uint64_t indices64, uint64_t positions64)
   }
 
 void mm_fit(int64_t mm_id, int64_t mesh_id)
-  {  
+  {
   g_view->fit_mm((uint32_t)mm_id, (uint32_t)mesh_id);
   }
 
@@ -1289,12 +1360,14 @@ void* register_functions(void*)
   register_external_primitive("morphable-model-color-basic-shape-coefficients", (void*)&mm_color_basic_shape_coeff, skiwi_scm, skiwi_int64, skiwi_int64, "(morphable-model-color-basic-shape-coefficients mm_id idx) returns the list of color coefficients of the `idx`-th color shape that was used to generate this morphable model. Not all morphable models have this data. For instance the Basel shape model does not contain this data.");
   register_external_primitive("morphable-model-color-coefficients-set!", (void*)&mm_color_coeff_set, skiwi_void, skiwi_int64, skiwi_scm, "(morphable-model-color-coefficients-set! mm_id coeff) sets the list of color coefficients for the morphable model with tag `mm_id`. Here `coeff` is a list of color coefficient values, and its size should equal (morphable-model-color-coefficients-size mm_id).");
 
-  
+
   register_external_primitive("morphable-model-fit-indices!", (void*)&mm_fit_indices, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, "(morphable-model-fit-indices! mm_id indices positions)");
   register_external_primitive("morphable-model-fit!", (void*)&mm_fit, skiwi_void, skiwi_int64, skiwi_int64, "(morphable-model-fit! mm_id mesh_id)");
 
 
   register_external_primitive("npoint", (void*)&npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "(npoint from to) computes the npoint-registration of the set of 3d points in `from` to the set of 3d points in `to`. The result is a 4x4 transformation matrix. Here `from` and `to` are lists of lists of the form ((x y z) (x y z) ...) and `from` and `to` should have the same amount of 3d points.");
+
+  register_external_primitive("parametric", (void*)&scm_parametric, skiwi_int64, skiwi_scm, skiwi_scm, "(parametric fun domain) returns the id of a new mesh. The mesh is created from a lambda function `fun`, where `fun` accepts two floating input values (u v) and returns a list (x y z). The input variable `domain` is a list of the form (min_u max_u step_u min_v max_v step_v) describing the uv parameter domain.");
 
   register_external_primitive("pointcloud-normals-estimate!", (void*)&scm_pointcloud_normals_estimate, skiwi_void, skiwi::skiwi_int64, skiwi::skiwi_int64, "(pointcloud-normals-estimate! id k) creates vertex normals for the pointcloud with tag `id` by taking the `k` nearest neighbours of each vertex, fit a least squares plane through these points, and use the normal of this plane as estimate.");
 
@@ -1343,7 +1416,7 @@ void* register_functions(void*)
   register_external_primitive("view-textured-set!", (void*)&scm_set_textured, skiwi_void, skiwi_bool, "(view-textured-set! #t/#f) turns on/off rendering of texture.");
   register_external_primitive("view-unzoom!", (void*)&scm_unzoom, skiwi_void, "(view-unzoom!) sets the camera to its initial position.");
   register_external_primitive("view-vertexcolors-set!", (void*)&scm_set_vertexcolors, skiwi_void, skiwi_bool, "(view-vertexcolors-set! #t/#f) turns on/off rendering of vertex colors.");
-  register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");  
+  register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
 
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");
   return nullptr;
@@ -1436,7 +1509,7 @@ int main(int argc, char** argv)
   v.loop();
   close_scheme_loop(sld);
   }
-  
+
   SDL_Quit();
   return 0;
   }

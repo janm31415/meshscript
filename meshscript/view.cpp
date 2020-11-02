@@ -954,6 +954,89 @@ uint32_t view::_get_semirandom_matcap_id(uint32_t object_id) const
   return _matcap.get_semirandom_matcap_id_for_given_db_id(object_id);
   }
 
+int64_t view::parametric(const std::array<double, 6>& domain, jtk::vec3<double>(*fun_ptr)(double, double))
+  {
+  std::scoped_lock lock(_mut);
+  mesh* db_mesh;
+  uint32_t id;
+  _db.create_mesh(db_mesh, id);
+
+  double vrange = domain[4] - domain[3];
+  double urange = domain[1] - domain[0];
+
+  int vsteps = std::round(vrange / domain[5]) + 1;
+  int usteps = std::round(urange / domain[2]) + 1;
+
+  db_mesh->vertices.resize((uint32_t)usteps*(uint32_t)vsteps);
+
+  jtk::parallel_for((int)0, vsteps, [&](int v)
+    {
+    double vpar = domain[3] + domain[5] * v;
+    for (int u = 0; u < usteps; ++u)
+      {
+      double upar = domain[0] + domain[2] * u;
+
+      uint32_t idx = (uint32_t)v * (uint32_t)usteps + (uint32_t)u;
+      auto res = fun_ptr(upar, vpar);
+      db_mesh->vertices[idx][0] = (float)res[0];
+      db_mesh->vertices[idx][1] = (float)res[1];
+      db_mesh->vertices[idx][2] = (float)res[2];
+      }
+    });
+
+  db_mesh->triangles.reserve((uint32_t)(usteps - 1)*(uint32_t)(vsteps - 1) * 2);
+  db_mesh->uv_coordinates.reserve((uint32_t)(usteps - 1)*(uint32_t)(vsteps - 1) * 2);
+  
+  for (int v = 0; v < vsteps-1; ++v)  
+    {
+    double vpar = domain[3] + domain[5] * v;
+    for (int u = 0; u < usteps-1; ++u)
+      {
+      double upar = domain[0] + domain[2] * u;
+      uint32_t idx_00 = (uint32_t)v * (uint32_t)usteps + (uint32_t)u;
+      uint32_t idx_01 = (uint32_t)(v+1) * (uint32_t)usteps + (uint32_t)u;
+      uint32_t idx_11 = (uint32_t)(v + 1) * (uint32_t)usteps + (uint32_t)(u+1);
+      uint32_t idx_10 = (uint32_t)v * (uint32_t)usteps + (uint32_t)(u + 1);
+      db_mesh->triangles.emplace_back(idx_00, idx_10, idx_11);
+      db_mesh->triangles.emplace_back(idx_00, idx_11, idx_01);
+
+      jtk::vec3<jtk::vec2<float>> uv;
+      uv[0][0] = upar;
+      uv[0][1] = vpar;
+      uv[1][0] = upar + domain[2];
+      uv[1][1] = vpar;
+      uv[2][0] = upar + domain[2];
+      uv[2][1] = vpar + domain[5];
+      db_mesh->uv_coordinates.push_back(uv);
+      uv[1][1] = vpar + domain[5];
+      uv[2][0] = upar;
+      db_mesh->uv_coordinates.push_back(uv);
+      }
+    }
+
+  for (auto& uv: db_mesh->uv_coordinates)
+    {
+    for (int i = 0; i < 3; ++i)
+      {
+      uv[i][0] -= domain[0];
+      uv[i][1] -= domain[3];
+      uv[i][0] /= urange;
+      uv[i][1] /= vrange;
+      }
+    }
+
+  db_mesh->texture = make_dummy_texture(usteps, vsteps, 1);
+
+  db_mesh->cs = get_identity();
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
+  db_mesh->visible = true;
+  add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return (int64_t)id;
+  }
+
 int64_t view::marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width, uint64_t height, uint64_t depth, float isovalue, double(*fun_ptr)(double, double, double))
   {
   std::scoped_lock lock(_mut);

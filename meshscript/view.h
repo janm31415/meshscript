@@ -124,6 +124,8 @@ class view
 
     int64_t marching_cubes(const jtk::boundingbox3d<float>& bb, uint64_t width, uint64_t height, uint64_t depth, float isovalue, double(*fun_ptr)(double, double, double));
 
+    int64_t parametric(const std::array<double, 6>& domain, jtk::vec3<double>(*fun_ptr)(double, double));
+
     std::vector<jtk::vec3<uint32_t>> triangles(uint32_t id);
 
     std::vector<jtk::vec3<float>> vertices(uint32_t id);

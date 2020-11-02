@@ -16,16 +16,16 @@
 using namespace jtk;
 
 
-jtk::image<uint32_t> make_dummy_texture(int w, int h)
+jtk::image<uint32_t> make_dummy_texture(int w, int h, int block_size)
   {
   jtk::image<uint32_t> im(w, h);
   for (int y = 0; y < h; ++y)
     {
     uint32_t* p_clr = im.row(y);
-    bool y_even = ((y / 32) & 1) == 1;
+    bool y_even = ((y / block_size) & 1) == 1;
     for (int x = 0; x < w; ++x, ++p_clr)
       {
-      bool x_even = ((x / 32) & 1) == 1;
+      bool x_even = ((x / block_size) & 1) == 1;
       bool black = (x_even && y_even) || (!x_even && !y_even);
       *p_clr = black ? 0xff000000 : 0xffffffff;
       }
