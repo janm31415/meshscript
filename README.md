@@ -15,6 +15,7 @@ Content
      - [Compare facial scans](#compare-facial-scans)
      - [Convert obj to ply](#convert-obj-to-ply)
      - [Pointcloud to mesh with Poisson surface reconstruction](#pointcloud-to-mesh-with-poisson-surface-reconstruction)
+     - [Parametric representation of Klein's bottle](#parametric-representation-of-kleins-bottle)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -558,6 +559,10 @@ For this example I've downloaded an obj file with texture from https://free3d.co
     
     (view-show!) ; show the 3d view
     
+### Parametric representation of Klein's bottle
+
+![](images/klein.png)    
+    
 Glossary
 --------
 
@@ -915,6 +920,16 @@ Below follows a dump of all the meshscript methods so far.
     	the same amount of 3d points.
     
     NAME
+    	parametric
+    DESCRIPTION
+    	(parametric fun domain) returns the id of a new mesh.
+    	The mesh is created from a lambda function `fun`, where
+    	`fun` accepts two floating input values (u v) and returns
+    	a list (x y z). The input variable `domain` is a list
+    	of the form (min_u max_u step_u min_v max_v step_v)
+    	describing the uv parameter domain.
+    
+    NAME
     	pointcloud-normals-estimate!
     DESCRIPTION
     	(pointcloud-normals-estimate! id k) creates vertex normals
@@ -1190,7 +1205,7 @@ Below follows a dump of all the meshscript methods so far.
     	exit
     DESCRIPTION
     	(exit) can be used in the input script to end meshscript,
-    	so the REPL is skipped.
+    	so the REPL is skipped.   
     
     
 Credits
