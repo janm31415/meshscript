@@ -142,6 +142,7 @@ target_link_libraries(meshscript
     ${SDL_LIBRARIES}
     asm
     dlib
+    libcork
     libpoisson
     libskiwi	
     trico

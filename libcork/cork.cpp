@@ -510,6 +510,7 @@ namespace
     intersections_per_tria.resize(triangles.size());
     std::atomic<bool> degen{ false };
     jtk::timer t;
+    t.start();
     int runs = resolve_all_intersections ? 1 : 2;
     for (int m = 0; m < runs; ++m)
       {
@@ -1203,6 +1204,7 @@ namespace
       }
 
     jtk::timer t;
+    t.start();
     _subdivide_triangles(triangles, info, quantized, intersection_data, new_vertices, options);
     assert(triangles.size() == info.size());
     if (options.p_str)
@@ -1467,8 +1469,10 @@ namespace
   void _classify_triangles(std::vector<triangle_info>& info, const std::vector<jtk::vec3<uint32_t>>& triangles, const std::vector<jtk::vec3<double>>& vertices, const cork_options& options)
     {
     jtk::timer tim1;
+    tim1.start();
     e_t_map edge_map = edges_to_triangles_map((uint32_t)vertices.size(), triangles);
     jtk::timer tim2;
+    tim2.start();
     auto components = _compute_components(info, triangles, edge_map);
     if (options.p_str)
       {
@@ -1476,6 +1480,7 @@ namespace
       *options.p_str << "[LIBCORK] " << "Computing components took " << tim2.time_elapsed() << "s\n";
       }
     jtk::timer tim5;
+    tim5.start();
     auto tria_aabvh = compute_triangle_aabvh(triangles, vertices);
     if (options.p_str)
       *options.p_str << "[LIBCORK] " << "Computing triangle aabvh took " << tim5.time_elapsed() << "s\n";

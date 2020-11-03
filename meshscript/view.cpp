@@ -12,6 +12,8 @@
 
 #include <libpoisson/poisson_reconstruction_screened.h>
 
+#include <libcork/cork.h>
+
 #include <iostream>
 
 #include <SDL_syswm.h>
@@ -1109,8 +1111,56 @@ std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
   return std::vector<jtk::vec3<uint32_t>>();
   }
 
+int64_t view::csg(uint32_t id1, uint32_t id2, int csg_type)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m1 = _db.get_mesh((uint32_t)id1);
+  mesh* m2 = _db.get_mesh((uint32_t)id2);
+  if (m1 && m2)
+    {
+    mesh* db_mesh;
+    uint32_t id;
+    _db.create_mesh(db_mesh, id);
+    cork_options ops;
+    ops.p_str = nullptr;
+    ops.resolve_all_intersections = false;
+    ops.use_parallel = true;
+    ops.debug_folder = nullptr;
+
+    switch (csg_type)
+      {
+      case 0:
+      {
+      compute_union(db_mesh->triangles, db_mesh->vertices, m1->triangles, m1->vertices, m2->triangles, m2->vertices, ops);
+      break;
+      }
+      case 1:
+      {
+      compute_difference(db_mesh->triangles, db_mesh->vertices, m1->triangles, m1->vertices, m2->triangles, m2->vertices, ops);
+      break;
+      }
+      case 2:
+      {
+      compute_intersection(db_mesh->triangles, db_mesh->vertices, m1->triangles, m1->vertices, m2->triangles, m2->vertices, ops);
+      break;
+      }
+      }
+    db_mesh->cs = jtk::get_identity();
+    db_mesh->visible = true;
+    _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
+    if (db_mesh->visible)
+      add_object(id, _scene, _db);
+    prepare_scene(_scene);
+    ::unzoom(_scene);
+    _refresh = true;
+    return (int64_t)id;
+    }
+  return -1;
+  }
+
 std::vector<jtk::vec3<float>> view::vertexnormals(uint32_t id)
   {
+  std::scoped_lock lock(_mut);
   pc* p = _db.get_pc((uint32_t)id);
   if (p)
     return p->normals;
@@ -1135,6 +1185,7 @@ std::vector<jtk::vec3<float>> view::vertexnormals(uint32_t id)
 
 std::vector<jtk::vec3<float>> view::trianglenormals(uint32_t id)
   {
+  std::scoped_lock lock(_mut);
   mesh* m = _db.get_mesh((uint32_t)id);
   if (m)
     {

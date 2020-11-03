@@ -277,11 +277,11 @@ struct triangulateio {
   int *edgemarkerlist;            /* Not used with Voronoi diagram; out only */
   REAL *normlist;                /* Used only with Voronoi diagram; out only */
   int numberofedges;                                             /* Out only */
-};
+  };
 
 /*#ifdef ANSI_DECLARATORS*/
 void triangulate(char *, struct triangulateio *, struct triangulateio *,
-                 struct triangulateio *);
+  struct triangulateio *);
 void trifree(void *memptr);
 /*#else*/ /* not ANSI_DECLARATORS */
 /*void triangulate();

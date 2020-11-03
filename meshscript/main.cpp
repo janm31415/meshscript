@@ -311,7 +311,9 @@ namespace
     if (!exists)
       local_context = skiwi::skiwi_clone_context(skiwi::skiwi_get_context());
     skiwi::scm_type res = skiwi::skiwi_run_raw(marching_cubes_fun, local_context, x, y, z);
-    return res.get_number();
+    if (res.is_fixnum() || res.is_flonum())
+      return res.get_number();
+    return 0.0;
     }
 
   }
@@ -393,9 +395,18 @@ namespace
       local_context = skiwi::skiwi_clone_context(skiwi::skiwi_get_context());
     skiwi::scm_type res = skiwi::skiwi_run_raw(parametric_fun, local_context, u, v);
     jtk::vec3<double> out(0.0, 0.0, 0.0);
-    out[0] = res.get_pair().first.get_number();
-    out[1] = res.get_pair().second.get_pair().first.get_number();
-    out[2] = res.get_pair().second.get_pair().second.get_pair().first.get_number();
+    try
+      {
+      out[0] = res.get_pair().first.get_number();
+      out[1] = res.get_pair().second.get_pair().first.get_number();
+      out[2] = res.get_pair().second.get_pair().second.get_pair().first.get_number();
+      }
+    catch (...)
+      {
+      out[0] = 0.0;
+      out[1] = 0.0;
+      out[2] = 0.0;
+      }
     return out;
     }
 
@@ -711,6 +722,21 @@ void scm_translate(int64_t id, uint64_t x_axis_64, uint64_t y_axis_64, uint64_t 
 
   auto t = jtk::make_translation((float)x, (float)y, (float)z);
   g_view->premultiply_coordinate_system((uint32_t)id, t);
+  }
+
+int64_t scm_union(int64_t id1, int64_t id2)
+  {
+  return g_view->csg((uint32_t)id1, (uint32_t)id2, 0);
+  }
+
+int64_t scm_difference(int64_t id1, int64_t id2)
+  {
+  return g_view->csg((uint32_t)id1, (uint32_t)id2, 1);
+  }
+
+int64_t scm_intersection(int64_t id1, int64_t id2)
+  {
+  return g_view->csg((uint32_t)id1, (uint32_t)id2, 2);
   }
 
 void scm_set_shading(bool b)
@@ -1419,6 +1445,12 @@ void* register_functions(void*)
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
 
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");
+
+
+  register_external_primitive("union", (void*)&scm_union, skiwi_int64, skiwi_int64, skiwi_int64, "(union id1 id2)");
+  register_external_primitive("difference", (void*)&scm_difference, skiwi_int64, skiwi_int64, skiwi_int64, "(difference id1 id2)");
+  register_external_primitive("intersection", (void*)&scm_intersection, skiwi_int64, skiwi_int64, skiwi_int64, "(intersection id1 id2)");
+
   return nullptr;
   }
 
