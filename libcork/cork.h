@@ -23,13 +23,15 @@ LIBCORK_API bool is_closed(const std::vector<jtk::vec3<uint32_t>>& triangles, co
 
 LIBCORK_API bool is_solid(const std::vector<jtk::vec3<uint32_t>>& triangles, const std::vector<jtk::vec3<float>>& vertices, const cork_options& options);
 
-LIBCORK_API void compute_union(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options);
+/*Coordinate systems are assumed to be float[16] and column-major*/
 
-LIBCORK_API void compute_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options);
+LIBCORK_API void compute_union(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options);
 
-LIBCORK_API void compute_intersection(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options);
+LIBCORK_API void compute_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options);
 
-LIBCORK_API void compute_symmetric_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options);
+LIBCORK_API void compute_intersection(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options);
+
+LIBCORK_API void compute_symmetric_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options);
 
 LIBCORK_API void resolve_intersections(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_in, const std::vector<jtk::vec3<float>>& vertices_in, const cork_options& options);
 

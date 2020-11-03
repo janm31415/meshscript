@@ -1003,15 +1003,15 @@ int64_t view::parametric(const std::array<double, 6>& domain, jtk::vec3<double>(
       db_mesh->triangles.emplace_back(idx_00, idx_11, idx_01);
 
       jtk::vec3<jtk::vec2<float>> uv;
-      uv[0][0] = upar;
-      uv[0][1] = vpar;
-      uv[1][0] = upar + domain[2];
-      uv[1][1] = vpar;
-      uv[2][0] = upar + domain[2];
-      uv[2][1] = vpar + domain[5];
+      uv[0][0] = (float)upar;
+      uv[0][1] = (float)vpar;
+      uv[1][0] = (float)(upar + domain[2]);
+      uv[1][1] = (float)vpar;
+      uv[2][0] = (float)(upar + domain[2]);
+      uv[2][1] = (float)(vpar + domain[5]);
       db_mesh->uv_coordinates.push_back(uv);
-      uv[1][1] = vpar + domain[5];
-      uv[2][0] = upar;
+      uv[1][1] = (float)(vpar + domain[5]);
+      uv[2][0] = (float)upar;
       db_mesh->uv_coordinates.push_back(uv);
       }
     }
@@ -1137,17 +1137,17 @@ int64_t view::csg(uint32_t id1, uint32_t id2, int csg_type)
       {
       case 0:
       {
-      compute_union(db_mesh->triangles, db_mesh->vertices, *t1, *v1, *t2, *v2, ops);
+      compute_union(db_mesh->triangles, db_mesh->vertices, *t1, *v1, &(*cs1)[0], *t2, *v2, &(*cs2)[0], ops);
       break;
       }
       case 1:
       {
-      compute_difference(db_mesh->triangles, db_mesh->vertices, *t1, *v1, *t2, *v2, ops);
+      compute_difference(db_mesh->triangles, db_mesh->vertices, *t1, *v1, &(*cs1)[0], *t2, *v2, &(*cs2)[0], ops);
       break;
       }
       case 2:
       {
-      compute_intersection(db_mesh->triangles, db_mesh->vertices, *t1, *v1, *t2, *v2, ops);
+      compute_intersection(db_mesh->triangles, db_mesh->vertices, *t1, *v1, &(*cs1)[0], *t2, *v2, &(*cs2)[0], ops);
       break;
       }
       }

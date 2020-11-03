@@ -1212,18 +1212,29 @@ namespace
     vertices.insert(vertices.end(), new_vertices.begin(), new_vertices.end());
     }
 
-  void _resolve_intersections(std::vector<jtk::vec3<double>>& vertices, std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<triangle_info>& info, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options)
+  inline jtk::vec3<float> mat_vec_multiply(const float* m, const jtk::vec3<float>& v)
+    {
+    jtk::vec3<float> out;
+    out[0] = m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12];
+    out[1] = m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13];
+    out[2] = m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14];
+    return out;
+    }
+
+  void _resolve_intersections(std::vector<jtk::vec3<double>>& vertices, std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<triangle_info>& info, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options)
     {
     vertices.clear();
     vertices.reserve(vertices_left.size() + vertices_right.size());
     for (const auto& pt : vertices_left)
       {
-      jtk::vec3<double> v((double)pt[0], (double)pt[1], (double)pt[2]);
+      auto pttr = mat_vec_multiply(cs_left, pt);
+      jtk::vec3<double> v((double)pttr[0], (double)pttr[1], (double)pttr[2]);
       vertices.push_back(v);
       }
     for (const auto& pt : vertices_right)
       {
-      jtk::vec3<double> v((double)pt[0], (double)pt[1], (double)pt[2]);
+      auto pttr = mat_vec_multiply(cs_right, pt);
+      jtk::vec3<double> v((double)pttr[0], (double)pttr[1], (double)pttr[2]);
       vertices.push_back(v);
       }
     triangles = triangles_left;
@@ -1649,11 +1660,11 @@ bool is_solid(const std::vector<jtk::vec3<uint32_t>>& triangles, const std::vect
   return true;
   }
 
-void compute_union(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options)
+void compute_union(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options)
   {
   std::vector<triangle_info> info;
   std::vector<jtk::vec3<double>> verticesd;
-  _resolve_intersections(verticesd, triangles, info, triangles_left, vertices_left, triangles_right, vertices_right, options);
+  _resolve_intersections(verticesd, triangles, info, triangles_left, vertices_left, cs_left, triangles_right, vertices_right, cs_right, options);
   _classify_triangles(info, triangles, verticesd, options);
   _DeleteAndFlip(triangles, verticesd, info, [](int bit) -> ETriangleOperation
     {
@@ -1665,11 +1676,11 @@ void compute_union(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk:
   vertices = vertices_to_float(verticesd);
   }
 
-void compute_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options)
+void compute_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options)
   {
   std::vector<triangle_info> info;
   std::vector<jtk::vec3<double>> verticesd;
-  _resolve_intersections(verticesd, triangles, info, triangles_left, vertices_left, triangles_right, vertices_right, options);
+  _resolve_intersections(verticesd, triangles, info, triangles_left, vertices_left, cs_left, triangles_right, vertices_right, cs_right, options);
   _classify_triangles(info, triangles, verticesd, options);
   _DeleteAndFlip(triangles, verticesd, info, [](int bit) -> ETriangleOperation
     {
@@ -1684,11 +1695,11 @@ void compute_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector
   }
 
 
-void compute_intersection(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options)
+void compute_intersection(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options)
   {
   std::vector<triangle_info> info;
   std::vector<jtk::vec3<double>> verticesd;
-  _resolve_intersections(verticesd, triangles, info, triangles_left, vertices_left, triangles_right, vertices_right, options);
+  _resolve_intersections(verticesd, triangles, info, triangles_left, vertices_left, cs_left, triangles_right, vertices_right, cs_right, options);
   _classify_triangles(info, triangles, verticesd, options);
   _DeleteAndFlip(triangles, verticesd, info, [](int bit) -> ETriangleOperation
     {
@@ -1701,11 +1712,11 @@ void compute_intersection(std::vector<jtk::vec3<uint32_t>>& triangles, std::vect
   }
 
 
-void compute_symmetric_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const cork_options& options)
+void compute_symmetric_difference(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles_left, const std::vector<jtk::vec3<float>>& vertices_left, const float* cs_left, const std::vector<jtk::vec3<uint32_t>>& triangles_right, const std::vector<jtk::vec3<float>>& vertices_right, const float* cs_right, const cork_options& options)
   {
   std::vector<triangle_info> info;
   std::vector<jtk::vec3<double>> verticesd;
-  _resolve_intersections(verticesd, triangles, info, triangles_left, vertices_left, triangles_right, vertices_right, options);
+  _resolve_intersections(verticesd, triangles, info, triangles_left, vertices_left, cs_left, triangles_right, vertices_right, cs_right, options);
   _classify_triangles(info, triangles, verticesd, options);
   _DeleteAndFlip(triangles, verticesd, info, [](int bit) -> ETriangleOperation
     {
