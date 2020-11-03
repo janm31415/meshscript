@@ -1338,6 +1338,7 @@ void* register_functions(void*)
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
   register_external_primitive("cs-premultiply!", (void*)&scm_cs_premultiply, skiwi_void, skiwi_int64, skiwi_scm, "(cs-premultiply! id cs) premultiplies the coordinate system of the object with tag `id` by the input coordinate system. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
 
+  register_external_primitive("difference", (void*)&scm_difference, skiwi_int64, skiwi_int64, skiwi_int64, "(difference id1 id2) computes the difference of the meshes or morphable models with tag `id1` and tag `id2` and returns the id of the result.");
 
   register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed) returns a list with values that represent the distance between objects with tag `id1` and `id2`. For each vertex of object `id1` there is exactly one distance in the list. The distance can be signed or unsigned, depending on the boolean value that is given to `bool-signed`.");
 
@@ -1354,6 +1355,9 @@ void* register_functions(void*)
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
   register_external_primitive("info", (void*)&scm_info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
+  
+  register_external_primitive("intersection", (void*)&scm_intersection, skiwi_int64, skiwi_int64, skiwi_int64, "(intersection id1 id2) computes the intersection of the meshes or morphable models with tag `id1` and tag `id2` and returns the id of the result.");
+
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list `lst` of values between 0 and 1 and returns a list of lists with (r g b) values.");
 
   register_external_primitive("load-mesh", (void*)&load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the STL file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an OBJ file and returns the id. Other input mesh formats that are implemented are PLY, OFF, and TRC.");
@@ -1417,6 +1421,9 @@ void* register_functions(void*)
   register_external_primitive("vertexnormals", (void*)&scm_vertexnormals, skiwi_scm, skiwi_int64, "(vertexnormals id) returns the vertex normals of object with tag `id`. The vertex normals are given as a list of lists with (x y z) values.");
   register_external_primitive("vertexcolors-set!", (void*)&scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(vertexcolors-set! id clrlst) sets vertex colors for the object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
   register_external_primitive("vertices", (void*)&scm_vertices, skiwi_scm, skiwi_int64, "(vertices id) returns the vertices of object with tag `id` as a list of lists of the form ((x y z) (x y z) ...) where each sublist (x y z) is a 3d point representing the position of that vertex.");
+  
+  register_external_primitive("union", (void*)&scm_union, skiwi_int64, skiwi_int64, skiwi_int64, "(union id1 id2) computes the union of the meshes or morphable models with tag `id1` and tag `id2` and returns the id of the result.");
+  
   register_external_primitive("vertices->csv", (void*)&vertices_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(vertices->csv id \"file.csv\") exports the vertices of the object with tag `id` to a csv file.");
   register_external_primitive("view-bg-set!", (void*)&scm_set_bg_color, skiwi_void, skiwi_int64, skiwi_int64, skiwi_int64, "(view-bg-set! r g b) changes the background color to (r g b).");
   register_external_primitive("view-cs", (void*)&scm_get_view_coordinate_system, skiwi_scm, "(view-cs) returns the coordinate system of the view camera.");
@@ -1444,12 +1451,7 @@ void* register_functions(void*)
   register_external_primitive("view-vertexcolors-set!", (void*)&scm_set_vertexcolors, skiwi_void, skiwi_bool, "(view-vertexcolors-set! #t/#f) turns on/off rendering of vertex colors.");
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
 
-  register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");
-
-
-  register_external_primitive("union", (void*)&scm_union, skiwi_int64, skiwi_int64, skiwi_int64, "(union id1 id2)");
-  register_external_primitive("difference", (void*)&scm_difference, skiwi_int64, skiwi_int64, skiwi_int64, "(difference id1 id2)");
-  register_external_primitive("intersection", (void*)&scm_intersection, skiwi_int64, skiwi_int64, skiwi_int64, "(intersection id1 id2)");
+  register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");  
 
   return nullptr;
   }

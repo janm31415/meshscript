@@ -1114,9 +1114,15 @@ std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
 int64_t view::csg(uint32_t id1, uint32_t id2, int csg_type)
   {
   std::scoped_lock lock(_mut);
-  mesh* m1 = _db.get_mesh((uint32_t)id1);
-  mesh* m2 = _db.get_mesh((uint32_t)id2);
-  if (m1 && m2)
+
+  std::vector<jtk::vec3<float>>* v1 = get_vertices(_db, id1);
+  std::vector<jtk::vec3<float>>* v2 = get_vertices(_db, id2);
+  std::vector<jtk::vec3<uint32_t>>* t1 = get_triangles(_db, id1);
+  std::vector<jtk::vec3<uint32_t>>* t2 = get_triangles(_db, id2);
+  jtk::float4x4* cs1 = get_cs(_db, id1);
+  jtk::float4x4* cs2 = get_cs(_db, id2);
+
+  if (v1 && v2 && t1 && t2 && cs1 && cs2)
     {
     mesh* db_mesh;
     uint32_t id;
@@ -1131,17 +1137,17 @@ int64_t view::csg(uint32_t id1, uint32_t id2, int csg_type)
       {
       case 0:
       {
-      compute_union(db_mesh->triangles, db_mesh->vertices, m1->triangles, m1->vertices, m2->triangles, m2->vertices, ops);
+      compute_union(db_mesh->triangles, db_mesh->vertices, *t1, *v1, *t2, *v2, ops);
       break;
       }
       case 1:
       {
-      compute_difference(db_mesh->triangles, db_mesh->vertices, m1->triangles, m1->vertices, m2->triangles, m2->vertices, ops);
+      compute_difference(db_mesh->triangles, db_mesh->vertices, *t1, *v1, *t2, *v2, ops);
       break;
       }
       case 2:
       {
-      compute_intersection(db_mesh->triangles, db_mesh->vertices, m1->triangles, m1->vertices, m2->triangles, m2->vertices, ops);
+      compute_intersection(db_mesh->triangles, db_mesh->vertices, *t1, *v1, *t2, *v2, ops);
       break;
       }
       }
