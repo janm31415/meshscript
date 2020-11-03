@@ -17,6 +17,7 @@ Content
      - [Pointcloud to mesh with Poisson surface reconstruction](#pointcloud-to-mesh-with-poisson-surface-reconstruction)
      - [Parametric representation of Klein's bottle](#parametric-representation-of-kleins-bottle)
      - [Compressing STL files by a factor 5](#compressing-stl-files-by-a-factor-5)
+     - [CSG modelling](#csg-modelling)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -640,6 +641,10 @@ Thai Statue | 10000000 | 4999996 | 488282 KB | 185548 KB | 104048 KB | 86165 KB 
 
 \* the PLY and Trico file contain vertex colors, the STL file does not.
 
+### CSG modelling
+
+![](images/csg.png)    
+
 Glossary
 --------
 
@@ -687,6 +692,13 @@ Below follows a dump of all the meshscript methods so far.
     	system. The coordinate system `cs` can be given as
     	a vector of size 16 in column major format or as a
     	list of lists in row major format.
+    
+    NAME
+    	difference
+    DESCRIPTION
+    	(difference id1 id2) computes the difference of the
+    	meshes or morphable models with tag `id1` and tag `id2`
+    	and returns the id of the result.
     
     NAME
     	distance-map
@@ -756,6 +768,13 @@ Below follows a dump of all the meshscript methods so far.
     	info
     DESCRIPTION
     	(info id) prints info on the object with tag `id`.
+    
+    NAME
+    	intersection
+    DESCRIPTION
+    	(intersection id1 id2) computes the intersection of
+    	the meshes or morphable models with tag `id1` and tag
+    	`id2` and returns the id of the result.
     
     NAME
     	jet
@@ -1152,6 +1171,13 @@ Below follows a dump of all the meshscript methods so far.
     	the position of that vertex.
     
     NAME
+    	union
+    DESCRIPTION
+    	(union id1 id2) computes the union of the meshes or
+    	morphable models with tag `id1` and tag `id2` and returns
+    	the id of the result.
+    
+    NAME
     	vertices->csv
     DESCRIPTION
     	(vertices->csv id "file.csv") exports the vertices of
@@ -1282,7 +1308,8 @@ Below follows a dump of all the meshscript methods so far.
     	exit
     DESCRIPTION
     	(exit) can be used in the input script to end meshscript,
-    	so the REPL is skipped.   
+    	so the REPL is skipped.
+    
     
     
 Credits
