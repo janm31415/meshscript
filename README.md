@@ -645,6 +645,42 @@ Thai Statue | 10000000 | 4999996 | 488282 KB | 185548 KB | 104048 KB | 86165 KB 
 
 ![](images/csg.png)    
 
+    (define length-square
+      (lambda (x y z)
+        (+ (* x x) (* y y) (* z z))
+      ))
+    
+    (define sphere-radius-square 1)
+    
+    (define sphere ; signed distance function for a sphere
+      (lambda (x y z)
+              (- (length-square x y z) sphere-radius-square)))
+                 
+       
+    (define cube-radius 0.8)
+     
+    (define cube ; signed distance function for a cube
+      (lambda (x y z)
+         (let ((xx (- (abs x) cube-radius)) (yy (- (abs y) cube-radius)) (zz (- (abs z) cube-radius)))
+           (+ (sqrt (length-square (max xx 0.0) (max yy 0.0) (max zz 0.0))) (min (max xx yy zz) 0.0))
+         )))
+           
+                               
+    (define bb '((-1.2 1.2) (-1.2 1.2) (-1.2 1.2))) ; the bounding box for marching cubes         
+    (define dim `(100 100 100)) ; the dimensions for marching cubes
+    
+    (define sph (marching-cubes bb dim 0.0 sphere)) ; make a sphere with marching cubes
+    
+    (define cub (marching-cubes bb dim 0.0 cube)) ; make a cube with marching cubes
+    
+    (define res (difference cub sph)) ; compute the difference of the cube and the sphere
+    (matcap-set! res 3) ; choose matcap nr 3 for rendering
+    
+    (hide! sph) ; hide the sphere
+    (hide! cub) ; hide the cube
+    
+    (view-show!)
+
 Glossary
 --------
 
