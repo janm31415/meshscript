@@ -266,7 +266,7 @@
 /*   Floating-Point Arithmetic and Fast Robust Geometric Predicates" (also   */
 /*   available as Section 6.6 of my dissertation).                           */
 
-#define CPU86
+//#define CPU86
 /* #define LINUX */
 
 #define ANSI_DECLARATORS

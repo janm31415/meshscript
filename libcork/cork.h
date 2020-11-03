@@ -2,6 +2,7 @@
 
 #include "libcork_api.h"
 
+#include <ostream>
 #include <vector>
 
 #include <jtk/vec.h>

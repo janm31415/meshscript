@@ -7,6 +7,8 @@
 
 #include "aabvh.h"
 
+#include <string.h>
+
 #include <jtk/concurrency.h>
 #include <jtk/geometry.h>
 #include <jtk/timer.h>
