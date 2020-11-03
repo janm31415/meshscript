@@ -210,6 +210,7 @@
 
 /* #define SINGLE */
 
+#define ANSI_DECLARATORS
 
 #include <stdint.h>
 
