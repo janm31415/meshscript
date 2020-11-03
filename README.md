@@ -1287,6 +1287,7 @@ Below follows a dump of all the meshscript methods so far.
     
 Credits
 --------
+- Constructive solid geometry: https://github.com/gilbo/cork
 - Image file formats: https://github.com/nothings/stb
 - Iterative closest point: http://www.cvlibs.net/software/libicp/
 - Marching cubes: http://paulbourke.net/geometry/polygonise/
