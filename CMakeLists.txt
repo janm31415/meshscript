@@ -27,6 +27,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "/W4 /MP /GF /O2 /Ob2 /Oi /Ot /MD /Zi /DNDEBUG")
 endif (WIN32)
 
 add_subdirectory(jtk)
+add_subdirectory(libcork)
 add_subdirectory(libpoisson)
 add_subdirectory(meshscript)
 add_subdirectory(skiwi)
@@ -36,6 +37,7 @@ add_subdirectory(trico/trico)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+set_target_properties (libcork PROPERTIES FOLDER cork)
 set_target_properties (libpoisson PROPERTIES FOLDER poisson)
 
 set_target_properties (asm PROPERTIES FOLDER skiwi)
