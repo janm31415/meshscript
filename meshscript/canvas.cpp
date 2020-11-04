@@ -805,9 +805,12 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
           const uint32_t v0 = triangles[two_level_index][object_id][0];
           const uint32_t v1 = triangles[two_level_index][object_id][1];
           const uint32_t v2 = triangles[two_level_index][object_id][2];
-          const float4 V0(vertices[two_level_index][v0][0], vertices[two_level_index][v0][1], vertices[two_level_index][v0][2], 1.f);
-          const float4 V1(vertices[two_level_index][v1][0], vertices[two_level_index][v1][1], vertices[two_level_index][v1][2], 1.f);
-          const float4 V2(vertices[two_level_index][v2][0], vertices[two_level_index][v2][1], vertices[two_level_index][v2][2], 1.f);
+          float4 V0(vertices[two_level_index][v0][0], vertices[two_level_index][v0][1], vertices[two_level_index][v0][2], 1.f);
+          float4 V1(vertices[two_level_index][v1][0], vertices[two_level_index][v1][1], vertices[two_level_index][v1][2], 1.f);
+          float4 V2(vertices[two_level_index][v2][0], vertices[two_level_index][v2][1], vertices[two_level_index][v2][2], 1.f);
+          V0 = jtk::transform(object_cs[two_level_index], V0);
+          V1 = jtk::transform(object_cs[two_level_index], V1);
+          V2 = jtk::transform(object_cs[two_level_index], V2);
           const float4 pos = V0 * (1.f - hit.u - hit.v) + hit.u*V1 + hit.v*V2;
           const float4 light_dir = light - pos;
 
