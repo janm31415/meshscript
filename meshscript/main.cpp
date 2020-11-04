@@ -516,6 +516,13 @@ void scm_subdivide(int64_t id, int64_t nr)
   g_view->subdivide((uint32_t)id, (uint32_t)nr);
   }
 
+int64_t scm_subdivide_persistent(int64_t id, int64_t nr)
+  {
+  int64_t new_id = scm_duplicate(id);
+  scm_subdivide(new_id, nr);
+  return new_id;
+  }
+
 void scm_smooth(int64_t id, int64_t iterations, uint64_t lambda64, uint64_t mu64)
   {
   skiwi::scm_type lambda(lambda64);
@@ -528,6 +535,13 @@ void scm_smooth(int64_t id, int64_t iterations, uint64_t lambda64, uint64_t mu64
     {
     std::cout << "error in smooth!: " << e.what() << "\n";
     }
+  }
+
+int64_t scm_smooth_pesistent(int64_t id, int64_t iterations, uint64_t lambda64, uint64_t mu64)
+  {
+  int64_t new_id = scm_duplicate(id);
+  scm_smooth(new_id, iterations, lambda64, mu64);
+  return new_id;
   }
 
 void scm_scale(int64_t id, uint64_t x64, uint64_t y64, uint64_t z64)
@@ -544,6 +558,13 @@ void scm_scale(int64_t id, uint64_t x64, uint64_t y64, uint64_t z64)
     {
     std::cout << "error in scale!: " << e.what() << "\n";
     }
+  }
+
+int64_t scm_scale_persistent(int64_t id, uint64_t x64, uint64_t y64, uint64_t z64)
+  {
+  int64_t new_id = scm_duplicate(id);
+  scm_scale(new_id, x64, y64, z64);
+  return new_id;
   }
 
 int64_t make_pointcloud(uint64_t scm_vertices_64)
@@ -1565,6 +1586,7 @@ void* register_functions(void*)
 
   register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\") writes the object with tag `id` to file. The filetype is determined by the extension that is given. You can export meshes to STL, PLY, OBJ, OFF, or TRC, pointclouds to PLY, OBJ, PTS, XYZ, or TRC, morphable models to SSM."); // don't use write: gives naming conflict with slib
 
+  register_external_primitive("scale", (void*)&scm_scale_persistent, skiwi_int64, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(scale id sx sy sz) scales the vertices of the object with tag `id` by vector (`sx`, `sy`, `sz). The resulting mesh's id is returned.");
   register_external_primitive("scale!", (void*)&scm_scale, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(scale! id sx sy sz) scales the vertices of the object with tag `id` by vector (`sx`, `sy`, `sz).");
 
   register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_int64, skiwi_scm, "(shape-predict sp_id (x y w h)) or (shape-predict sp_id ((x y w h) ...)) runs the shape predictor with tag `sp_id` on the region defined by (x y w h) or on the regions defined by ((x y w h) ...) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
@@ -1576,11 +1598,13 @@ void* register_functions(void*)
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
 
+  register_external_primitive("smooth", (void*)&scm_smooth_pesistent, skiwi_int64, skiwi_int64, skiwi_int64, skiwi_scm, skiwi_scm, "(smooth id iterations lambda mu) smooths the mesh with tag `id` `iterations` times with Taubin smoothing parameters `lambda` and `mu`. The resulting mesh's id is returned. For Laplacian smoothing, choose `lambda` equal to 1 and `mu` equal to 0. General rule for Taubin smoothing: let -`mu` > `lambda` > 0.");
 
   register_external_primitive("smooth!", (void*)&scm_smooth, skiwi_void, skiwi_int64, skiwi_int64, skiwi_scm, skiwi_scm, "(smooth! id iterations lambda mu) smooths the mesh with tag `id` `iterations` times with Taubin smoothing parameters `lambda` and `mu`. For Laplacian smoothing, choose `lambda` equal to 1 and `mu` equal to 0. General rule for Taubin smoothing: let -`mu` > `lambda` > 0.");
 
   register_external_primitive("sphere", (void*)&scm_sphere, skiwi_int64, skiwi_scm, "(sphere) makes a sphere with radius `r`.");
 
+  register_external_primitive("subdivide", (void*)&scm_subdivide_persistent, skiwi_int64, skiwi_int64, skiwi_int64, "(subdivide id nr) subdivides the mesh with tag `id` `nr` times. The resulting mesh's id is returned. ");
   register_external_primitive("subdivide!", (void*)&scm_subdivide, skiwi_void, skiwi_int64, skiwi_int64, "(subdivide! id nr) subdivides the mesh with tag `id` `nr` times.");
 
   register_external_primitive("trianglenormals", (void*)&scm_trianglenormals, skiwi_scm, skiwi_int64, "(trianglenormals id) returns the triangle normals of object with tag `id`. The triangle normals are given as a list of lists with (x y z) values.");
