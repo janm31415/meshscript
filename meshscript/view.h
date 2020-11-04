@@ -54,6 +54,8 @@ class view
 
     void subdivide(uint32_t id, uint32_t nr);
 
+    void smooth(uint32_t id, uint32_t iterations, float lambda, float mu);
+
     int64_t triangulate(const std::vector<jtk::vec2<float>>& vertices);
 
     int64_t extrude(const std::vector<jtk::vec2<float>>& vertices, float h);

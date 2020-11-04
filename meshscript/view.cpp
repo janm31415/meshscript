@@ -286,6 +286,21 @@ void view::subdivide(uint32_t id, uint32_t nr)
     }
   }
 
+void view::smooth(uint32_t id, uint32_t iterations, float lambda, float mu)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<jtk::vec3<float>>* p_vertices = get_vertices(_db, id);
+  std::vector<jtk::vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
+  if (p_vertices && p_triangles)
+    {
+    jtk::smooth(*p_vertices, *p_triangles, iterations, lambda, mu);
+    remove_object(id, _scene);
+    if (is_visible(_db, id))
+      add_object(id, _scene, _db);
+    _refresh = true;
+    }
+  }
+
 void view::scale(uint32_t id, float sx, float sy, float sz)
   {
   std::scoped_lock lock(_mut);

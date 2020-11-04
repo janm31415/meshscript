@@ -516,6 +516,20 @@ void scm_subdivide(int64_t id, int64_t nr)
   g_view->subdivide((uint32_t)id, (uint32_t)nr);
   }
 
+void scm_smooth(int64_t id, int64_t iterations, uint64_t lambda64, uint64_t mu64)
+  {
+  skiwi::scm_type lambda(lambda64);
+  skiwi::scm_type mu(mu64);
+  try
+    {
+    g_view->smooth((uint32_t)id, (uint32_t)iterations, (float)lambda.get_number(), (float)mu.get_number());
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error in smooth!: " << e.what() << "\n";
+    }
+  }
+
 void scm_scale(int64_t id, uint64_t x64, uint64_t y64, uint64_t z64)
   {
   skiwi::scm_type x(x64);
@@ -1561,6 +1575,9 @@ void* register_functions(void*)
   register_external_primitive("shape-predictor-unlink", (void*)&scm_sp_link_remove, skiwi_void, skiwi_int64, "(shape-predictor-unlink id) unlinks the shape predictor given by tag `id`, see shape-predictor-link-to-face-detector, shape-predictor-link-to-ear-right-detector, or shape-predictor-link-to-ear-left-detector.");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
+
+
+  register_external_primitive("smooth!", (void*)&scm_smooth, skiwi_void, skiwi_int64, skiwi_int64, skiwi_scm, skiwi_scm, "(smooth! id iterations lambda mu) smooths the mesh with tag `id` `iterations` times with Taubin smoothing parameters `lambda` and `mu`. For Laplacian smoothing, choose `lambda` equal to 1 and `mu` equal to 0. General rule for Taubin smoothing: let -`mu` > `lambda` > 0.");
 
   register_external_primitive("sphere", (void*)&scm_sphere, skiwi_int64, skiwi_scm, "(sphere) makes a sphere with radius `r`.");
 
