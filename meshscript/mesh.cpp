@@ -1,7 +1,7 @@
 #include "mesh.h"
 #include "io.h"
 
-#include "polyhedrons.h"
+#include "primitives.h"
 
 #include <jtk/geometry.h>
 
