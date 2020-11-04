@@ -1217,6 +1217,40 @@ uint64_t scm_shape_predict(int64_t id, uint64_t rect64)
   return make_nil();
   }
 
+int64_t scm_cube(uint64_t w64, uint64_t h64, uint64_t d64)
+  {
+  skiwi::scm_type w(w64);
+  skiwi::scm_type h(h64);
+  skiwi::scm_type d(d64);
+  try
+    {
+    double wd = w.get_number();
+    double hd = h.get_number();
+    double dd = d.get_number();
+    return g_view->make_cube((float)wd, (float)hd, (float)dd);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: cube: invalid parameters.\n";
+    }
+  return -1;
+  }
+
+int64_t scm_sphere(uint64_t r64)
+  {
+  skiwi::scm_type r(r64);
+  try
+    {
+    double rd = r.get_number();
+    return g_view->make_sphere((float)rd);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: sphere: invalid parameters.\n";
+    }
+  return -1;
+  }
+
 uint64_t npoint_scm(uint64_t src64, uint64_t tgt64)
   {
   using namespace skiwi;
@@ -1338,6 +1372,8 @@ void* register_functions(void*)
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
   register_external_primitive("cs-premultiply!", (void*)&scm_cs_premultiply, skiwi_void, skiwi_int64, skiwi_scm, "(cs-premultiply! id cs) premultiplies the coordinate system of the object with tag `id` by the input coordinate system. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
 
+  register_external_primitive("cube", (void*)&scm_cube, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cube w h d) makes a cube with dimensions `w`x`h`x`d`.");
+
   register_external_primitive("difference", (void*)&scm_difference, skiwi_int64, skiwi_int64, skiwi_int64, "(difference id1 id2) computes the difference of the meshes or morphable models with tag `id1` and tag `id2` and returns the id of the result.");
 
   register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed) returns a list with values that represent the distance between objects with tag `id1` and `id2`. For each vertex of object `id1` there is exactly one distance in the list. The distance can be signed or unsigned, depending on the boolean value that is given to `bool-signed`.");
@@ -1413,6 +1449,9 @@ void* register_functions(void*)
   register_external_primitive("shape-predictor-unlink", (void*)&scm_sp_link_remove, skiwi_void, skiwi_int64, "(shape-predictor-unlink id) unlinks the shape predictor given by tag `id`, see shape-predictor-link-to-face-detector, shape-predictor-link-to-ear-right-detector, or shape-predictor-link-to-ear-left-detector.");
 
   register_external_primitive("show!", (void*)&show, skiwi_void, skiwi_int64, "(show! id) makes the object with tag `id` visible.");
+
+  register_external_primitive("sphere", (void*)&scm_sphere, skiwi_int64, skiwi_scm, "(sphere) makes a sphere with radius `r`.");
+
 
   register_external_primitive("trianglenormals", (void*)&scm_trianglenormals, skiwi_scm, skiwi_int64, "(trianglenormals id) returns the triangle normals of object with tag `id`. The triangle normals are given as a list of lists with (x y z) values.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id) returns the triangles of object with tag `id` as a list of lists of the form ((v0 v1 v2) (v3 v4 v4) ...) where each sublist (v0 v1 v2) contain the indices of the vertices that form a triangle. The actual vertex positions can be obtained with the command (vertices id).");

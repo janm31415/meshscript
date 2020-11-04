@@ -1,6 +1,8 @@
 #include "mesh.h"
 #include "io.h"
 
+#include "polyhedrons.h"
+
 #include <jtk/geometry.h>
 
 #include <algorithm>
@@ -241,4 +243,53 @@ void cs_apply(mesh& m)
     v[2] = V[2];
     }
   m.cs = jtk::get_identity();
+  }
+
+
+void make_cube(mesh& m, float w, float h, float d)
+  {
+  m = mesh();
+  m.vertices.emplace_back((float)0, (float)0, (float)d);
+  m.vertices.emplace_back((float)w, (float)0, (float)d);
+  m.vertices.emplace_back((float)w, (float)h, (float)d);
+  m.vertices.emplace_back((float)0, (float)h, (float)d);
+  m.vertices.emplace_back((float)0, (float)0, (float)0);
+  m.vertices.emplace_back((float)w, (float)0, (float)0);
+  m.vertices.emplace_back((float)w, (float)h, (float)0);
+  m.vertices.emplace_back((float)0, (float)h, (float)0);
+
+  m.triangles.emplace_back(0, 1, 2);
+  m.triangles.emplace_back(0, 2, 3);
+  m.triangles.emplace_back(7, 6, 5);
+  m.triangles.emplace_back(7, 5, 4);
+  m.triangles.emplace_back(1, 0, 4);
+  m.triangles.emplace_back(1, 4, 5);
+  m.triangles.emplace_back(2, 1, 5);
+  m.triangles.emplace_back(2, 5, 6);
+  m.triangles.emplace_back(3, 2, 6);
+  m.triangles.emplace_back(3, 6, 7);
+  m.triangles.emplace_back(0, 3, 7);
+  m.triangles.emplace_back(0, 7, 4);
+  m.cs = get_identity();
+  m.visible = true;
+  }
+
+void make_sphere(mesh& m, float r)
+  {
+  m = mesh();
+  
+  icosahedron ico;
+  m.vertices = ico.vertices;
+  m.triangles = ico.triangles;
+
+  for (int iter = 0; iter < 7; ++iter)
+    jtk::dyadic_subdivide(m.vertices, m.triangles);
+
+  for (auto& v : m.vertices)
+    {
+    v = (r*v) / jtk::length(v);
+    }
+
+  m.cs = get_identity();
+  m.visible = true;
   }

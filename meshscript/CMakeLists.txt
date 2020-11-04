@@ -63,6 +63,7 @@ mouse.h
 objects.h
 pc.h
 pixel.h
+polyhedrons.h
 scene.h
 shape_predictor.h
 sp.h

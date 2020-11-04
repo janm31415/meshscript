@@ -35,3 +35,7 @@ bool write_to_file(const mesh& m, const std::string& filename);
 void info(const mesh& m);
 
 void cs_apply(mesh& m);
+
+
+void make_cube(mesh& m, float w, float h, float d);
+void make_sphere(mesh& m, float r);
