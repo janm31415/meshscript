@@ -206,6 +206,22 @@ int64_t view::make_sphere(float r)
   return id;
   }
 
+int64_t view::make_icosahedron(float r)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* new_object;
+  uint32_t id;
+  _db.create_mesh(new_object, id);
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
+  ::make_icosahedron(*new_object, r);
+  if (new_object->visible)
+    add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return id;
+  }
+
 int64_t view::duplicate(uint32_t id)
   {
   std::scoped_lock lock(_mut);

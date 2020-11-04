@@ -1251,6 +1251,21 @@ int64_t scm_sphere(uint64_t r64)
   return -1;
   }
 
+int64_t scm_icosahedron(uint64_t r64)
+  {
+  skiwi::scm_type r(r64);
+  try
+    {
+    double rd = r.get_number();
+    return g_view->make_icosahedron((float)rd);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: icosahedron: invalid parameters.\n";
+    }
+  return -1;
+  }
+
 uint64_t npoint_scm(uint64_t src64, uint64_t tgt64)
   {
   using namespace skiwi;
@@ -1389,6 +1404,9 @@ void* register_functions(void*)
   register_external_primitive("force-redraw", (void*)&scm_force_redraw, skiwi_void, "(force-redraw) redraws the canvas. This is useful if you want to use view-position in your script, as view-position uses the data of the last render of the view.");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
+  
+  register_external_primitive("icosahedron", (void*)&scm_icosahedron, skiwi_int64, skiwi_scm, "(icosahedron) makes a icosahedron with radius `r`.");
+  
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
   register_external_primitive("info", (void*)&scm_info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
   

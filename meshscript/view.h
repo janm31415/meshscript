@@ -46,6 +46,8 @@ class view
 
     int64_t make_sphere(float r);
 
+    int64_t make_icosahedron(float r);
+
     void mesh_texture_set(uint32_t id, uint32_t tex);
 
     void pointcloud_estimate_normals(uint32_t id, uint32_t k);

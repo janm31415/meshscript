@@ -49,3 +49,38 @@ struct icosahedron
   std::vector<jtk::vec3<float>> vertices;
   std::vector<jtk::vec3<uint32_t>> triangles;
   };
+
+
+struct cube
+  {
+  cube()
+    {
+    using namespace jtk;
+    vertices.reserve(8);
+    triangles.reserve(12);
+    vertices.emplace_back((float)0, (float)0, (float)1);
+    vertices.emplace_back((float)1, (float)0, (float)1);
+    vertices.emplace_back((float)1, (float)1, (float)1);
+    vertices.emplace_back((float)0, (float)1, (float)1);
+    vertices.emplace_back((float)0, (float)0, (float)0);
+    vertices.emplace_back((float)1, (float)0, (float)0);
+    vertices.emplace_back((float)1, (float)1, (float)0);
+    vertices.emplace_back((float)0, (float)1, (float)0);
+
+    triangles.emplace_back(0, 1, 2);
+    triangles.emplace_back(0, 2, 3);
+    triangles.emplace_back(7, 6, 5);
+    triangles.emplace_back(7, 5, 4);
+    triangles.emplace_back(1, 0, 4);
+    triangles.emplace_back(1, 4, 5);
+    triangles.emplace_back(2, 1, 5);
+    triangles.emplace_back(2, 5, 6);
+    triangles.emplace_back(3, 2, 6);
+    triangles.emplace_back(3, 6, 7);
+    triangles.emplace_back(0, 3, 7);
+    triangles.emplace_back(0, 7, 4);
+    }
+
+  std::vector<jtk::vec3<float>> vertices;
+  std::vector<jtk::vec3<uint32_t>> triangles;
+  };
