@@ -686,7 +686,7 @@ Thai Statue | 10000000 | 4999996 | 488282 KB | 185548 KB | 104048 KB | 86165 KB 
 
 ![](images/racecar.png)  
 
-I've taken this example from the [OpenSCAD tutorial](https://en.wikibooks.org/wiki/OpenSCAD_Tutorial/Chapter_9).
+I've taken this example from this [OpenSCAD tutorial](https://en.wikibooks.org/wiki/OpenSCAD_Tutorial/Chapter_9).
 
     (define d1 30)
     (define d2 20)
