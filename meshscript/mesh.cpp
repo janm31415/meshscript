@@ -300,3 +300,26 @@ void make_icosahedron(mesh& m, float r)
   m.cs = get_identity();
   m.visible = true;
   }
+
+void make_cylinder(mesh& m, float r, float d)
+  {
+  m = mesh();
+
+  cylinder c;
+  m.vertices = c.vertices;
+  m.triangles = c.triangles;
+
+  for (auto& v : m.vertices)
+    {
+    float rr = std::sqrt(v[0] * v[0] + v[1] * v[1]);
+    if (rr)
+      {
+      v[0] *= r / rr;
+      v[1] *= r / rr;
+      }
+    v[2] *= d;
+    }
+
+  m.cs = get_identity();
+  m.visible = true;
+  }

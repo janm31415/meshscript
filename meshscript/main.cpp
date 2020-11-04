@@ -1236,6 +1236,23 @@ int64_t scm_cube(uint64_t w64, uint64_t h64, uint64_t d64)
   return -1;
   }
 
+int64_t scm_cylinder(uint64_t r64, uint64_t h64)
+  {
+  skiwi::scm_type r(r64);
+  skiwi::scm_type h(h64);  
+  try
+    {
+    double rd = r.get_number();
+    double hd = h.get_number();    
+    return g_view->make_cylinder((float)rd, (float)hd);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: cylinder: invalid parameters.\n";
+    }
+  return -1;
+  }
+
 int64_t scm_sphere(uint64_t r64)
   {
   skiwi::scm_type r(r64);
@@ -1388,6 +1405,7 @@ void* register_functions(void*)
   register_external_primitive("cs-premultiply!", (void*)&scm_cs_premultiply, skiwi_void, skiwi_int64, skiwi_scm, "(cs-premultiply! id cs) premultiplies the coordinate system of the object with tag `id` by the input coordinate system. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
 
   register_external_primitive("cube", (void*)&scm_cube, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cube w h d) makes a cube with dimensions `w`x`h`x`d`.");
+  register_external_primitive("cylinder", (void*)&scm_cylinder, skiwi_int64, skiwi_scm, skiwi_scm, "(cylinder r h) makes a cylinder with radius `r` and height `h`.");
 
   register_external_primitive("difference", (void*)&scm_difference, skiwi_int64, skiwi_int64, skiwi_int64, "(difference id1 id2) computes the difference of the meshes or morphable models with tag `id1` and tag `id2` and returns the id of the result.");
 

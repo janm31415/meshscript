@@ -84,3 +84,41 @@ struct cube
   std::vector<jtk::vec3<float>> vertices;
   std::vector<jtk::vec3<uint32_t>> triangles;
   };
+
+
+struct cylinder
+  {
+  cylinder()
+    {
+    double twopi = 2.0* 3.14159265358979323846264338327950288419716939937510;
+    using namespace jtk;
+    int steps = 128;
+    vertices.reserve(steps * 2 + 2);
+    triangles.reserve(4 * steps);
+    for (int i = 0; i < steps; ++i)
+      {
+      float cs = std::cos((double)i/(double)steps*twopi);
+      float sn = std::sin((double)i / (double)steps*twopi);
+      vertices.emplace_back(cs, sn, 0.f);
+      vertices.emplace_back(cs, sn, 1.f);      
+      }
+    vertices.emplace_back(0.f, 0.f, 0.f);
+    vertices.emplace_back(0.f, 0.f, 1.f);
+
+    for (int i = 0; i < steps-1; ++i)
+      {
+      triangles.emplace_back(2 * i, 2 * i + 2, 2*i+1);
+      triangles.emplace_back(2 * i + 1, 2 * i + 2, 2*i + 3);
+
+      triangles.emplace_back(2 * steps, 2 * i + 2, 2 * i);
+      triangles.emplace_back(2 * steps+1, 2 * i + 1, 2 * i + 3);
+      }
+    triangles.emplace_back(2 * (steps-1), 0, 2 * (steps - 1) + 1);
+    triangles.emplace_back(2 * (steps - 1) + 1, 0, 1);
+
+    triangles.emplace_back(2*steps, 0, 2 * (steps - 1));
+    triangles.emplace_back(2 * steps + 1, 2 * (steps - 1) + 1, 1);
+    }
+  std::vector<jtk::vec3<float>> vertices;
+  std::vector<jtk::vec3<uint32_t>> triangles;
+  };

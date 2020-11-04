@@ -40,3 +40,4 @@ void cs_apply(mesh& m);
 void make_cube(mesh& m, float w, float h, float d);
 void make_sphere(mesh& m, float r);
 void make_icosahedron(mesh& m, float r);
+void make_cylinder(mesh& m, float r, float d);
