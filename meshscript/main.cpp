@@ -511,6 +511,27 @@ int64_t scm_extrude(uint64_t pts_list64, uint64_t height64)
   return -1;
   }
 
+void scm_subdivide(int64_t id, int64_t nr)
+  {
+  g_view->subdivide((uint32_t)id, (uint32_t)nr);
+  }
+
+void scm_scale(int64_t id, uint64_t x64, uint64_t y64, uint64_t z64)
+  {
+  skiwi::scm_type x(x64);
+  skiwi::scm_type y(y64);
+  skiwi::scm_type z(z64);
+
+  try
+    {
+    g_view->scale((uint32_t)id, (float)x.get_number(), (float)y.get_number(), (float)z.get_number());
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error in scale!: " << e.what() << "\n";
+    }
+  }
+
 int64_t make_pointcloud(uint64_t scm_vertices_64)
   {
   skiwi::scm_type scm_vertices(scm_vertices_64);
@@ -1476,7 +1497,7 @@ void* register_functions(void*)
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
   
-  register_external_primitive("icosahedron", (void*)&scm_icosahedron, skiwi_int64, skiwi_scm, "(icosahedron) makes a icosahedron with radius `r`.");
+  register_external_primitive("icosahedron", (void*)&scm_icosahedron, skiwi_int64, skiwi_scm, "(icosahedron r) makes a icosahedron with radius `r`.");
   
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
   register_external_primitive("info", (void*)&scm_info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
@@ -1530,6 +1551,8 @@ void* register_functions(void*)
 
   register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\") writes the object with tag `id` to file. The filetype is determined by the extension that is given. You can export meshes to STL, PLY, OBJ, OFF, or TRC, pointclouds to PLY, OBJ, PTS, XYZ, or TRC, morphable models to SSM."); // don't use write: gives naming conflict with slib
 
+  register_external_primitive("scale!", (void*)&scm_scale, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(scale! id sx sy sz) scales the vertices of the object with tag `id` by vector (`sx`, `sy`, `sz).");
+
   register_external_primitive("shape-predict", (void*)&scm_shape_predict, skiwi_scm, skiwi_int64, skiwi_scm, "(shape-predict sp_id (x y w h)) or (shape-predict sp_id ((x y w h) ...)) runs the shape predictor with tag `sp_id` on the region defined by (x y w h) or on the regions defined by ((x y w h) ...) in the current view and returns the coordinates of the landmarks as a list of lists. The predictor should be initialized with load-shape-predictor.");
   register_external_primitive("shape-predictor-horizontal-flip-set!", (void*)&scm_shape_predictor_horizontal_flip_set, skiwi_void, skiwi_int64, skiwi_bool, "(shape-predictor-horizontal-flip-set! id #t/#f) toggles horizontal flipping of the shape predictor given by tag `id`.");
   register_external_primitive("shape-predictor-link-to-ear-left-detector", (void*)&scm_sp_link_to_ear_left, skiwi_void, skiwi_int64, "(shape-predictor-link-to-ear-left-detector id) links the shape predictor given by tag `id` to the ear left detector. The result of this operation is that the shape predictor is rendered automatically when the left ear detector's automatic rendering is on. You can turn on/off automatic rendering of the left ear detector with the command (view-ear-left-detector-set! #t/#f).");
@@ -1541,6 +1564,7 @@ void* register_functions(void*)
 
   register_external_primitive("sphere", (void*)&scm_sphere, skiwi_int64, skiwi_scm, "(sphere) makes a sphere with radius `r`.");
 
+  register_external_primitive("subdivide!", (void*)&scm_subdivide, skiwi_void, skiwi_int64, skiwi_int64, "(subdivide! id nr) subdivides the mesh with tag `id` `nr` times.");
 
   register_external_primitive("trianglenormals", (void*)&scm_trianglenormals, skiwi_scm, skiwi_int64, "(trianglenormals id) returns the triangle normals of object with tag `id`. The triangle normals are given as a list of lists with (x y z) values.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id) returns the triangles of object with tag `id` as a list of lists of the form ((v0 v1 v2) (v3 v4 v4) ...) where each sublist (v0 v1 v2) contain the indices of the vertices that form a triangle. The actual vertex positions can be obtained with the command (vertices id).");

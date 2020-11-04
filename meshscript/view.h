@@ -50,6 +50,10 @@ class view
 
     int64_t make_cylinder(float r, float d);
 
+    void scale(uint32_t id, float sx, float sy, float sz);
+
+    void subdivide(uint32_t id, uint32_t nr);
+
     int64_t triangulate(const std::vector<jtk::vec2<float>>& vertices);
 
     int64_t extrude(const std::vector<jtk::vec2<float>>& vertices, float h);

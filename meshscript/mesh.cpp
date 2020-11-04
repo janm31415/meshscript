@@ -481,3 +481,4 @@ void extrude_points(mesh& m, const std::vector<jtk::vec2<float>>& pts, float h)
   m.cs = get_identity();
   m.visible = true;
   }
+

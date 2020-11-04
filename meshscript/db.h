@@ -88,3 +88,4 @@ class db
 std::vector<jtk::vec3<float>>* get_vertices(const db& _db, uint32_t id);
 std::vector<jtk::vec3<uint32_t>>* get_triangles(const db& _db, uint32_t id);
 jtk::float4x4* get_cs(const db& _db, uint32_t id);
+bool is_visible(const db& _db, uint32_t id);

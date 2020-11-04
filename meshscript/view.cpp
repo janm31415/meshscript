@@ -270,6 +270,42 @@ int64_t view::extrude(const std::vector<jtk::vec2<float>>& vertices, float h)
   return id;
   }
 
+void view::subdivide(uint32_t id, uint32_t nr)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<jtk::vec3<float>>* p_vertices = get_vertices(_db, id);
+  std::vector<jtk::vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
+  if (p_vertices && p_triangles)
+    {
+    for (uint32_t i = 0; i < nr; ++i)
+      jtk::dyadic_subdivide(*p_vertices, *p_triangles);
+    remove_object(id, _scene);
+    if (is_visible(_db, id))
+      add_object(id, _scene, _db);
+    _refresh = true;
+    }
+  }
+
+void view::scale(uint32_t id, float sx, float sy, float sz)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<jtk::vec3<float>>* p_vertices = get_vertices(_db, id);
+  if (p_vertices)
+    {
+    for (auto& v : *p_vertices)
+      {
+      v[0] *= sx;
+      v[1] *= sy;
+      v[2] *= sz;
+      }
+    remove_object(id, _scene);
+    if (is_visible(_db, id))
+      add_object(id, _scene, _db);
+    prepare_scene(_scene);
+    _refresh = true;
+    }
+  }
+
 int64_t view::duplicate(uint32_t id)
   {
   std::scoped_lock lock(_mut);

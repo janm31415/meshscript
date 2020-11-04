@@ -332,3 +332,21 @@ float4x4* get_cs(const db& _db, uint32_t id)
     }
   return nullptr;
   }
+
+bool is_visible(const db& _db, uint32_t id)
+  {
+  auto key = get_db_key(id);
+  switch (key)
+    {
+    case MESH_KEY:
+      return _db.get_mesh(id)->visible;
+      break;
+    case PC_KEY:
+      return _db.get_pc(id)->visible;
+      break;
+    case MM_KEY:
+      return _db.get_mm(id)->visible;
+      break;
+    }
+  return false;
+  }
