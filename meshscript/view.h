@@ -50,6 +50,10 @@ class view
 
     int64_t make_cylinder(float r, float d);
 
+    int64_t triangulate(const std::vector<jtk::vec2<float>>& vertices);
+
+    int64_t extrude(const std::vector<jtk::vec2<float>>& vertices, float h);
+
     void mesh_texture_set(uint32_t id, uint32_t tex);
 
     void pointcloud_estimate_normals(uint32_t id, uint32_t k);

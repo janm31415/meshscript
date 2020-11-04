@@ -248,6 +248,10 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#include "libcork_api.h"
+
+#define REAL double
+
 struct triangulateio {
   REAL *pointlist;                                               /* In / out */
   REAL *pointattributelist;                                      /* In / out */
@@ -280,9 +284,9 @@ struct triangulateio {
   };
 
 /*#ifdef ANSI_DECLARATORS*/
-void triangulate(char *, struct triangulateio *, struct triangulateio *,
+LIBCORK_API void triangulate(char *, struct triangulateio *, struct triangulateio *,
   struct triangulateio *);
-void trifree(void *memptr);
+LIBCORK_API void trifree(void *memptr);
 /*#else*/ /* not ANSI_DECLARATORS */
 /*void triangulate();
 void trifree();*/

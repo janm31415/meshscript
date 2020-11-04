@@ -238,6 +238,38 @@ int64_t view::make_cylinder(float r, float d)
   return id;
   }
 
+int64_t view::triangulate(const std::vector<jtk::vec2<float>>& vertices)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* new_object;
+  uint32_t id;
+  _db.create_mesh(new_object, id);
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
+  ::triangulate_points(*new_object, vertices);
+  if (new_object->visible)
+    add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return id;
+  }
+
+int64_t view::extrude(const std::vector<jtk::vec2<float>>& vertices, float h)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* new_object;
+  uint32_t id;
+  _db.create_mesh(new_object, id);
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
+  ::extrude_points(*new_object, vertices, h);
+  if (new_object->visible)
+    add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return id;
+  }
+
 int64_t view::duplicate(uint32_t id)
   {
   std::scoped_lock lock(_mut);

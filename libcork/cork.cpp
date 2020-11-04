@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <mutex>
 
-#define REAL double
+//#define REAL double
 
 extern "C"
   {

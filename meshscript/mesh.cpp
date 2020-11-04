@@ -11,6 +11,11 @@
 
 #include <trico/trico/trico.h>
 
+extern "C"
+  {
+#include <libcork/triangle.h>
+  }
+
 #include <stb_image.h>
 
 #include <iostream>
@@ -267,7 +272,7 @@ void make_cube(mesh& m, float w, float h, float d)
 void make_sphere(mesh& m, float r)
   {
   m = mesh();
-  
+
   icosahedron ico;
   m.vertices = ico.vertices;
   m.triangles = ico.triangles;
@@ -318,6 +323,159 @@ void make_cylinder(mesh& m, float r, float d)
       v[1] *= r / rr;
       }
     v[2] *= d;
+    }
+
+  m.cs = get_identity();
+  m.visible = true;
+  }
+
+void triangulate_points(mesh& m, const std::vector<jtk::vec2<float>>& pts)
+  {
+  m = mesh();
+
+  struct triangulateio in, out;
+
+  in.numberofpoints = (int)pts.size();
+  in.numberofpointattributes = 0;
+  in.pointlist = new REAL[in.numberofpoints * 2];
+  in.pointattributelist = nullptr;
+  in.pointmarkerlist = new int[in.numberofpoints];
+  for (int i = 0; i < in.numberofpoints; ++i)
+    {
+    in.pointlist[i * 2 + 0] = pts[i][0];
+    in.pointlist[i * 2 + 1] = pts[i][1];
+    in.pointmarkerlist[i] = 1;
+    }
+  in.numberofsegments = (int)pts.size();
+  in.numberofholes = 0;
+  in.numberofregions = 0;
+  in.segmentlist = new int[in.numberofsegments * 2];
+  in.segmentmarkerlist = new int[in.numberofsegments];
+  for (int i = 0; i < in.numberofsegments; ++i)
+    in.segmentmarkerlist[i] = 1;
+  for (int i = 0; i < in.numberofsegments; ++i)
+    {
+    in.segmentlist[i * 2] = i;
+    in.segmentlist[i * 2 + 1] = (i + 1) % pts.size();
+    }
+  in.numberoftriangles = 0;
+  in.numberoftriangleattributes = 0;
+
+  out.pointlist = nullptr;
+  out.pointattributelist = nullptr;
+  out.pointmarkerlist = nullptr;
+  out.trianglelist = nullptr;
+  out.segmentlist = nullptr;
+  out.segmentmarkerlist = nullptr;
+
+  char* params = (char*)("pzQYY");
+
+  triangulate(params, &in, &out, nullptr);
+
+  for (int i = 0; i < out.numberofpoints; ++i)
+    {
+    double x = out.pointlist[i * 2];
+    double y = out.pointlist[i * 2 + 1];
+    m.vertices.emplace_back((float)x, (float)y, 0.f);
+    }
+  for (int i = 0; i < out.numberoftriangles; ++i)
+    {
+    int a = out.trianglelist[i * 3];
+    int b = out.trianglelist[i * 3 + 1];
+    int c = out.trianglelist[i * 3 + 2];
+    m.triangles.emplace_back((uint32_t)a, (uint32_t)b, (uint32_t)c);
+    }
+
+
+  m.cs = get_identity();
+  m.visible = true;
+  }
+
+namespace
+  {
+  // https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order#:~:text=If%20the%20determinant%20is%20negative,q%20and%20r%20are%20collinear.
+  bool polyline_is_clockwise(const std::vector<jtk::vec2<float>>& pts)
+    {
+    float sum = 0.f;
+    for (size_t i = 0; i < pts.size(); ++i)
+      {
+      auto a = pts[i];
+      auto b = pts[(i + 1) % pts.size()];
+      float term = (b[0] - a[0])*(b[1] + a[1]);
+      sum += term;
+      }
+    return sum > 0.f;
+    }
+
+  }
+
+void extrude_points(mesh& m, const std::vector<jtk::vec2<float>>& pts, float h)
+  {
+  m = mesh();
+
+  bool clockwise = polyline_is_clockwise(pts);
+
+  struct triangulateio in, out;
+
+  in.numberofpoints = (int)pts.size();
+  in.numberofpointattributes = 0;
+  in.pointlist = new REAL[in.numberofpoints * 2];
+  in.pointattributelist = nullptr;
+  in.pointmarkerlist = new int[in.numberofpoints];
+  for (int i = 0; i < in.numberofpoints; ++i)
+    {
+    in.pointlist[i * 2 + 0] = clockwise ? pts[i][0] : pts[in.numberofpoints - 1 - i][0];
+    in.pointlist[i * 2 + 1] = clockwise ? pts[i][1] : pts[in.numberofpoints - 1 - i][1];
+    in.pointmarkerlist[i] = 1;
+    }
+  in.numberofsegments = (int)pts.size();
+  in.numberofholes = 0;
+  in.numberofregions = 0;
+  in.segmentlist = new int[in.numberofsegments * 2];
+  in.segmentmarkerlist = new int[in.numberofsegments];
+  for (int i = 0; i < in.numberofsegments; ++i)
+    in.segmentmarkerlist[i] = 1;
+  for (int i = 0; i < in.numberofsegments; ++i)
+    {
+    in.segmentlist[i * 2] = i;
+    in.segmentlist[i * 2 + 1] = (i + 1) % pts.size();
+    }
+  in.numberoftriangles = 0;
+  in.numberoftriangleattributes = 0;
+
+  out.pointlist = nullptr;
+  out.pointattributelist = nullptr;
+  out.pointmarkerlist = nullptr;
+  out.trianglelist = nullptr;
+  out.segmentlist = nullptr;
+  out.segmentmarkerlist = nullptr;
+
+  char* params = (char*)("pzQYY");
+
+  triangulate(params, &in, &out, nullptr);
+
+  for (int i = 0; i < out.numberofpoints; ++i)
+    {
+    double x = out.pointlist[i * 2];
+    double y = out.pointlist[i * 2 + 1];
+    m.vertices.emplace_back((float)x, (float)y, 0.f);
+    m.vertices.emplace_back((float)x, (float)y, h);
+    }
+  for (int i = 0; i < out.numberoftriangles; ++i)
+    {
+    int a = out.trianglelist[i * 3];
+    int b = out.trianglelist[i * 3 + 1];
+    int c = out.trianglelist[i * 3 + 2];
+    m.triangles.emplace_back((uint32_t)c * 2, (uint32_t)b * 2, (uint32_t)a * 2);
+    m.triangles.emplace_back((uint32_t)a * 2 + 1, (uint32_t)b * 2 + 1, (uint32_t)c * 2 + 1);
+    }
+
+  for (int i = 0; i < out.numberofsegments; ++i)
+    {
+    int a = out.segmentlist[2 * i];
+    int b = out.segmentlist[2 * i + 1];
+    m.triangles.emplace_back((uint32_t)b * 2, (uint32_t)a * 2, (uint32_t)a * 2 + 1);
+    m.triangles.emplace_back((uint32_t)b * 2, (uint32_t)a * 2 + 1, (uint32_t)b * 2 + 1);
     }
 
   m.cs = get_identity();

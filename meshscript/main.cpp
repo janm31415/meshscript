@@ -460,6 +460,57 @@ int64_t scm_parametric(uint64_t fun64, uint64_t dom64)
   return -1;
   }
 
+int64_t scm_triangulate(uint64_t pts_list64)
+  {
+  skiwi::scm_type pts_list(pts_list64);
+  try
+    {
+    std::vector<vec2<float>> vertices;
+    auto pts = pts_list.get_list();
+    vertices.reserve(pts.size());
+    for (auto& p : pts)
+      {
+      auto vertex = p.get_list();
+      if (vertex.size() != 2)
+        throw std::runtime_error("error: triangulate: invalid vertex size (should have 2 float values)");
+      vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number());
+      }
+    int64_t id = g_view->triangulate(vertices);
+    return id;
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error in triangulate: " << e.what() << "\n";
+    }
+  return -1;
+  }
+
+int64_t scm_extrude(uint64_t pts_list64, uint64_t height64)
+  {
+  skiwi::scm_type pts_list(pts_list64);
+  skiwi::scm_type height(height64);
+  try
+    {
+    std::vector<vec2<float>> vertices;
+    auto pts = pts_list.get_list();
+    vertices.reserve(pts.size());
+    for (auto& p : pts)
+      {
+      auto vertex = p.get_list();
+      if (vertex.size() != 2)
+        throw std::runtime_error("error: extrude: invalid vertex size (should have 2 float values)");
+      vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number());
+      }
+    int64_t id = g_view->extrude(vertices, (float)height.get_number());
+    return id;
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error in extrude: " << e.what() << "\n";
+    }
+  return -1;
+  }
+
 int64_t make_pointcloud(uint64_t scm_vertices_64)
   {
   skiwi::scm_type scm_vertices(scm_vertices_64);
@@ -474,7 +525,7 @@ int64_t make_pointcloud(uint64_t scm_vertices_64)
       {
       auto vertex = v.get_list();
       if (vertex.size() != 3)
-        throw std::runtime_error("error: make-mesh: invalid vertex size (should have 3 float values)");
+        throw std::runtime_error("error: make-pointcloud: invalid vertex size (should have 3 float values)");
       vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number(), (float)vertex[2].get_number());
       }
     }
@@ -1417,6 +1468,8 @@ void* register_functions(void*)
 
   register_external_primitive("ear-left-detect", (void*)&scm_left_ear_detect, skiwi_scm, "(ear-left-detect) runs the ear detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the left ear starting in corner (x,y) and with sizes (w,h).");
 
+  register_external_primitive("extrude", (void*)&scm_extrude, skiwi_int64, skiwi_scm, skiwi_scm, "(extrude lst h) extrudes a list of 2d points of the form ((x0 y0) (x1 y1) ...) with length `h` and returns the id of the resulting mesh.");
+
   register_external_primitive("face-detect", (void*)&scm_face_detect, skiwi_scm, "(face-detect) runs the face detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the face starting in corner (x,y) and with sizes (w,h).");
 
   register_external_primitive("force-redraw", (void*)&scm_force_redraw, skiwi_void, "(force-redraw) redraws the canvas. This is useful if you want to use view-position in your script, as view-position uses the data of the last render of the view.");
@@ -1492,6 +1545,9 @@ void* register_functions(void*)
   register_external_primitive("trianglenormals", (void*)&scm_trianglenormals, skiwi_scm, skiwi_int64, "(trianglenormals id) returns the triangle normals of object with tag `id`. The triangle normals are given as a list of lists with (x y z) values.");
   register_external_primitive("triangles", (void*)&scm_triangles, skiwi_scm, skiwi_int64, "(triangles id) returns the triangles of object with tag `id` as a list of lists of the form ((v0 v1 v2) (v3 v4 v4) ...) where each sublist (v0 v1 v2) contain the indices of the vertices that form a triangle. The actual vertex positions can be obtained with the command (vertices id).");
   register_external_primitive("triangles->csv", (void*)&triangles_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(triangles->csv id \"file.csv\") exports the triangles of the object with tag `id` to a csv file.");
+
+  register_external_primitive("triangulate", (void*)&scm_triangulate, skiwi_int64, skiwi_scm, "(triangulate lst) triangulates a list of 2d points of the form ((x0 y0) (x1 y1) ...) and returns the id of the resulting mesh.");
+
   register_external_primitive("vertexcolors", (void*)&scm_vertexcolors, skiwi_scm, skiwi_int64, "(vertexcolors id) returns the vertex colors of object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
   register_external_primitive("vertexnormals", (void*)&scm_vertexnormals, skiwi_scm, skiwi_int64, "(vertexnormals id) returns the vertex normals of object with tag `id`. The vertex normals are given as a list of lists with (x y z) values.");
   register_external_primitive("vertexcolors-set!", (void*)&scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(vertexcolors-set! id clrlst) sets vertex colors for the object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
