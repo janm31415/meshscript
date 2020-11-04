@@ -686,6 +686,7 @@ Glossary
 
 Below follows a dump of all the meshscript methods so far. 
 
+
     NAME
     	cs
     DESCRIPTION
@@ -730,6 +731,17 @@ Below follows a dump of all the meshscript methods so far.
     	list of lists in row major format.
     
     NAME
+    	cube
+    DESCRIPTION
+    	(cube w h d) makes a cube with dimensions `w`x`h`x`d`.
+    
+    NAME
+    	cylinder
+    DESCRIPTION
+    	(cylinder r h) makes a cylinder with radius `r` and
+    	height `h`.
+    
+    NAME
     	difference
     DESCRIPTION
     	(difference id1 id2) computes the difference of the
@@ -771,6 +783,13 @@ Below follows a dump of all the meshscript methods so far.
     	(w,h).
     
     NAME
+    	extrude
+    DESCRIPTION
+    	(extrude lst h) extrudes a list of 2d points of the
+    	form ((x0 y0) (x1 y1) ...) with length `h` and returns
+    	the id of the resulting mesh.
+    
+    NAME
     	face-detect
     DESCRIPTION
     	(face-detect) runs the face detector on the current
@@ -789,6 +808,11 @@ Below follows a dump of all the meshscript methods so far.
     	hide!
     DESCRIPTION
     	(hide! id) makes the object with tag `id` invisible.
+    
+    NAME
+    	icosahedron
+    DESCRIPTION
+    	(icosahedron r) makes a icosahedron with radius `r`.
     
     NAME
     	icp
@@ -1090,6 +1114,19 @@ Below follows a dump of all the meshscript methods so far.
     	TRC, morphable models to SSM.
     
     NAME
+    	scale
+    DESCRIPTION
+    	(scale id sx sy sz) scales the vertices of the object
+    	with tag `id` by vector (`sx`, `sy`, `sz). The resulting
+    	mesh's id is returned.
+    
+    NAME
+    	scale!
+    DESCRIPTION
+    	(scale! id sx sy sz) scales the vertices of the object
+    	with tag `id` by vector (`sx`, `sy`, `sz).
+    
+    NAME
     	shape-predict
     DESCRIPTION
     	(shape-predict sp_id (x y w h)) or (shape-predict sp_id
@@ -1155,6 +1192,42 @@ Below follows a dump of all the meshscript methods so far.
     	(show! id) makes the object with tag `id` visible.
     
     NAME
+    	smooth
+    DESCRIPTION
+    	(smooth id iterations lambda mu) smooths the mesh with
+    	tag `id` `iterations` times with Taubin smoothing parameters
+    	`lambda` and `mu`. The resulting mesh's id is returned.
+    	For Laplacian smoothing, choose `lambda` equal to 1
+    	and `mu` equal to 0. General rule for Taubin smoothing:
+    	let -`mu` > `lambda` > 0.
+    
+    NAME
+    	smooth!
+    DESCRIPTION
+    	(smooth! id iterations lambda mu) smooths the mesh with
+    	tag `id` `iterations` times with Taubin smoothing parameters
+    	`lambda` and `mu`. For Laplacian smoothing, choose
+    	`lambda` equal to 1 and `mu` equal to 0. General rule
+    	for Taubin smoothing: let -`mu` > `lambda` > 0.
+    
+    NAME
+    	sphere
+    DESCRIPTION
+    	(sphere) makes a sphere with radius `r`.
+    
+    NAME
+    	subdivide
+    DESCRIPTION
+    	(subdivide id nr) subdivides the mesh with tag `id`
+    	`nr` times. The resulting mesh's id is returned. 
+    
+    NAME
+    	subdivide!
+    DESCRIPTION
+    	(subdivide! id nr) subdivides the mesh with tag `id`
+    	`nr` times.
+    
+    NAME
     	trianglenormals
     DESCRIPTION
     	(trianglenormals id) returns the triangle normals of
@@ -1176,6 +1249,13 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(triangles->csv id "file.csv") exports the triangles
     	of the object with tag `id` to a csv file.
+    
+    NAME
+    	triangulate
+    DESCRIPTION
+    	(triangulate lst) triangulates a list of 2d points of
+    	the form ((x0 y0) (x1 y1) ...) and returns the id of
+    	the resulting mesh.
     
     NAME
     	vertexcolors
@@ -1345,8 +1425,6 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(exit) can be used in the input script to end meshscript,
     	so the REPL is skipped.
-    
-    
     
 Credits
 --------
