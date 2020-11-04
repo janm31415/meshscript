@@ -18,6 +18,7 @@ Content
      - [Parametric representation of Klein's bottle](#parametric-representation-of-kleins-bottle)
      - [Compressing STL files by a factor 5](#compressing-stl-files-by-a-factor-5)
      - [CSG modelling](#csg-modelling)
+     - [Racing car with spoiler](#racing-car-with-spoiler)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -680,6 +681,135 @@ Thai Statue | 10000000 | 4999996 | 488282 KB | 185548 KB | 104048 KB | 86165 KB 
     (hide! cub) ; hide the cube
     
     (view-show!)
+    
+### Racing car with spoiler
+
+![](images/racingcar.png)  
+
+I've taken this example from the [OpenSCAD tutorial](https://en.wikibooks.org/wiki/OpenSCAD_Tutorial/Chapter_9).
+
+    (define d1 30)
+    (define d2 20)
+    (define d3 20)
+    (define d4 10)
+    (define d5 20)
+    
+    (define w1 15)
+    (define w2 45)
+    (define w3 25)
+    
+    (define l1 d1)
+    (define l2 (+ d1 d2))
+    (define l3 (+ d1 d2 d3))
+    (define l4 (+ d1 d2 d3 d4))
+    (define l5 (+ d1 d2 d3 d4 d5))
+    
+    (define p0 (list 0 (/ w1 2)))
+    (define p1 (list l1 (/ w1 2)))
+    (define p2 (list l2 (/ w2 2)))
+    (define p3 (list l3 (/ w2 2)))
+    (define p4 (list l4 (/ w3 2)))
+    (define p5 (list l5 (/ w3 2)))
+    
+    (define p6 (list l5 (/ w3 -2)))
+    (define p7 (list l4 (/ w3 -2)))
+    (define p8 (list l3 (/ w2 -2)))
+    (define p9 (list l2 (/ w2 -2)))
+    (define p10 (list l1 (/ w1 -2)))
+    (define p11 (list 0 (/ w1 -2)))
+    
+    (define h 14)
+    
+    (define points (list p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11))
+    
+    (define body (extrude points h))
+    
+    (define canopy (sphere (/ w2 4)))
+    (scale! canopy ( / (/ (+ d2 d3 d4) 2) (/ w2 4)) 1 1)
+    (cs-translate! canopy (+ d1 d2 (/ d3 2)) 0 h)
+    
+    (define axis-length 40)
+    (define front-axis (cylinder 1 axis-length))
+    (cs-rotate! front-axis 90 0 0)
+    (define back-axis (duplicate front-axis))
+    (cs-translate! front-axis (/ d1 2) (/ axis-length 2) (/ h 2))
+    (cs-translate! back-axis (+ d1 d2 d3 d4 (/ d5 2)) (/ axis-length 2) (/ h 2))
+    
+    (define front-wheel-width 12)
+    (define back-wheel-width 15)
+    (define wheel-radius 10)
+    (define left-front-wheel (cylinder wheel-radius front-wheel-width))
+    (define right-front-wheel (duplicate left-front-wheel))
+    (cs-rotate! left-front-wheel 90 0 0)
+    (cs-rotate! right-front-wheel -90 0 0)
+    
+    (cs-translate! left-front-wheel (/ d1 2) -10 (/ h 2))
+    (cs-translate! right-front-wheel (/ d1 2) 10 (/ h 2))
+    
+    (define left-back-wheel (cylinder wheel-radius back-wheel-width))
+    (define right-back-wheel (duplicate left-back-wheel))
+    (cs-rotate! left-back-wheel 90 0 0)
+    (cs-rotate! right-back-wheel -90 0 0)
+    
+    (cs-translate! left-back-wheel (+ d1 d2 d3 d4 (/ d5 2)) -15 (/ h 2))
+    (cs-translate! right-back-wheel (+ d1 d2 d3 d4 (/ d5 2)) 15 (/ h 2))
+    
+    (define (naca-half-thickness x t)
+      (* 5 t (+ (* 0.2969 (sqrt x)) (* -0.1260 x) (* -0.3516 (expt x 2)) (* 0.2843 (expt x 3)) (* -0.1015 (expt x 4) )))
+    )
+    
+    (define (naca-top-coordinates t n)
+      (define coords '())
+      (let loop ((x 0))
+        (if (> x 1)
+            coords
+            (begin
+              (set! coords (append coords (list (list x (naca-half-thickness x t)))))
+              (loop (+ x (/ 1 n)))        
+            )))
+    )
+    
+    (define (naca-bottom-coordinates t n)
+      (define coords '())
+      (let loop ((x 1))
+        (if (< x 0)
+            coords
+            (begin
+              (set! coords (append coords (list (list x (- 0 (naca-half-thickness x t))))))
+              (loop (- x (/ 1 n)))        
+            )))
+    )
+    
+    (define (naca-coordinates t n)
+      (append (naca-top-coordinates t n) (naca-bottom-coordinates t n))
+    )
+    
+    (define wing1 (extrude (naca-coordinates 0.12 300) 15))
+    (scale! wing1 20 20 1)
+    (define wing2 (duplicate wing1))
+    (cs-translate! wing1 (+ d1 d2 d3 d4 (/ d5 2)) 10 10)
+    (cs-translate! wing2 (+ d1 d2 d3 d4 (/ d5 2)) -10 10)
+    
+    (define wing3 (extrude (naca-coordinates 0.12 300) 60))
+    (scale! wing3 20 20 1)
+    (cs-rotate! wing3 90 0 0)
+    (cs-translate! wing3 (+ d1 d2 d3 d4 (/ d5 2)) 30 25)
+    
+    (matcap-set! body 3)
+    (matcap-set! left-front-wheel 3)
+    (matcap-set! right-front-wheel 3)
+    (matcap-set! left-back-wheel 3)
+    (matcap-set! right-back-wheel 3)
+    (matcap-set! canopy 3)
+    (matcap-set! wing1 3)
+    (matcap-set! wing2 3)
+    (matcap-set! wing3 3)
+    
+    (view-shadow-set! #t)
+    
+    (view-show!)
+    
+    
 
 Glossary
 --------
