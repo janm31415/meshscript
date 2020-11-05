@@ -19,6 +19,7 @@ Content
      - [Compressing STL files by a factor 5](#compressing-stl-files-by-a-factor-5)
      - [CSG modelling](#csg-modelling)
      - [Racing car with spoiler](#racing-car-with-spoiler)
+     - [Brandy glass](#brandy-glass)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -811,7 +812,39 @@ I've taken this example from this [OpenSCAD tutorial](https://en.wikibooks.org/w
     
     (view-show!)
     
+### Brandy glass
+
+![](images/brandy.png)  
+
+    (define glass-shape
+      (lambda (x)
+        (let ((a -2.9) (b 1) (c 1) (d 0.3))
+          (+ (* a (expt x 3)) (* b (expt x 2)) (* c x) d)
+        )
+      )
+    )
     
+    (define (glass-coordinates n)
+      (define coords '())
+      (let loop ((x 0))
+        (if (> x 1)
+            coords
+            (begin
+              (set! coords (append coords (list (list x (glass-shape x)))))
+              (loop (+ x (/ 1 n)))        
+            )))
+    )
+    
+    
+    (define pts-list (glass-coordinates 100))
+    
+    (define id (revolve pts-list 100 #f))
+    
+    (define im (load-image "D:/matcaps/metal_shiny.png"))
+    (matcap-set! id im)
+    
+    (view-show!)
+
 
 Glossary
 --------
