@@ -20,6 +20,7 @@ Content
      - [CSG modelling](#csg-modelling)
      - [Racing car with spoiler](#racing-car-with-spoiler)
      - [Brandy glass](#brandy-glass)
+     - [Torus](#torus)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -842,6 +843,41 @@ I've taken this example from this [OpenSCAD tutorial](https://en.wikibooks.org/w
     
     (define im (load-image "D:/matcaps/metal_shiny.png"))
     (matcap-set! id im)
+    
+    (view-show!)
+
+### Torus
+
+![](images/torus.png)  
+
+    (define (circle cx cy r n)    
+      (define coords '())
+      (let loop ((i 0))
+        (if (= i n)
+            coords
+            (begin
+              (let* ((ang (/ (* i 2.0 3.1415926535) n)) 
+                     (x (+ (* r (cos ang)) cx)) 
+                     (y (+ (* r (sin ang)) cy)))
+                (set! coords (append coords (list (list x y))))
+              )
+              (loop (+ i 1))
+            )))
+    )
+    
+    (define r1 1.5)
+    (define R1 7.5)
+    
+    (define circle-pts-1 (circle 0 R1 r1 128))
+    
+    (define id1 (revolve circle-pts-1 100 #t))
+    
+    (define r2 2)
+    (define R2 3)
+    
+    (define circle-pts-2 (circle 0 R2 r2 8))
+    
+    (define id2 (revolve circle-pts-2 10 #t))
     
     (view-show!)
 
