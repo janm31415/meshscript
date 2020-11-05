@@ -1240,6 +1240,16 @@ Below follows a dump of all the meshscript methods so far.
     	surface reconstruction.
     
     NAME
+    	revolve
+    DESCRIPTION
+    	(revolve lst n closed?) revolves a list of 2d points
+    	of the form ((x0 y0) (x1 y1) ...). The second parameter
+    	`n` indicates the number of revolve steps. The third
+    	parameter `closed?` indicates whether the input list
+    	is closed or not. Its value should be #t or #f. The
+    	id of the resulting mesh is returned.
+    
+    NAME
     	save
     DESCRIPTION
     	(save id "file.ext") writes the object with tag `id`
@@ -1564,6 +1574,7 @@ Below follows a dump of all the meshscript methods so far.
     	(exit) can be used in the input script to end meshscript,
     	so the REPL is skipped.
     
+
 
     
 Credits
