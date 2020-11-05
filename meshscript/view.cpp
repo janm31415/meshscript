@@ -270,6 +270,22 @@ int64_t view::extrude(const std::vector<jtk::vec2<float>>& vertices, float h)
   return id;
   }
 
+int64_t view::revolve(const std::vector<jtk::vec2<float>>& vertices, uint32_t n, bool closed)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* new_object;
+  uint32_t id;
+  _db.create_mesh(new_object, id);
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
+  ::revolve_points(*new_object, vertices, n, closed);
+  if (new_object->visible)
+    add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return id;
+  }
+
 void view::subdivide(uint32_t id, uint32_t nr)
   {
   std::scoped_lock lock(_mut);

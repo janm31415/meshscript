@@ -409,6 +409,43 @@ namespace
 
   }
 
+void revolve_points(mesh& m, const std::vector<jtk::vec2<float>>& pts, uint32_t n, bool closed)
+  {
+  bool clockwise = polyline_is_clockwise(pts);
+
+  m = mesh();
+  const double twopi = 2.0* 3.14159265358979323846264338327950288419716939937510;
+
+  m.vertices.reserve(pts.size() * n);
+
+  for (uint32_t i = 0; i < (uint32_t)pts.size(); ++i)
+    {
+    uint32_t idx = clockwise ? i : (uint32_t)pts.size() - 1 - i;
+    for (uint32_t j = 0; j < n; ++j)
+      {      
+      const double angle = (double)j * twopi / (double)n ;
+      m.vertices.emplace_back(pts[idx][0], (float)(pts[idx][1] * std::sin(angle)), (float)(pts[idx][1] * std::cos(angle)));
+      }
+    }
+
+  uint32_t sz = (uint32_t)m.vertices.size();
+
+  uint32_t top = closed ? (uint32_t)pts.size() : (uint32_t)pts.size() - 1;
+
+  for (uint32_t i = 0; i < top; ++i)
+    {
+    for (uint32_t j = 0; j < n; ++j)
+      {
+      m.triangles.emplace_back(i*n + j, (((i + 1) % pts.size())*n + j), (i*n + (j + 1) % n));
+      m.triangles.emplace_back((i*n + (j + 1) % n), (((i + 1) % pts.size())*n + j), (((i + 1) % pts.size())*n + (j + 1) % n));
+      }
+    }
+
+
+  m.cs = get_identity();
+  m.visible = true;
+  }
+
 void extrude_points(mesh& m, const std::vector<jtk::vec2<float>>& pts, float h)
   {
   m = mesh();

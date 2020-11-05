@@ -44,3 +44,4 @@ void make_cylinder(mesh& m, float r, float d, uint32_t n);
 
 void triangulate_points(mesh& m, const std::vector<jtk::vec2<float>>& pts);
 void extrude_points(mesh& m, const std::vector<jtk::vec2<float>>& pts, float h);
+void revolve_points(mesh& m, const std::vector<jtk::vec2<float>>& pts, uint32_t n, bool closed);

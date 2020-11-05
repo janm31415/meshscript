@@ -511,6 +511,32 @@ int64_t scm_extrude(uint64_t pts_list64, uint64_t height64)
   return -1;
   }
 
+
+int64_t scm_revolve(uint64_t pts_list64, int64_t n, bool closed)
+  {
+  skiwi::scm_type pts_list(pts_list64);
+  try
+    {
+    std::vector<vec2<float>> vertices;
+    auto pts = pts_list.get_list();
+    vertices.reserve(pts.size());
+    for (auto& p : pts)
+      {
+      auto vertex = p.get_list();
+      if (vertex.size() != 2)
+        throw std::runtime_error("error: extrude: invalid vertex size (should have 2 float values)");
+      vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number());
+      }
+    int64_t id = g_view->revolve(vertices, (uint32_t)n, closed);
+    return id;
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error in revolve: " << e.what() << "\n";
+    }
+  return -1;
+  }
+
 void scm_subdivide(int64_t id, int64_t nr)
   {
   g_view->subdivide((uint32_t)id, (uint32_t)nr);
@@ -1625,6 +1651,8 @@ void* register_functions(void*)
   register_external_primitive("pointcloud-normals-estimate!", (void*)&scm_pointcloud_normals_estimate, skiwi_void, skiwi::skiwi_int64, skiwi::skiwi_int64, "(pointcloud-normals-estimate! id k) creates vertex normals for the pointcloud with tag `id` by taking the `k` nearest neighbours of each vertex, fit a least squares plane through these points, and use the normal of this plane as estimate.");
 
   register_external_primitive("poisson", (void*)&scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth) applies Poisson surface reconstruction to the pointcloud with tag `pc_id`. This is the screened Poisson surface reconstruction algorithm by M. Kazhdan and H. Hoppe. You have to provide the parameter `depth` which represents the depth of the octree during Poisson surface reconstruction.");
+
+  register_external_primitive("revolve", (void*)&scm_revolve, skiwi_int64, skiwi_scm, skiwi_int64, skiwi_bool, "(revolve lst n closed?) revolves a list of 2d points of the form ((x0 y0) (x1 y1) ...). The second parameter `n` indicates the number of revolve steps. The third parameter `closed?` indicates whether the input list is closed or not. Its value should be #t or #f. The id of the resulting mesh is returned.");
 
   register_external_primitive("save", (void*)&scm_write, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(save id \"file.ext\") writes the object with tag `id` to file. The filetype is determined by the extension that is given. You can export meshes to STL, PLY, OBJ, OFF, or TRC, pointclouds to PLY, OBJ, PTS, XYZ, or TRC, morphable models to SSM."); // don't use write: gives naming conflict with slib
 

@@ -60,6 +60,8 @@ class view
 
     int64_t extrude(const std::vector<jtk::vec2<float>>& vertices, float h);
 
+    int64_t revolve(const  std::vector<jtk::vec2<float>>& vertices, uint32_t n, bool closed);
+
     void mesh_texture_set(uint32_t id, uint32_t tex);
 
     void pointcloud_estimate_normals(uint32_t id, uint32_t k);
