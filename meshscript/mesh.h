@@ -38,9 +38,9 @@ void cs_apply(mesh& m);
 
 
 void make_cube(mesh& m, float w, float h, float d);
-void make_sphere(mesh& m, float r);
+void make_sphere(mesh& m, float r, uint32_t subdivision_levels);
 void make_icosahedron(mesh& m, float r);
-void make_cylinder(mesh& m, float r, float d);
+void make_cylinder(mesh& m, float r, float d, uint32_t n);
 
 void triangulate_points(mesh& m, const std::vector<jtk::vec2<float>>& pts);
 void extrude_points(mesh& m, const std::vector<jtk::vec2<float>>& pts, float h);

@@ -831,19 +831,61 @@ void scm_translate(int64_t id, uint64_t x_axis_64, uint64_t y_axis_64, uint64_t 
   g_view->premultiply_coordinate_system((uint32_t)id, t);
   }
 
-int64_t scm_union(int64_t id1, int64_t id2)
+int64_t scm_union(uint64_t id_list64)
   {
-  return g_view->csg((uint32_t)id1, (uint32_t)id2, 0);
+  skiwi::scm_type id_list(id_list64);
+  try
+    {
+    auto lst = id_list.get_list();
+    std::vector<uint32_t> ids;
+    for (const auto& l : lst)
+      {
+      ids.push_back((uint32_t)l.get_fixnum());
+      }
+    return g_view->csg(ids, 0);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error in union: invalid input: " << e.what() << std::endl;
+    }
   }
 
-int64_t scm_difference(int64_t id1, int64_t id2)
+int64_t scm_difference(uint64_t id_list64)
   {
-  return g_view->csg((uint32_t)id1, (uint32_t)id2, 1);
+  skiwi::scm_type id_list(id_list64);
+  try
+    {
+    auto lst = id_list.get_list();
+    std::vector<uint32_t> ids;
+    for (const auto& l : lst)
+      {
+      ids.push_back((uint32_t)l.get_fixnum());
+      }
+    return g_view->csg(ids, 1);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error in difference: invalid input: " << e.what() << std::endl;
+    }
   }
 
-int64_t scm_intersection(int64_t id1, int64_t id2)
+int64_t scm_intersection(uint64_t id_list64)
   {
-  return g_view->csg((uint32_t)id1, (uint32_t)id2, 2);
+  skiwi::scm_type id_list(id_list64);
+  try
+    {
+    auto lst = id_list.get_list();
+    std::vector<uint32_t> ids;
+    for (const auto& l : lst)
+      {
+      ids.push_back((uint32_t)l.get_fixnum());
+      }
+    return g_view->csg(ids, 2);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error in intersection: invalid input: " << e.what() << std::endl;
+    }
   }
 
 void scm_set_shading(bool b)
@@ -1343,7 +1385,7 @@ int64_t scm_cube(uint64_t w64, uint64_t h64, uint64_t d64)
   return -1;
   }
 
-int64_t scm_cylinder(uint64_t r64, uint64_t h64)
+int64_t scm_cylinder(uint64_t r64, uint64_t h64, int64_t n)
   {
   skiwi::scm_type r(r64);
   skiwi::scm_type h(h64);  
@@ -1351,7 +1393,7 @@ int64_t scm_cylinder(uint64_t r64, uint64_t h64)
     {
     double rd = r.get_number();
     double hd = h.get_number();    
-    return g_view->make_cylinder((float)rd, (float)hd);
+    return g_view->make_cylinder((float)rd, (float)hd, (uint32_t)n);
     }
   catch (std::runtime_error e)
     {
@@ -1360,13 +1402,13 @@ int64_t scm_cylinder(uint64_t r64, uint64_t h64)
   return -1;
   }
 
-int64_t scm_sphere(uint64_t r64)
+int64_t scm_sphere(uint64_t r64, int64_t subdivision_levels)
   {
   skiwi::scm_type r(r64);
   try
     {
     double rd = r.get_number();
-    return g_view->make_sphere((float)rd);
+    return g_view->make_sphere((float)rd, (uint32_t)subdivision_levels);
     }
   catch (std::runtime_error e)
     {
@@ -1511,10 +1553,10 @@ void* register_functions(void*)
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
   register_external_primitive("cs-premultiply!", (void*)&scm_cs_premultiply, skiwi_void, skiwi_int64, skiwi_scm, "(cs-premultiply! id cs) premultiplies the coordinate system of the object with tag `id` by the input coordinate system. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
 
-  register_external_primitive("cube", (void*)&scm_cube, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cube w h d) makes a cube with dimensions `w`x`h`x`d`.");
-  register_external_primitive("cylinder", (void*)&scm_cylinder, skiwi_int64, skiwi_scm, skiwi_scm, "(cylinder r h) makes a cylinder with radius `r` and height `h`.");
+  register_external_primitive("cube", (void*)&scm_cube, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cube w h d) makes a cube with dimensions `w` x `h` x `d`.");
+  register_external_primitive("cylinder", (void*)&scm_cylinder, skiwi_int64, skiwi_scm, skiwi_scm, "(cylinder r h n) makes a cylinder with radius `r` and height `h`. The cylinder's side is discretized by 'n' ribs.");
 
-  register_external_primitive("difference", (void*)&scm_difference, skiwi_int64, skiwi_int64, skiwi_int64, "(difference id1 id2) computes the difference of the meshes or morphable models with tag `id1` and tag `id2` and returns the id of the result.");
+  register_external_primitive("difference", (void*)&scm_difference, skiwi_int64, skiwi_scm, "(difference (id1 id2 ...) ) computes the difference of the meshes or morphable models with tag `id1`, tag `id2`, ... in the list (`id` `id2` ...) and returns the id of the result.");
 
   register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed) returns a list with values that represent the distance between objects with tag `id1` and `id2`. For each vertex of object `id1` there is exactly one distance in the list. The distance can be signed or unsigned, depending on the boolean value that is given to `bool-signed`.");
 
@@ -1537,7 +1579,7 @@ void* register_functions(void*)
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
   register_external_primitive("info", (void*)&scm_info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
   
-  register_external_primitive("intersection", (void*)&scm_intersection, skiwi_int64, skiwi_int64, skiwi_int64, "(intersection id1 id2) computes the intersection of the meshes or morphable models with tag `id1` and tag `id2` and returns the id of the result.");
+  register_external_primitive("intersection", (void*)&scm_intersection, skiwi_int64, skiwi_scm, "(intersection (id1 id2 ...)) computes the intersection of the meshes or morphable models with tag `id1`, tag `id2`, ... in the list (`id` `id2` ...) and returns the id of the result.");
 
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list `lst` of values between 0 and 1 and returns a list of lists with (r g b) values.");
 
@@ -1602,7 +1644,7 @@ void* register_functions(void*)
 
   register_external_primitive("smooth!", (void*)&scm_smooth, skiwi_void, skiwi_int64, skiwi_int64, skiwi_scm, skiwi_scm, "(smooth! id iterations lambda mu) smooths the mesh with tag `id` `iterations` times with Taubin smoothing parameters `lambda` and `mu`. For Laplacian smoothing, choose `lambda` equal to 1 and `mu` equal to 0. General rule for Taubin smoothing: let -`mu` > `lambda` > 0.");
 
-  register_external_primitive("sphere", (void*)&scm_sphere, skiwi_int64, skiwi_scm, "(sphere) makes a sphere with radius `r`.");
+  register_external_primitive("sphere", (void*)&scm_sphere, skiwi_int64, skiwi_scm, skiwi_int64, "(sphere r sub) makes a sphere with radius `r`. The sphere starts from a regular icosahedron, and is then subdivided `sub` times.");
 
   register_external_primitive("subdivide", (void*)&scm_subdivide_persistent, skiwi_int64, skiwi_int64, skiwi_int64, "(subdivide id nr) subdivides the mesh with tag `id` `nr` times. The resulting mesh's id is returned. ");
   register_external_primitive("subdivide!", (void*)&scm_subdivide, skiwi_void, skiwi_int64, skiwi_int64, "(subdivide! id nr) subdivides the mesh with tag `id` `nr` times.");
@@ -1618,7 +1660,7 @@ void* register_functions(void*)
   register_external_primitive("vertexcolors-set!", (void*)&scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(vertexcolors-set! id clrlst) sets vertex colors for the object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
   register_external_primitive("vertices", (void*)&scm_vertices, skiwi_scm, skiwi_int64, "(vertices id) returns the vertices of object with tag `id` as a list of lists of the form ((x y z) (x y z) ...) where each sublist (x y z) is a 3d point representing the position of that vertex.");
   
-  register_external_primitive("union", (void*)&scm_union, skiwi_int64, skiwi_int64, skiwi_int64, "(union id1 id2) computes the union of the meshes or morphable models with tag `id1` and tag `id2` and returns the id of the result.");
+  register_external_primitive("union", (void*)&scm_union, skiwi_int64, skiwi_scm, "(union (id1 id2 ...)) computes the union of the meshes or morphable models with tag `id1`, tag `id2`, ... in the list (`id` `id2` ...) and returns the id of the result.");
   
   register_external_primitive("vertices->csv", (void*)&vertices_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(vertices->csv id \"file.csv\") exports the vertices of the object with tag `id` to a csv file.");
   register_external_primitive("view-bg-set!", (void*)&scm_set_bg_color, skiwi_void, skiwi_int64, skiwi_int64, skiwi_int64, "(view-bg-set! r g b) changes the background color to (r g b).");

@@ -44,11 +44,11 @@ class view
 
     int64_t make_cube(float w, float h, float d);
 
-    int64_t make_sphere(float r);
+    int64_t make_sphere(float r, uint32_t subdivision_levels);
 
     int64_t make_icosahedron(float r);
 
-    int64_t make_cylinder(float r, float d);
+    int64_t make_cylinder(float r, float d, uint32_t n);
 
     void scale(uint32_t id, float sx, float sy, float sz);
 
@@ -78,7 +78,7 @@ class view
 
     std::vector<float> distance_map(uint32_t id1, uint32_t id2, bool sign);
 
-    int64_t csg(uint32_t id1, uint32_t id2, int csg_type);
+    int64_t csg(const std::vector<uint32_t>& ids, int csg_type);
 
     int64_t mm_coeff_size(uint32_t id);
     int64_t mm_shape_size(uint32_t id);

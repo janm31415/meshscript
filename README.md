@@ -674,7 +674,7 @@ Thai Statue | 10000000 | 4999996 | 488282 KB | 185548 KB | 104048 KB | 86165 KB 
     
     (define cub (marching-cubes bb dim 0.0 cube)) ; make a cube with marching cubes
     
-    (define res (difference cub sph)) ; compute the difference of the cube and the sphere
+    (define res (difference (list cub sph))) ; compute the difference of the cube and the sphere
     (matcap-set! res 3) ; choose matcap nr 3 for rendering
     
     (hide! sph) ; hide the sphere
@@ -724,12 +724,12 @@ I've taken this example from this [OpenSCAD tutorial](https://en.wikibooks.org/w
     
     (define body (extrude points h))
     
-    (define canopy (sphere (/ w2 4)))
+    (define canopy (sphere (/ w2 4) 5))
     (scale! canopy ( / (/ (+ d2 d3 d4) 2) (/ w2 4)) 1 1)
     (cs-translate! canopy (+ d1 d2 (/ d3 2)) 0 h)
     
     (define axis-length 40)
-    (define front-axis (cylinder 1 axis-length))
+    (define front-axis (cylinder 1 axis-length 128))
     (cs-rotate! front-axis 90 0 0)
     (define back-axis (duplicate front-axis))
     (cs-translate! front-axis (/ d1 2) (/ axis-length 2) (/ h 2))
@@ -738,7 +738,7 @@ I've taken this example from this [OpenSCAD tutorial](https://en.wikibooks.org/w
     (define front-wheel-width 12)
     (define back-wheel-width 15)
     (define wheel-radius 10)
-    (define left-front-wheel (cylinder wheel-radius front-wheel-width))
+    (define left-front-wheel (cylinder wheel-radius front-wheel-width 128))
     (define right-front-wheel (duplicate left-front-wheel))
     (cs-rotate! left-front-wheel 90 0 0)
     (cs-rotate! right-front-wheel -90 0 0)
@@ -746,7 +746,7 @@ I've taken this example from this [OpenSCAD tutorial](https://en.wikibooks.org/w
     (cs-translate! left-front-wheel (/ d1 2) -10 (/ h 2))
     (cs-translate! right-front-wheel (/ d1 2) 10 (/ h 2))
     
-    (define left-back-wheel (cylinder wheel-radius back-wheel-width))
+    (define left-back-wheel (cylinder wheel-radius back-wheel-width 128))
     (define right-back-wheel (duplicate left-back-wheel))
     (cs-rotate! left-back-wheel 90 0 0)
     (cs-rotate! right-back-wheel -90 0 0)
@@ -804,6 +804,8 @@ I've taken this example from this [OpenSCAD tutorial](https://en.wikibooks.org/w
     (matcap-set! wing1 3)
     (matcap-set! wing2 3)
     (matcap-set! wing3 3)
+    (matcap-set! front-axis 3)
+    (matcap-set! back-axis 3)
     
     (view-shadow-set! #t)
     

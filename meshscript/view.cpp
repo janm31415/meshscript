@@ -190,14 +190,14 @@ int64_t view::make_cube(float w, float h, float d)
   return id;
   }
 
-int64_t view::make_sphere(float r)
+int64_t view::make_sphere(float r, uint32_t subdivision_levels)
   {
   std::scoped_lock lock(_mut);
   mesh* new_object;
   uint32_t id;
   _db.create_mesh(new_object, id);
   _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
-  ::make_sphere(*new_object, r);
+  ::make_sphere(*new_object, r, subdivision_levels);
   if (new_object->visible)
     add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -222,14 +222,14 @@ int64_t view::make_icosahedron(float r)
   return id;
   }
 
-int64_t view::make_cylinder(float r, float d)
+int64_t view::make_cylinder(float r, float d, uint32_t n)
   {
   std::scoped_lock lock(_mut);
   mesh* new_object;
   uint32_t id;
   _db.create_mesh(new_object, id);
   _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
-  ::make_cylinder(*new_object, r, d);
+  ::make_cylinder(*new_object, r, d, n);
   if (new_object->visible)
     add_object(id, _scene, _db);
   prepare_scene(_scene);
@@ -1258,10 +1258,13 @@ std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
   return std::vector<jtk::vec3<uint32_t>>();
   }
 
-int64_t view::csg(uint32_t id1, uint32_t id2, int csg_type)
+int64_t view::csg(const std::vector<uint32_t>& ids, int csg_type)
   {
   std::scoped_lock lock(_mut);
-
+  if (ids.size() < 2)
+    return -1;
+  uint32_t id1 = ids[0];
+  uint32_t id2 = ids[1];
   std::vector<jtk::vec3<float>>* v1 = get_vertices(_db, id1);
   std::vector<jtk::vec3<float>>* v2 = get_vertices(_db, id2);
   std::vector<jtk::vec3<uint32_t>>* t1 = get_triangles(_db, id1);
@@ -1274,6 +1277,7 @@ int64_t view::csg(uint32_t id1, uint32_t id2, int csg_type)
     mesh* db_mesh;
     uint32_t id;
     _db.create_mesh(db_mesh, id);
+    db_mesh->cs = jtk::get_identity();
     cork_options ops;
     ops.p_str = nullptr;
     ops.resolve_all_intersections = false;
@@ -1298,7 +1302,39 @@ int64_t view::csg(uint32_t id1, uint32_t id2, int csg_type)
       break;
       }
       }
-    db_mesh->cs = jtk::get_identity();
+
+    for (uint32_t j = 2; j < ids.size(); ++j)
+      {
+      v2 = get_vertices(_db, ids[j]);
+      t2 = get_triangles(_db, ids[j]);
+      cs2 = get_cs(_db, ids[j]);
+      if (v2 && t2 && cs2)
+        {
+        mesh tmp;
+        tmp.vertices.swap(db_mesh->vertices);
+        tmp.triangles.swap(db_mesh->triangles);
+
+        switch (csg_type)
+          {
+          case 0:
+          {
+          compute_union(db_mesh->triangles, db_mesh->vertices, tmp.triangles, tmp.vertices, &(db_mesh->cs)[0], *t2, *v2, &(*cs2)[0], ops);
+          break;
+          }
+          case 1:
+          {
+          compute_difference(db_mesh->triangles, db_mesh->vertices, tmp.triangles, tmp.vertices, &(db_mesh->cs)[0], *t2, *v2, &(*cs2)[0], ops);
+          break;
+          }
+          case 2:
+          {
+          compute_intersection(db_mesh->triangles, db_mesh->vertices, tmp.triangles, tmp.vertices, &(db_mesh->cs)[0], *t2, *v2, &(*cs2)[0], ops);
+          break;
+          }
+          }
+        }
+      }
+    
     db_mesh->visible = true;
     _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
     if (db_mesh->visible)

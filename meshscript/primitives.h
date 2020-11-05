@@ -88,11 +88,10 @@ struct cube
 
 struct cylinder
   {
-  cylinder()
+  cylinder(uint32_t steps)
     {
     double twopi = 2.0* 3.14159265358979323846264338327950288419716939937510;
     using namespace jtk;
-    int steps = 128;
     vertices.reserve(steps * 2 + 2);
     triangles.reserve(4 * steps);
     for (int i = 0; i < steps; ++i)

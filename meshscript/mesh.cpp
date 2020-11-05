@@ -269,7 +269,7 @@ void make_cube(mesh& m, float w, float h, float d)
   m.visible = true;
   }
 
-void make_sphere(mesh& m, float r)
+void make_sphere(mesh& m, float r, uint32_t subdivision_levels)
   {
   m = mesh();
 
@@ -277,7 +277,7 @@ void make_sphere(mesh& m, float r)
   m.vertices = ico.vertices;
   m.triangles = ico.triangles;
 
-  for (int iter = 0; iter < 7; ++iter)
+  for (uint32_t iter = 0; iter < subdivision_levels; ++iter)
     jtk::dyadic_subdivide(m.vertices, m.triangles);
 
   for (auto& v : m.vertices)
@@ -306,11 +306,11 @@ void make_icosahedron(mesh& m, float r)
   m.visible = true;
   }
 
-void make_cylinder(mesh& m, float r, float d)
+void make_cylinder(mesh& m, float r, float d, uint32_t n)
   {
   m = mesh();
 
-  cylinder c;
+  cylinder c(n);
   m.vertices = c.vertices;
   m.triangles = c.triangles;
 
