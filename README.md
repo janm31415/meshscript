@@ -944,6 +944,12 @@ Below follows a dump of all the meshscript methods so far.
     	ribs.
     
     NAME
+    	diagnose
+    DESCRIPTION
+    	(diagnose id) diagnoses the self intersections of the
+    	mesh with tag `id`.
+    
+    NAME
     	difference
     DESCRIPTION
     	(difference (id1 id2 ...) ) computes the difference
@@ -1309,6 +1315,12 @@ Below follows a dump of all the meshscript methods so far.
     	surface reconstruction.
     
     NAME
+    	resolve-intersections
+    DESCRIPTION
+    	(resolve-intersections id) resolves all self intersections
+    	of the mesh with tag `id`.
+    
+    NAME
     	revolve
     DESCRIPTION
     	(revolve lst n closed?) revolves a list of 2d points
@@ -1643,8 +1655,6 @@ Below follows a dump of all the meshscript methods so far.
     	(exit) can be used in the input script to end meshscript,
     	so the REPL is skipped.
     
-
-
     
 Credits
 --------
