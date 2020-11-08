@@ -857,6 +857,16 @@ void scm_translate(int64_t id, uint64_t x_axis_64, uint64_t y_axis_64, uint64_t 
   g_view->premultiply_coordinate_system((uint32_t)id, t);
   }
 
+int64_t scm_resolve_intersections(int64_t id)
+  {
+  return g_view->resolve_intersections((uint32_t)id);
+  }
+
+void scm_diagnose(int64_t id)
+  {
+  g_view->diagnose((uint32_t)id);
+  }
+
 int64_t scm_union(uint64_t id_list64)
   {
   skiwi::scm_type id_list(id_list64);
@@ -874,6 +884,7 @@ int64_t scm_union(uint64_t id_list64)
     {
     std::cout << "error in union: invalid input: " << e.what() << std::endl;
     }
+  return -1;
   }
 
 int64_t scm_difference(uint64_t id_list64)
@@ -893,6 +904,7 @@ int64_t scm_difference(uint64_t id_list64)
     {
     std::cout << "error in difference: invalid input: " << e.what() << std::endl;
     }
+  return -1;
   }
 
 int64_t scm_intersection(uint64_t id_list64)
@@ -912,6 +924,7 @@ int64_t scm_intersection(uint64_t id_list64)
     {
     std::cout << "error in intersection: invalid input: " << e.what() << std::endl;
     }
+  return -1;
   }
 
 void scm_set_shading(bool b)
@@ -1582,6 +1595,8 @@ void* register_functions(void*)
   register_external_primitive("cube", (void*)&scm_cube, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cube w h d) makes a cube with dimensions `w` x `h` x `d`.");
   register_external_primitive("cylinder", (void*)&scm_cylinder, skiwi_int64, skiwi_scm, skiwi_scm, "(cylinder r h n) makes a cylinder with radius `r` and height `h`. The cylinder's side is discretized by 'n' ribs.");
 
+  register_external_primitive("diagnose", (void*)&scm_diagnose, skiwi_void, skiwi_int64, "(diagnose id) diagnoses the self intersections of the mesh with tag `id`.");
+
   register_external_primitive("difference", (void*)&scm_difference, skiwi_int64, skiwi_scm, "(difference (id1 id2 ...) ) computes the difference of the meshes or morphable models with tag `id1`, tag `id2`, ... in the list (`id` `id2` ...) and returns the id of the result.");
 
   register_external_primitive("distance-map", (void*)&scm_distance_map, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_bool, "(distance-map id1 id2 bool-signed) returns a list with values that represent the distance between objects with tag `id1` and `id2`. For each vertex of object `id1` there is exactly one distance in the list. The distance can be signed or unsigned, depending on the boolean value that is given to `bool-signed`.");
@@ -1651,6 +1666,8 @@ void* register_functions(void*)
   register_external_primitive("pointcloud-normals-estimate!", (void*)&scm_pointcloud_normals_estimate, skiwi_void, skiwi::skiwi_int64, skiwi::skiwi_int64, "(pointcloud-normals-estimate! id k) creates vertex normals for the pointcloud with tag `id` by taking the `k` nearest neighbours of each vertex, fit a least squares plane through these points, and use the normal of this plane as estimate.");
 
   register_external_primitive("poisson", (void*)&scm_poisson, skiwi::skiwi_int64, skiwi::skiwi_int64, skiwi::skiwi_int64, "(poisson pc_id depth) applies Poisson surface reconstruction to the pointcloud with tag `pc_id`. This is the screened Poisson surface reconstruction algorithm by M. Kazhdan and H. Hoppe. You have to provide the parameter `depth` which represents the depth of the octree during Poisson surface reconstruction.");
+
+  register_external_primitive("resolve-intersections", (void*)&scm_resolve_intersections, skiwi_int64, skiwi_int64, "(resolve-intersections id) resolves all self intersections of the mesh with tag `id`.");
 
   register_external_primitive("revolve", (void*)&scm_revolve, skiwi_int64, skiwi_scm, skiwi_int64, skiwi_bool, "(revolve lst n closed?) revolves a list of 2d points of the form ((x0 y0) (x1 y1) ...). The second parameter `n` indicates the number of revolve steps. The third parameter `closed?` indicates whether the input list is closed or not. Its value should be #t or #f. The id of the resulting mesh is returned.");
 

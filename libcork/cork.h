@@ -10,8 +10,9 @@
 
 struct cork_options
   {
-  cork_options() : use_parallel(true), debug_folder(nullptr), resolve_all_intersections(false), p_str(nullptr) {}
+  cork_options() : use_parallel(true), debug_folder(nullptr), resolve_all_intersections(false), p_str(nullptr), center(true) {}
   bool use_parallel;
+  bool center;
   const char* debug_folder;
   bool resolve_all_intersections;
   std::ostream* p_str;

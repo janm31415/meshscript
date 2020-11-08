@@ -80,6 +80,10 @@ class view
 
     std::vector<float> distance_map(uint32_t id1, uint32_t id2, bool sign);
 
+    void diagnose(uint32_t id);
+
+    int64_t resolve_intersections(uint32_t id);
+
     int64_t csg(const std::vector<uint32_t>& ids, int csg_type);
 
     int64_t mm_coeff_size(uint32_t id);

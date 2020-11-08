@@ -290,6 +290,18 @@ namespace
       }, options);
     }
 
+  void aabvh_edge_triangle_parallel_allow_degeneracies(std::function<bool(const jtk::vec2<uint32_t>& e, const jtk::vec3<uint32_t>& t, uint32_t tria_index)> func, const aabvh<jtk::vec2<uint32_t>, EDGE_N> & edge_aabvh, const std::vector<jtk::vec3<uint32_t>>& triangles, const std::vector<jtk::vec3<double>>& vertices, const cork_options& options)
+    {
+    _parallel_for((uint32_t)0, (uint32_t)triangles.size(), [&](uint32_t tria_index)
+      {
+        auto bbox = compute_bb(triangles[tria_index], vertices);
+        edge_aabvh.for_each_in_box(bbox, [&](const jtk::vec2<uint32_t>& ed)
+          {
+          func(ed, triangles[tria_index], tria_index);
+          });        
+      }, options);
+    }
+
   void aabvh_edge_triangle_parallel(std::function<bool(const jtk::vec2<uint32_t>& e, const jtk::vec3<uint32_t>& t, uint32_t tria_index)> func, const aabvh<jtk::vec2<uint32_t>, EDGE_N> & edge_aabvh, const std::vector<triangle_info>& info, const std::vector<jtk::vec3<uint32_t>>& triangles, const std::vector<jtk::vec3<double>>& vertices, int mesh_id, const cork_options& options)
     {
     std::atomic<bool> aborted{ false };
@@ -1179,6 +1191,18 @@ namespace
 
   void _resolve_intersections(std::vector<triangle_info>& info, std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<double>>& vertices, bool resolve_all_intersections, const cork_options& options)
     {
+    jtk::vec3<double> center(0, 0, 0);
+    if (options.center)
+      {
+      for (const auto& pt : vertices)
+        center = center + pt;
+      center = center / (double)vertices.size();
+      for (auto& pt : vertices)
+        {
+        pt = pt - center;
+        }
+      }
+
     srand(100);
     if (info.empty())
       info.resize(triangles.size());
@@ -1194,6 +1218,8 @@ namespace
       {
       if (try_to_find_intersections(intersection_data, new_vertices, info, edge_to_tria_map, triangles, quantized, resolve_all_intersections, options, q))
         break;
+      if (options.p_str)
+        *options.p_str << "[LIBCORK] " << "Perturbing vertices to deal with degeneracies" << std::endl;
       perturb_vertices(quantized, q);
       }
     if (trys == 5)
@@ -1209,7 +1235,15 @@ namespace
     assert(triangles.size() == info.size());
     if (options.p_str)
       *options.p_str << "[LIBCORK] " << "Subdividing triangles took " << t.time_elapsed() << "s\n";
-    vertices.insert(vertices.end(), new_vertices.begin(), new_vertices.end());
+    //vertices.insert(vertices.end(), new_vertices.begin(), new_vertices.end());
+    vertices = quantized;
+    if (options.center)
+      {
+      for (auto& pt : vertices)
+        {
+        pt = pt + center;
+        }
+      }
     }
 
   inline jtk::vec3<float> mat_vec_multiply(const float* m, const jtk::vec3<float>& v)
@@ -1742,6 +1776,19 @@ diagnostics diagnose(const std::vector<jtk::vec3<uint32_t>>& triangles, const st
   {
   diagnostics d;
   std::vector<jtk::vec3<double>> verticesd = vertices_to_double(vertices);
+
+  jtk::vec3<double> center(0, 0, 0);
+  if (options.center)
+    {
+    for (const auto& pt : verticesd)
+      center = center + pt;
+    center = center / (double)verticesd.size();
+    for (auto& pt : verticesd)
+      {
+      pt = pt - center;
+      }
+    }
+
   quantization q(get_magnitude(verticesd), 30);
   verticesd = get_scaled_vertices(verticesd, q);
 
@@ -1752,7 +1799,7 @@ diagnostics diagnose(const std::vector<jtk::vec3<uint32_t>>& triangles, const st
   std::atomic<int> isct = 0;
   auto edge_to_tria_map = edges_to_triangles_map((uint32_t)vertices.size(), triangles);
   auto edge_aabvh = compute_edge_aabvh(edge_to_tria_map, verticesd);
-  aabvh_edge_triangle_parallel([&](const jtk::vec2<uint32_t>& e, const jtk::vec3<uint32_t>& t, uint32_t /*tria_index*/)->bool
+  aabvh_edge_triangle_parallel_allow_degeneracies([&](const jtk::vec2<uint32_t>& e, const jtk::vec3<uint32_t>& t, uint32_t /*tria_index*/)->bool
     {
     bool deg = false;
     if (intersects(deg, e, t, verticesd, q))
@@ -1762,7 +1809,6 @@ diagnostics diagnose(const std::vector<jtk::vec3<uint32_t>>& triangles, const st
     if (deg)
       {
       ++degen;
-      return false;
       }
     return true;
     }, edge_aabvh, triangles, verticesd, options);

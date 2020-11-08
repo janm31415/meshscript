@@ -1274,6 +1274,60 @@ std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
   return std::vector<jtk::vec3<uint32_t>>();
   }
 
+void view::diagnose(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<jtk::vec3<float>>* v = get_vertices(_db, id);
+  std::vector<jtk::vec3<uint32_t>>* t = get_triangles(_db, id);
+  if (v && t)
+    {
+    cork_options ops;
+    ops.p_str = nullptr;
+    ops.resolve_all_intersections = true;
+    ops.use_parallel = true;
+    ops.debug_folder = nullptr;
+    ops.center = true;
+    auto d = ::diagnose(*t, *v, ops);
+    std::cout << "Diagnostics" << std::endl;
+    std::cout << "-----------" << std::endl;
+    std::cout << "number of triangles: " << d.number_of_triangles << std::endl;
+    std::cout << "number of vertices: " << d.number_of_vertices << std::endl;
+    std::cout << "number of self intersections: " << d.intersections << std::endl;
+    std::cout << "number of degenerates: " << d.degenerate << std::endl;
+    std::cout << "-----------" << std::endl;
+    }
+  }
+
+int64_t view::resolve_intersections(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<jtk::vec3<float>>* v = get_vertices(_db, id);
+  std::vector<jtk::vec3<uint32_t>>* t = get_triangles(_db, id);
+  if (v && t)
+    {
+    mesh* db_mesh;
+    uint32_t id_out;
+    _db.create_mesh(db_mesh, id_out);
+    db_mesh->cs = *get_cs(_db, id);
+    cork_options ops;
+    ops.p_str = nullptr;
+    ops.resolve_all_intersections = true;
+    ops.use_parallel = true;
+    ops.debug_folder = nullptr;
+    ops.center = true;
+    ::resolve_intersections(db_mesh->triangles, db_mesh->vertices, *t, *v, ops);
+    db_mesh->visible = true;
+    _matcap.map_db_id_to_matcap_id(id_out, _get_semirandom_matcap_id(id_out));
+    if (db_mesh->visible)
+      add_object(id_out, _scene, _db);
+    //prepare_scene(_scene);
+    //::unzoom(_scene);
+    _refresh = true;
+    return (int64_t)id_out;
+    }
+  return -1;
+  }
+
 int64_t view::csg(const std::vector<uint32_t>& ids, int csg_type)
   {
   std::scoped_lock lock(_mut);
@@ -1299,6 +1353,7 @@ int64_t view::csg(const std::vector<uint32_t>& ids, int csg_type)
     ops.resolve_all_intersections = false;
     ops.use_parallel = true;
     ops.debug_folder = nullptr;
+    ops.center = true;
 
     switch (csg_type)
       {
@@ -1355,8 +1410,8 @@ int64_t view::csg(const std::vector<uint32_t>& ids, int csg_type)
     _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
     if (db_mesh->visible)
       add_object(id, _scene, _db);
-    prepare_scene(_scene);
-    ::unzoom(_scene);
+    //prepare_scene(_scene);
+    //::unzoom(_scene);
     _refresh = true;
     return (int64_t)id;
     }
