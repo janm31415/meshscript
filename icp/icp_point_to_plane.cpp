@@ -7,6 +7,7 @@ namespace jtk
 
   std::vector<uint64_t> icp_point_to_plane::inliers(const std::vector<vec3<float>>& template_points, const matf16& transformation, float inlier_distance, void* data)
     {
+    (void*)data;
     std::vector<uint64_t> inliers;
     for (uint64_t i = 0; i < (uint64_t)template_points.size(); ++i)
       {
@@ -58,9 +59,9 @@ namespace jtk
 
   float icp_point_to_plane::fit_step(matf16& transformation, const std::vector<vec3<float>>& template_points, const std::vector<uint64_t>& active)
     {
-    matf A(active.size(), 6);
-    matf b(active.size(), 1);
-    for (uint64_t i = 0; i < active.size(); ++i)
+    matf A((uint32_t)active.size(), 6);
+    matf b((uint32_t)active.size(), 1);
+    for (uint32_t i = 0; i < (uint32_t)active.size(); ++i)
       {
       matf4 v(4);
       v << template_points[active[i]][0], template_points[active[i]][1], template_points[active[i]][2], 1;
