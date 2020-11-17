@@ -4,10 +4,12 @@
 #include <jtk/fitting.h>
 
 #include <cassert>
+#include <iostream>
 
 /*
 Constructing Triangular Meshes of Minimal Area
-Wenyu Chen1, Yiyu Cai2, and Jianmin Zheng3.Computer-Aided Design and Applications, 5(1-4), 2008, 508-518.
+Wenyu Chen1, Yiyu Cai2, and Jianmin Zheng3.
+Computer-Aided Design and Applications, 5(1-4), 2008, 508-518.
 */
 
 fill_hole_minimal_surface_parameters::fill_hole_minimal_surface_parameters()
@@ -60,7 +62,7 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
     }
 
   jtk::mutable_adjacency_list adj_list((uint32_t)vertices.size(), triangles.data(), (uint32_t)triangles.size());
-  for (int iter = 0; iter < 1; ++iter)
+  for (int iter = 0; iter < 200; ++iter)
     {
     //first laplace fairing
     std::vector<jtk::vec3<float>> vert(vertices.begin() + center_id, vertices.end());
@@ -108,6 +110,7 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
             auto tria = jtk::triangle_indices_from_edge(v, v2, adj_list);
             if (tria.size() != 2)
               continue;
+
             auto t1 = triangles[tria[0]];
             auto t2 = triangles[tria[1]];
             int t1v = 0;
@@ -125,19 +128,31 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
 
             if (tria1_area_swapped + tria2_area_swapped < tria1_area + tria2_area)
               {
-              edge_swapped = true;
-              uint32_t T1v = t1[t1v];
-              uint32_t T2v = t2[t2v];
-             
-              adj_list.remove_triangle_from_vertex(v2, tria[0]);
-              adj_list.remove_triangle_from_vertex(v, tria[1]);
-
+              
+              
               int vpos = 0;
               while (t1[vpos] != v)
                 ++vpos;
               int v2pos = 0;
               while (t1[v2pos] != v2)
                 ++v2pos;
+
+              if ((v2pos + 1) % 3 == vpos)
+                {
+                std::swap(tria[0], tria[1]);
+                std::swap(t1, t2);
+                std::swap(t1v, t2v);
+                }                          
+
+              uint32_t T1v = t1[t1v];
+              uint32_t T2v = t2[t2v];
+
+              if (!jtk::triangle_indices_from_edge(T1v, T2v, adj_list).empty())
+                continue;
+
+              edge_swapped = true;
+              adj_list.remove_triangle_from_vertex(v2, tria[0]);
+              adj_list.remove_triangle_from_vertex(v, tria[1]);
 
 
               t1[0] = T1v;
@@ -148,17 +163,17 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
               t2[1] = T2v;
               t2[2] = v2;
 
-              if (vpos > v2pos)
-                {
-                std::swap(t1[0], t1[2]);
-                std::swap(t2[0], t2[2]);
-                }
-
               triangles[tria[0]] = t1;
               triangles[tria[1]] = t2;
 
               adj_list.add_triangle_to_vertex(T1v, tria[1]);
               adj_list.add_triangle_to_vertex(T2v, tria[0]);
+
+              assert(jtk::triangle_indices_from_edge(T1v, T2v, adj_list).size() == 2);
+              assert(jtk::triangle_indices_from_edge(T1v, v2, adj_list).size() == 2);
+              assert(jtk::triangle_indices_from_edge(v2, T2v, adj_list).size() == 2);
+              assert(jtk::triangle_indices_from_edge(T1v, v, adj_list).size() == 2);
+              assert(jtk::triangle_indices_from_edge(v, T2v, adj_list).size() == 2);
 
               }
 
