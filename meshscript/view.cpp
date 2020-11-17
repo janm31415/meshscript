@@ -6,6 +6,7 @@
 #include "im.h"
 #include "ear_detector.h"
 #include "face_detector.h"
+#include "fill_holes.h"
 #include "view.h"
 #include "distance_map.h"
 #include "shape_predictor.h"
@@ -1272,6 +1273,137 @@ std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
   if (mo)
     return mo->shape.triangles;
   return std::vector<jtk::vec3<uint32_t>>();
+  }
+
+int64_t view::fill_hole(uint32_t id, const std::vector<uint32_t>& hole)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
+  std::vector<vec3<float>>* p_vertices = get_vertices(_db, id);
+  if (p_triangles && p_vertices)
+    {
+    mesh* new_object;
+    uint32_t new_id;
+    _db.create_mesh(new_object, new_id);
+    _matcap.map_db_id_to_matcap_id(new_id, _get_semirandom_matcap_id(new_id));
+    new_object->triangles = *p_triangles;
+    new_object->vertices = *p_vertices;
+    new_object->visible = true;
+    if (get_cs(_db, id))
+      new_object->cs = *get_cs(_db, id);
+    else
+      new_object->cs = jtk::get_identity();
+
+    jtk::mutable_adjacency_list adj_list((uint32_t)new_object->vertices.size(), new_object->triangles.data(), (uint32_t)new_object->triangles.size());
+    jtk::fill_hole_ear<jtk::minimum_weight_ear>(new_object->triangles, new_object->vertices.data(), adj_list, hole);
+    if (new_object->visible)
+      add_object(new_id, _scene, _db);
+    prepare_scene(_scene);
+    _refresh = true;
+    return new_id;
+    }
+  return -1;
+  }
+
+int64_t view::fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
+  std::vector<vec3<float>>* p_vertices = get_vertices(_db, id);
+  if (p_triangles && p_vertices)
+    {
+    mesh* new_object;
+    uint32_t new_id;
+    _db.create_mesh(new_object, new_id);
+    _matcap.map_db_id_to_matcap_id(new_id, _get_semirandom_matcap_id(new_id));
+    new_object->triangles = *p_triangles;
+    new_object->vertices = *p_vertices;
+    new_object->visible = true;
+    if (get_cs(_db, id))
+      new_object->cs = *get_cs(_db, id);
+    else
+      new_object->cs = jtk::get_identity();
+    fill_hole_minimal_surface_parameters pars;
+
+    fill_hole_minimal_surface(new_object->triangles, new_object->vertices, hole, pars);
+    
+    if (new_object->visible)
+      add_object(new_id, _scene, _db);
+    prepare_scene(_scene);
+    _refresh = true;
+    return new_id;
+    }
+  return -1;
+  }
+
+std::vector<std::vector<uint32_t>> view::holes(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<std::vector<uint32_t>> holes;
+  std::vector<vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
+  std::vector<vec3<float>>* p_vertices = get_vertices(_db, id);
+  if (p_triangles && p_vertices)
+    {
+    jtk::adjacency_list adj_list((uint32_t)p_vertices->size(), p_triangles->data(), (uint32_t)p_triangles->size());
+    std::vector<bool> vertex_treated(p_vertices->size(), false);
+    for (uint32_t v = 0; v < (uint32_t)vertex_treated.size(); ++v)
+      {
+      if (!vertex_treated[v])
+        {
+        vertex_treated[v] = true;
+        if (is_boundary_vertex(v, adj_list, p_triangles->data()))
+          {
+          std::vector<uint32_t> hole;
+          hole.push_back(v);
+          std::queue<uint32_t> qu;
+          auto neighbouring_vertices = one_ring_vertices_from_vertex(v, adj_list, p_triangles->data());
+          for (auto v2 : neighbouring_vertices)
+            {
+            if (!vertex_treated[v2] && is_boundary_edge(v, v2, adj_list))
+              {
+              qu.push(v2);
+              break;
+              }
+            }
+          while (!qu.empty())
+            {
+            uint32_t current_vertex = qu.front();
+            assert(!vertex_treated[current_vertex]);
+            hole.push_back(current_vertex);
+            vertex_treated[current_vertex] = true;
+            qu.pop();
+            neighbouring_vertices = one_ring_vertices_from_vertex(current_vertex, adj_list, p_triangles->data());
+            for (auto v2 : neighbouring_vertices)
+              {
+              if (!vertex_treated[v2] && is_boundary_edge(current_vertex, v2, adj_list))
+                {
+                qu.push(v2);
+                break;
+                }
+              }
+            }
+          bool valid_hole = hole.size() > 2;
+          if (valid_hole)
+            {
+            neighbouring_vertices = one_ring_vertices_from_vertex(v, adj_list, p_triangles->data());
+            bool found_last = false;
+            for (auto v2 : neighbouring_vertices)
+              {
+              if (v2 == hole.back())
+                {
+                found_last = true;
+                break;
+                }
+              }
+            valid_hole = found_last;
+            }
+          if (valid_hole)
+            holes.push_back(hole);
+          }
+        }
+      }
+    }
+  return holes;
   }
 
 void view::diagnose(uint32_t id)

@@ -51,6 +51,7 @@ db.h
 distance_map.h
 ear_detector.h
 face_detector.h
+fill_holes.h
 hdf5aux.h
 im.h
 io.h
@@ -79,6 +80,7 @@ db.cpp
 distance_map.cpp
 ear_detector.cpp
 face_detector.cpp
+fill_holes.cpp
 im.cpp
 io.cpp
 jet.cpp

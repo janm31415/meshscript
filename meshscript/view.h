@@ -188,6 +188,12 @@ class view
 
     int64_t poisson(uint32_t pc_id, uint32_t depth);
 
+    std::vector<std::vector<uint32_t>> holes(uint32_t id);
+
+    int64_t fill_hole(uint32_t id, const std::vector<uint32_t>& hole);
+
+    int64_t fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole);
+
     void info(uint32_t id);
 
     void cs_apply(uint32_t id);

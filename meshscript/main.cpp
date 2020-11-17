@@ -686,6 +686,65 @@ void hide(int64_t id)
   g_view->hide(id);
   }
 
+int64_t scm_fill_hole(int64_t id, uint64_t hole64)
+  {
+  using namespace skiwi;
+  skiwi::scm_type hole(hole64);
+  try
+    {
+    auto h = hole.get_list();
+    std::vector<uint32_t> ho;
+    for (const auto& hol : h)
+      {
+      ho.push_back((uint32_t)hol.get_fixnum());
+      }
+    return g_view->fill_hole((uint32_t)id, ho);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: fill-hole: " << e.what() << "\n";
+    }
+  return -1;
+  }
+
+int64_t scm_fill_hole_minimal(int64_t id, uint64_t hole64)
+  {
+  using namespace skiwi;
+  skiwi::scm_type hole(hole64);
+  try
+    {
+    auto h = hole.get_list();
+    std::vector<uint32_t> ho;
+    for (const auto& hol : h)
+      {
+      ho.push_back((uint32_t)hol.get_fixnum());
+      }
+    return g_view->fill_hole_minimal((uint32_t)id, ho);
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << "error: fill-hole-minimal: " << e.what() << "\n";
+    }
+  return -1;
+  }
+
+uint64_t scm_holes(int64_t id)
+  {
+  using namespace skiwi;
+  std::vector<std::vector<uint32_t>> holes = g_view->holes(id);
+
+  std::vector<scm_type> holeslist;
+  for (const auto& hole : holes)
+    {
+    std::vector<scm_type> h;
+    for (auto ho : hole)
+      h.push_back(make_fixnum(ho));
+    holeslist.push_back(make_list(h));
+    }
+  return make_list(holeslist);
+
+  }
+
 void set_matcap(int64_t id, int64_t clr_id)
   {
   g_view->set_matcap((uint32_t)id, (uint32_t)clr_id);
@@ -1611,10 +1670,16 @@ void* register_functions(void*)
 
   register_external_primitive("face-detect", (void*)&scm_face_detect, skiwi_scm, "(face-detect) runs the face detector on the current view and returns a list of lists of the form ((x y w h) ...) where (x y w h) represents a rectangle containing the face starting in corner (x,y) and with sizes (w,h).");
 
+  register_external_primitive("fill-hole", (void*)&scm_fill_hole, skiwi_int64, skiwi_int64, skiwi_scm, "(fill-hole id hole) fills the list of vertex indices `hole` for the object with tag `id` and returns the result as a new mesh.");
+
+  register_external_primitive("fill-hole-minimal", (void*)&scm_fill_hole_minimal, skiwi_int64, skiwi_int64, skiwi_scm, "(fill-hole-minimal id hole) fills the list of vertex indices `hole` for the object with tag `id` as a minimal surface, and returns the result as a new mesh.");
+
   register_external_primitive("force-redraw", (void*)&scm_force_redraw, skiwi_void, "(force-redraw) redraws the canvas. This is useful if you want to use view-position in your script, as view-position uses the data of the last render of the view.");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
   
+  register_external_primitive("holes", (void*)&scm_holes, skiwi_scm, skiwi_int64, "(holes id) returns a list of lists containing the vertex indices that form a hole for the object with tag `id`.");
+
   register_external_primitive("icosahedron", (void*)&scm_icosahedron, skiwi_int64, skiwi_scm, "(icosahedron r) makes a icosahedron with radius `r`.");
   
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
