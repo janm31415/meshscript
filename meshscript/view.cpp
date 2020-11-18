@@ -1339,71 +1339,15 @@ int64_t view::fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole)
 std::vector<std::vector<uint32_t>> view::holes(uint32_t id)
   {
   std::scoped_lock lock(_mut);
-  std::vector<std::vector<uint32_t>> holes;
+  std::vector<std::vector<uint32_t>> holes_found;
   std::vector<vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
   std::vector<vec3<float>>* p_vertices = get_vertices(_db, id);
   if (p_triangles && p_vertices)
     {
     jtk::adjacency_list adj_list((uint32_t)p_vertices->size(), p_triangles->data(), (uint32_t)p_triangles->size());
-    std::vector<bool> vertex_treated(p_vertices->size(), false);
-    for (uint32_t v = 0; v < (uint32_t)vertex_treated.size(); ++v)
-      {
-      if (!vertex_treated[v])
-        {
-        vertex_treated[v] = true;
-        if (is_boundary_vertex(v, adj_list, p_triangles->data()))
-          {
-          std::vector<uint32_t> hole;
-          hole.push_back(v);
-          std::queue<uint32_t> qu;
-          auto neighbouring_vertices = one_ring_vertices_from_vertex(v, adj_list, p_triangles->data());
-          for (auto v2 : neighbouring_vertices)
-            {
-            if (!vertex_treated[v2] && is_boundary_edge(v, v2, adj_list))
-              {
-              qu.push(v2);
-              break;
-              }
-            }
-          while (!qu.empty())
-            {
-            uint32_t current_vertex = qu.front();
-            assert(!vertex_treated[current_vertex]);
-            hole.push_back(current_vertex);
-            vertex_treated[current_vertex] = true;
-            qu.pop();
-            neighbouring_vertices = one_ring_vertices_from_vertex(current_vertex, adj_list, p_triangles->data());
-            for (auto v2 : neighbouring_vertices)
-              {
-              if (!vertex_treated[v2] && is_boundary_edge(current_vertex, v2, adj_list))
-                {
-                qu.push(v2);
-                break;
-                }
-              }
-            }
-          bool valid_hole = hole.size() > 2;
-          if (valid_hole)
-            {
-            neighbouring_vertices = one_ring_vertices_from_vertex(v, adj_list, p_triangles->data());
-            bool found_last = false;
-            for (auto v2 : neighbouring_vertices)
-              {
-              if (v2 == hole.back())
-                {
-                found_last = true;
-                break;
-                }
-              }
-            valid_hole = found_last;
-            }
-          if (valid_hole)
-            holes.push_back(hole);
-          }
-        }
-      }
+    holes_found = jtk::holes(adj_list, p_triangles->data());
     }
-  return holes;
+  return holes_found;
   }
 
 void view::diagnose(uint32_t id)
