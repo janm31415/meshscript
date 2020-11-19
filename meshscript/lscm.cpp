@@ -89,8 +89,8 @@ std::vector<std::pair<float, float>> lscm(const jtk::vec3<uint32_t>* triangles, 
   uint32_t n = nr_of_triangles;
   uint32_t m = nr_of_vertices - num_of_correspondences;
 
-  jtk::smatf A(2 * n, 2 * m);
-  jtk::matf b = jtk::zeros<float>(2 * n, 1);
+  jtk::smat A(2 * n, 2 * m);
+  jtk::mat b = jtk::zeros<double>(2 * n, 1);
 
   for (uint32_t i = 0; i < nr_of_triangles; ++i)
     {
@@ -121,7 +121,7 @@ std::vector<std::pair<float, float>> lscm(const jtk::vec3<uint32_t>* triangles, 
       if (indices[tria[j]] != 0xffffffff)
         {
         A.put(i, indices[tria[j]]) = w_real[j] / sqrt_dt;
-        A.put(i+n, indices[tria[j]] + m) = w_real[j] / sqrt_dt;
+        A.put(i + n, indices[tria[j]] + m) = w_real[j] / sqrt_dt;
 
         A.put(i + n, indices[tria[j]]) = w_image[j] / sqrt_dt;
         A.put(i, indices[tria[j]] + m) = -w_image[j] / sqrt_dt;
@@ -140,37 +140,37 @@ std::vector<std::pair<float, float>> lscm(const jtk::vec3<uint32_t>* triangles, 
 
   auto At = transpose(A);
   auto AtA = At * A;
-  jtk::matf Atb;
+  jtk::mat Atb;
   Atb.noalias() = At * b;
 
   jtk::timer t;
 
   t.start();
-  jtk::diagonal_preconditioner<float> P(AtA);
+  jtk::diagonal_preconditioner<double> P(AtA);
   std::cout << "Preconditioner calculated! -> " << t.time_elapsed() << "s" << std::endl;
   t.start();
-  jtk::symmetric_sparse_matrix_wrapper<float> AtA_lower(AtA);
+  jtk::symmetric_sparse_matrix_wrapper<double> AtA_lower(AtA);
   std::cout << "Symmetric sparse wrapper calculated! -> " << t.time_elapsed() << "s" << std::endl;
 
-  jtk::matf solution;
-  float residu;
+  jtk::mat solution;
+  double residu;
   uint32_t iterations;
-  jtk::matf x0 = jtk::zeros(AtA.rows(), 1);
-  auto tolerance = std::numeric_limits<float>::epsilon();
+  jtk::mat x0 = jtk::zeros(AtA.rows(), 1);
+  auto tolerance = (double)std::numeric_limits<float>::epsilon();
 
   t.start();
   jtk::preconditioned_conjugate_gradient(solution, residu, iterations, AtA_lower, P, Atb, x0, tolerance);
   std::cout << "solution calculated! -> " << t.time_elapsed() << "s" << std::endl;
   std::cout << "iterations: " << iterations << std::endl;
   std::cout << "residu: " << residu << std::endl;
-  
+
   for (uint32_t index = 0; index < nr_of_vertices; ++index)
     {
     if (indices[index] != -1)
       {
       std::pair<float, float> uv_coord;
-      uv_coord.first = solution(indices[index]);
-      uv_coord.second = solution(indices[index] + m);
+      uv_coord.first = (float)solution(indices[index]);
+      uv_coord.second = (float)solution(indices[index] + m);
       res.push_back(uv_coord);
       }
     else
@@ -180,4 +180,35 @@ std::vector<std::pair<float, float>> lscm(const jtk::vec3<uint32_t>* triangles, 
     }
 
   return res;
+  }
+
+void scale_to_unit(std::vector<std::pair<float, float>>& uv)
+  {
+  if (uv.empty())
+    return;
+  float xmin, xmax, ymin, ymax;
+  xmin = uv.front().first;
+  xmax = uv.front().first;
+  ymin = uv.front().second;
+  ymax = uv.front().second;
+  for (const auto& p : uv)
+    {
+    xmin = p.first < xmin ? p.first : xmin;
+    xmax = p.first > xmax ? p.first : xmax;
+    ymin = p.second < ymin ? p.second : ymin;
+    ymax = p.second > ymax ? p.second : ymax;
+    }
+  float xrange = xmax - xmin;
+  float yrange = ymax - ymin;
+  if (xrange == 0.f)
+    xrange = 1.f;
+  if (yrange == 0.f)
+    yrange = 1.f;
+  for (auto& p : uv)
+    {
+    p.first -= xmin;
+    p.second -= ymin;
+    p.first /= xrange;
+    p.second /= yrange;
+    }
   }

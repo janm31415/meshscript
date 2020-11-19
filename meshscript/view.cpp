@@ -1290,6 +1290,7 @@ int64_t view::lscm(uint32_t id)
     new_object->visible = true;    
     
     auto lscm_uv = ::lscm(new_object->triangles.data(), (uint32_t)new_object->triangles.size(), new_object->vertices.data(), (uint32_t)new_object->vertices.size());
+    scale_to_unit(lscm_uv);
     if (new_object->texture.width() == 0 || new_object->texture.height() == 0)
       new_object->texture = make_dummy_texture(512, 512);
 
