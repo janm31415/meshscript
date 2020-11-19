@@ -728,6 +728,11 @@ int64_t scm_fill_hole_minimal(int64_t id, uint64_t hole64)
   return -1;
   }
 
+int64_t scm_lscm(int64_t id)
+  {
+  return g_view->lscm((uint32_t)id);
+  }
+
 uint64_t scm_holes(int64_t id)
   {
   using namespace skiwi;
@@ -1688,6 +1693,8 @@ void* register_functions(void*)
   register_external_primitive("intersection", (void*)&scm_intersection, skiwi_int64, skiwi_scm, "(intersection (id1 id2 ...)) computes the intersection of the meshes or morphable models with tag `id1`, tag `id2`, ... in the list (`id` `id2` ...) and returns the id of the result.");
 
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list `lst` of values between 0 and 1 and returns a list of lists with (r g b) values.");
+
+  register_external_primitive("lscm", (void*)&scm_lscm, skiwi_int64, skiwi_int64, "(lscm id) takes a mesh with tag `id` as input, and returns a new mesh with uv texture map, computed with the least squares conformal mapping method.");
 
   register_external_primitive("load-mesh", (void*)&load_mesh, skiwi_int64, skiwi_char_pointer, "(load-mesh \"stlfile.stl\") loads the STL file and returns an id. Similarly (load-mesh \"objfile.obj\") loads an OBJ file and returns the id. Other input mesh formats that are implemented are PLY, OFF, and TRC.");
   register_external_primitive("load-morphable-model", (void*)&load_morphable_model, skiwi_int64, skiwi_char_pointer, "(load-morphable-model \"model2019_fullHead.h5\") loads morphable models following the hdf5 file format as used by the Basel Face Model project (https://faces.dmi.unibas.ch/bfm/bfm2019.html). The other file format that can be read is meshscripts own binary morphable model file format with extension SSM.");

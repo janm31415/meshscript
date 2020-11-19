@@ -10,6 +10,7 @@
 #include "view.h"
 #include "distance_map.h"
 #include "shape_predictor.h"
+#include "lscm.h"
 
 #include <libpoisson/poisson_reconstruction_screened.h>
 
@@ -1273,6 +1274,46 @@ std::vector<jtk::vec3<uint32_t>> view::triangles(uint32_t id)
   if (mo)
     return mo->shape.triangles;
   return std::vector<jtk::vec3<uint32_t>>();
+  }
+
+int64_t view::lscm(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  mesh* m = _db.get_mesh(id);
+  if (m)
+    {
+    mesh* new_object;
+    uint32_t new_id;
+    _db.create_mesh(new_object, new_id);
+    _matcap.map_db_id_to_matcap_id(new_id, _get_semirandom_matcap_id(new_id));
+    *new_object = *m;
+    new_object->visible = true;    
+    
+    auto lscm_uv = ::lscm(new_object->triangles.data(), (uint32_t)new_object->triangles.size(), new_object->vertices.data(), (uint32_t)new_object->vertices.size());
+    if (new_object->texture.width() == 0 || new_object->texture.height() == 0)
+      new_object->texture = make_dummy_texture(512, 512);
+
+    new_object->uv_coordinates.clear();
+    new_object->uv_coordinates.reserve(new_object->triangles.size());
+    for (uint32_t t = 0; t < (uint32_t)new_object->triangles.size(); ++t)
+      {
+      jtk::vec3<jtk::vec2<float>> uv;
+      for (uint32_t j = 0; j < 3; ++j)
+        {
+        const auto& vertex_uv = lscm_uv[new_object->triangles[t][j]];
+        uv[j][0] = vertex_uv.first;
+        uv[j][1] = vertex_uv.second;
+        }
+      new_object->uv_coordinates.push_back(uv);
+      }
+
+    if (new_object->visible)
+      add_object(new_id, _scene, _db);
+    prepare_scene(_scene);
+    _refresh = true;
+    return new_id;
+    }
+  return -1;
   }
 
 int64_t view::fill_hole(uint32_t id, const std::vector<uint32_t>& hole)

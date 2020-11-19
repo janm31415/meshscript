@@ -56,6 +56,7 @@ hdf5aux.h
 im.h
 io.h
 jet.h
+lscm.h
 matcap.h
 mesh.h
 mm.h
@@ -84,6 +85,7 @@ fill_holes.cpp
 im.cpp
 io.cpp
 jet.cpp
+lscm.cpp
 main.cpp
 matcap.cpp
 mesh.cpp

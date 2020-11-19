@@ -190,6 +190,8 @@ class view
 
     std::vector<std::vector<uint32_t>> holes(uint32_t id);
 
+    int64_t lscm(uint32_t id);
+
     int64_t fill_hole(uint32_t id, const std::vector<uint32_t>& hole);
 
     int64_t fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole);
