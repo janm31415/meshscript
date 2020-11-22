@@ -621,6 +621,32 @@ int64_t make_pointcloud(uint64_t scm_vertices_64)
   return -1;
   }
 
+int64_t make_minimal(uint64_t scm_vertices_64, int64_t number_of_rings, int64_t number_of_iterations)
+  {
+  skiwi::scm_type scm_vertices(scm_vertices_64);
+  try
+    {
+    std::vector<vec3<float>> vertices;
+    {
+    auto vert = scm_vertices.get_list();
+    vertices.reserve(vert.size());
+    for (auto& v : vert)
+      {
+      auto vertex = v.get_list();
+      if (vertex.size() != 3)
+        throw std::runtime_error("error: make-minimal: invalid vertex size (should have 3 float values)");
+      vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number(), (float)vertex[2].get_number());
+      }
+    return g_view->make_minimal(vertices, (uint32_t)number_of_rings, (uint32_t)number_of_iterations);
+    }
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << e.what() << "\n";
+    }
+  return -1;
+  }
+
 int64_t make_mesh(uint64_t scm_vertices_64, uint64_t scm_triangles_64)
   {
   skiwi::scm_type scm_vertices(scm_vertices_64);
@@ -786,9 +812,9 @@ uint64_t scm_jet(uint64_t mask64)
       //r = jet_red(gray);
       //b = jet_green(gray); // swap blue and green
       //g = jet_blue(gray);
-      int64_t r2 = (int64_t)(r*255.f);
-      int64_t g2 = (int64_t)(g*255.f);
-      int64_t b2 = (int64_t)(b*255.f);
+      int64_t r2 = (int64_t)(r * 255.f);
+      int64_t g2 = (int64_t)(g * 255.f);
+      int64_t b2 = (int64_t)(b * 255.f);
       std::vector<scm_type> clr;
       clr.push_back(make_fixnum(r2));
       clr.push_back(make_fixnum(g2));
@@ -1491,11 +1517,11 @@ int64_t scm_cube(uint64_t w64, uint64_t h64, uint64_t d64)
 int64_t scm_cylinder(uint64_t r64, uint64_t h64, int64_t n)
   {
   skiwi::scm_type r(r64);
-  skiwi::scm_type h(h64);  
+  skiwi::scm_type h(h64);
   try
     {
     double rd = r.get_number();
-    double hd = h.get_number();    
+    double hd = h.get_number();
     return g_view->make_cylinder((float)rd, (float)hd, (uint32_t)n);
     }
   catch (std::runtime_error e)
@@ -1682,14 +1708,14 @@ void* register_functions(void*)
   register_external_primitive("force-redraw", (void*)&scm_force_redraw, skiwi_void, "(force-redraw) redraws the canvas. This is useful if you want to use view-position in your script, as view-position uses the data of the last render of the view.");
 
   register_external_primitive("hide!", (void*)&hide, skiwi_void, skiwi_int64, "(hide! id) makes the object with tag `id` invisible.");
-  
+
   register_external_primitive("holes", (void*)&scm_holes, skiwi_scm, skiwi_int64, "(holes id) returns a list of lists containing the vertex indices that form a hole for the object with tag `id`.");
 
   register_external_primitive("icosahedron", (void*)&scm_icosahedron, skiwi_int64, skiwi_scm, "(icosahedron r) makes a icosahedron with radius `r`.");
-  
+
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
   register_external_primitive("info", (void*)&scm_info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
-  
+
   register_external_primitive("intersection", (void*)&scm_intersection, skiwi_int64, skiwi_scm, "(intersection (id1 id2 ...)) computes the intersection of the meshes or morphable models with tag `id1`, tag `id2`, ... in the list (`id` `id2` ...) and returns the id of the result.");
 
   register_external_primitive("jet", (void*)&scm_jet, skiwi_scm, skiwi_scm, "(jet lst) takes a list `lst` of values between 0 and 1 and returns a list of lists with (r g b) values.");
@@ -1703,6 +1729,7 @@ void* register_functions(void*)
   register_external_primitive("load-image", (void*)&load_image, skiwi_int64, skiwi_char_pointer, "(load-image \"image.png\") loads the PNG file as image and returns an id. Other well known image formats can also be loaded.");
 
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) creates the mesh with given `vertices` and `triangles`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and `triangles` should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
+  register_external_primitive("make-minimal", (void*)&make_minimal, skiwi_int64, skiwi_scm, skiwi_int64, skiwi_int64, "(make-minimal vertices rings iterations) creates a mesh with minimual surface area surrounded by the given `vertices`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values.");
   register_external_primitive("make-pointcloud", (void*)&make_pointcloud, skiwi_int64, skiwi_scm, "(make-pointcloud vertices) creates the pointcloud with given `vertices`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values.");
   register_external_primitive("marching-cubes", (void*)&scm_marching_cubes, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, skiwi_scm, "(marching-cubes bb dim isovalue fun) with `bb` representing the bounding box of the form ((min_x max_x) (min_y max_y) (min_z max_z)), `dim` representing the dimensions of the form (width height depth), `isovalue` a flonum representing the signed distance requested, and `fun` representing the distance functions as a lambda function accepting (x y z) values and returning a distance.");
   register_external_primitive("matcap-set!", (void*)&set_matcap, skiwi_void, skiwi_int64, skiwi_int64, "(matcap-set! id matcap-id) changes the matcap of the object with tag `id`. The matcap is given by its id `matcap-id`. There are 4 hard-coded matcaps with ids 0, 1, 2, 3. You can also provide an image id as `matcap-id`, see load-image.");
@@ -1776,9 +1803,9 @@ void* register_functions(void*)
   register_external_primitive("vertexnormals", (void*)&scm_vertexnormals, skiwi_scm, skiwi_int64, "(vertexnormals id) returns the vertex normals of object with tag `id`. The vertex normals are given as a list of lists with (x y z) values.");
   register_external_primitive("vertexcolors-set!", (void*)&scm_set_vertex_colors, skiwi_void, skiwi_int64, skiwi_scm, "(vertexcolors-set! id clrlst) sets vertex colors for the object with tag `id`. The vertex colors are given as a list of lists with (r g b) values.");
   register_external_primitive("vertices", (void*)&scm_vertices, skiwi_scm, skiwi_int64, "(vertices id) returns the vertices of object with tag `id` as a list of lists of the form ((x y z) (x y z) ...) where each sublist (x y z) is a 3d point representing the position of that vertex.");
-  
+
   register_external_primitive("union", (void*)&scm_union, skiwi_int64, skiwi_scm, "(union (id1 id2 ...)) computes the union of the meshes or morphable models with tag `id1`, tag `id2`, ... in the list (`id` `id2` ...) and returns the id of the result.");
-  
+
   register_external_primitive("vertices->csv", (void*)&vertices_to_csv, skiwi_bool, skiwi_int64, skiwi_char_pointer, "(vertices->csv id \"file.csv\") exports the vertices of the object with tag `id` to a csv file.");
   register_external_primitive("view-bg-set!", (void*)&scm_set_bg_color, skiwi_void, skiwi_int64, skiwi_int64, skiwi_int64, "(view-bg-set! r g b) changes the background color to (r g b).");
   register_external_primitive("view-cs", (void*)&scm_get_view_coordinate_system, skiwi_scm, "(view-cs) returns the coordinate system of the view camera.");
@@ -1806,7 +1833,7 @@ void* register_functions(void*)
   register_external_primitive("view-vertexcolors-set!", (void*)&scm_set_vertexcolors, skiwi_void, skiwi_bool, "(view-vertexcolors-set! #t/#f) turns on/off rendering of vertex colors.");
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
 
-  register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");  
+  register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");
 
   return nullptr;
   }

@@ -15,6 +15,7 @@ Computer-Aided Design and Applications, 5(1-4), 2008, 508-518.
 fill_hole_minimal_surface_parameters::fill_hole_minimal_surface_parameters()
   {
   number_of_rings = 12;
+  iterations = 100;
   }
 
 void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std::vector<jtk::vec3<float>>& vertices, const std::vector<uint32_t>& hole, const fill_hole_minimal_surface_parameters& params)
@@ -45,7 +46,9 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
       }
     }
 
-  triangles.reserve(triangles.size() + hole.size()*(s * 2 + 1));
+  size_t new_triangles = hole.size()* (s * 2 + 1);
+
+  triangles.reserve(triangles.size() + new_triangles);
   for (uint32_t k0 = 0; k0 < (uint32_t)hole.size(); ++k0)
     {
     uint32_t k1 = (k0 + 1) % hole.size();
@@ -61,8 +64,10 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
     triangles.emplace_back(center_id + k1 * s + s, center_id + k0 * s + s, center_id);
     }
 
+
+
   jtk::mutable_adjacency_list adj_list((uint32_t)vertices.size(), triangles.data(), (uint32_t)triangles.size());
-  for (int iter = 0; iter < 2000; ++iter)
+  for (int iter = 0; iter < params.iterations; ++iter)
     {
     //first laplace fairing
     std::vector<jtk::vec3<float>> vert(vertices.begin() + center_id, vertices.end());
@@ -95,10 +100,11 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
       vertices[v] = umbrella / total_area;
       }
 
+    size_t edge_swaps = 0;
     // now edge swapping
     bool edge_swapped = true;
-    while (edge_swapped)
-      {
+    while (edge_swapped && edge_swaps < new_triangles*3)
+      {      
       edge_swapped = false;
       for (uint32_t v = center_id; v < (uint32_t)vertices.size(); ++v)
         {
@@ -128,13 +134,15 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
 
             if (tria1_area_swapped + tria2_area_swapped < tria1_area + tria2_area)
               {
-              edge_swapped |= jtk::edge_swap(v, v2, triangles, adj_list);              
+              bool success = jtk::edge_swap(v, v2, triangles, adj_list);             
+              edge_swaps |= success;
+              if (success)
+                ++edge_swaps;
               }
-
             }
           }
         }
 
       }
-    }
+    } // for iter
   }

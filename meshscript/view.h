@@ -192,6 +192,8 @@ class view
 
     int64_t lscm(uint32_t id);
 
+    int64_t make_minimal(const std::vector<jtk::vec3<float>>& vertices, uint32_t number_of_rings, uint32_t number_of_iterations);
+
     int64_t fill_hole(uint32_t id, const std::vector<uint32_t>& hole);
 
     int64_t fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole);

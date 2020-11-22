@@ -1317,6 +1317,34 @@ int64_t view::lscm(uint32_t id)
   return -1;
   }
 
+int64_t view::make_minimal(const std::vector<jtk::vec3<float>>& vertices, uint32_t number_of_rings, uint32_t number_of_iterations)
+  {
+  std::scoped_lock lock(_mut);
+  if (vertices.size() < 3)
+    return -1;
+  mesh* new_object;
+  uint32_t new_id;
+  _db.create_mesh(new_object, new_id);
+  _matcap.map_db_id_to_matcap_id(new_id, _get_semirandom_matcap_id(new_id));
+  new_object->vertices = vertices;
+  new_object->cs = jtk::get_identity();
+  new_object->visible = true;
+  std::vector<uint32_t> hole;
+  hole.reserve(vertices.size());
+  for (uint32_t i = 0; i < (uint32_t)vertices.size(); ++i)
+    hole.push_back(i);
+  fill_hole_minimal_surface_parameters pars;
+  pars.number_of_rings = number_of_iterations;
+  pars.iterations = number_of_iterations;
+  fill_hole_minimal_surface(new_object->triangles, new_object->vertices, hole, pars);
+  if (new_object->visible)
+    add_object(new_id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return new_id;
+  }
+
 int64_t view::fill_hole(uint32_t id, const std::vector<uint32_t>& hole)
   {
   std::scoped_lock lock(_mut);

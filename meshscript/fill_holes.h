@@ -7,6 +7,7 @@ struct fill_hole_minimal_surface_parameters
   {
   fill_hole_minimal_surface_parameters();
 
+  int iterations;
   int number_of_rings;
   };
 
