@@ -129,11 +129,11 @@ std::vector<std::pair<float, float>> lscm(const jtk::vec3<uint32_t>* triangles, 
       else
         {
         auto uv = correspondences[tria[j]];
-        b(i) -= (w_real[j] / sqrt_dt)*uv.first;
-        b(i) -= -(w_image[j] / sqrt_dt)*uv.second;
+        b(i) -= (w_real[j] / sqrt_dt) * uv.first;
+        b(i) -= -(w_image[j] / sqrt_dt) * uv.second;
 
-        b(i + n) -= (w_image[j] / sqrt_dt)*uv.first;
-        b(i + n) -= (w_real[j] / sqrt_dt)*uv.second;
+        b(i + n) -= (w_image[j] / sqrt_dt) * uv.first;
+        b(i + n) -= (w_real[j] / sqrt_dt) * uv.second;
         }
       }
     }
@@ -211,4 +211,77 @@ void scale_to_unit(std::vector<std::pair<float, float>>& uv)
     p.first /= xrange;
     p.second /= yrange;
     }
+  }
+
+namespace
+  {
+
+  float _compute_uv_area(float angle, const std::vector<std::pair<float, float>>& uv)
+    {   
+    float area = 0.f;
+    float sn = std::sin(angle);
+    float cs = std::cos(angle);
+    float minu = std::numeric_limits<float>::infinity();
+    float minv = std::numeric_limits<float>::infinity();
+    float maxu = -std::numeric_limits<float>::infinity();
+    float maxv = -std::numeric_limits<float>::infinity();
+    for (uint32_t v = 0; v < (uint32_t)uv.size(); ++v)
+      {
+      jtk::vec2<float> pos(uv[v].first, uv[v].second);
+      jtk::vec2<float> pos_trans(cs * pos[0] - sn * pos[1], sn * pos[0] + cs * pos[1]);
+      minu = std::min<float>(minu, pos_trans[0]);
+      minv = std::min<float>(minv, pos_trans[1]);
+      maxu = std::max<float>(maxu, pos_trans[0]);
+      maxv = std::max<float>(maxv, pos_trans[1]);
+      }
+    return (maxu - minu) * (maxv - minv);
+    }
+
+  }
+
+void optimize_aabb(std::vector<std::pair<float, float>>& uv, const jtk::vec3<uint32_t>* triangles, uint32_t nr_of_triangles, const jtk::vec3<float>* vertices, uint32_t nr_of_vertices)
+  {
+  //rotating calipers
+  jtk::adjacency_list adj_list(nr_of_vertices, triangles, nr_of_triangles);
+  std::vector<std::pair<uint32_t, uint32_t>> boundary;
+  for (uint32_t t = 0; t < nr_of_triangles; ++t)
+    {
+    for (uint32_t j = 0; j < 3; ++j)
+      {
+      uint32_t e0 = triangles[t][j];
+      uint32_t e1 = triangles[t][(j + 1) % 3];
+      if (jtk::is_boundary_edge(e0, e1, adj_list))
+        boundary.emplace_back(e0, e1);
+      }
+    }
+
+  float best_angle = 0.f;
+  float best_area = _compute_uv_area(best_angle, uv);
+
+  for (const auto& edge : boundary)
+    {
+    auto uv0 = uv[edge.first];
+    auto uv1 = uv[edge.second];
+    auto e = jtk::vec2<float>(uv1.first - uv0.first, uv1.second - uv0.second);
+    e = jtk::normalize(e);
+    float cos_angle = e[0];
+    float angle = std::acos(cos_angle);
+    float current_area = _compute_uv_area(angle, uv);
+    if (current_area < best_area)
+      {
+      best_area = current_area;
+      best_angle = angle;
+      }
+    }
+
+  float sn = std::sin(best_angle);
+  float cs = std::cos(best_angle);
+
+  for (auto& p : uv)
+    {
+    jtk::vec2<float> uv_trans(cs * p.first - sn * p.second, sn * p.first + cs * p.second);
+    p.first = uv_trans[0];
+    p.second = uv_trans[1];
+    }
+
   }
