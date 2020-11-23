@@ -1335,7 +1335,7 @@ int64_t view::make_minimal(const std::vector<jtk::vec3<float>>& vertices, uint32
   for (uint32_t i = 0; i < (uint32_t)vertices.size(); ++i)
     hole.push_back(i);
   fill_hole_minimal_surface_parameters pars;
-  pars.number_of_rings = number_of_iterations;
+  pars.number_of_rings = number_of_rings;
   pars.iterations = number_of_iterations;
   fill_hole_minimal_surface(new_object->triangles, new_object->vertices, hole, pars);
   if (new_object->visible)

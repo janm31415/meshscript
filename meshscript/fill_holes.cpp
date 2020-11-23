@@ -89,6 +89,7 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
   jtk::mutable_adjacency_list adj_list((uint32_t)vertices.size(), triangles.data(), (uint32_t)triangles.size());
   for (int iter = 0; iter < params.iterations; ++iter)
     {
+    //std::cout << "Iteration " << iter << "\n";
     //first laplace fairing
     std::vector<jtk::vec3<float>> vert(vertices.begin() + center_id, vertices.end());
     auto get_vertex = [&](uint32_t i)->jtk::vec3<float>
@@ -120,11 +121,14 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
       vertices[v] = umbrella / total_area;
       }
 
+    //std::cout << "Starting edge swap\n";
     size_t edge_swaps = 0;
+    size_t edge_swap_iterations = 0;
     // now edge swapping
     bool edge_swapped = true;
-    while (edge_swapped && edge_swaps < new_triangles*3)
-      {      
+    while (edge_swapped && (edge_swaps < new_triangles*3) && (edge_swap_iterations < 10))
+      {     
+      ++edge_swap_iterations;
       edge_swapped = false;
       for (uint32_t v = center_id; v < (uint32_t)vertices.size(); ++v)
         {
@@ -172,8 +176,7 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
               {
               bool success = jtk::edge_swap(v, v2, triangles, adj_list);             
               edge_swapped |= success;
-              if (success)
-                ++edge_swaps;
+              ++edge_swaps;
               }
             }
           }
