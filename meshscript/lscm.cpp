@@ -10,7 +10,7 @@
 
 namespace
   {
-  void _automatically_detect_correspondences(std::map<uint32_t, std::pair<float, float>>& correspondences, const jtk::adjacency_list& adj_list, const jtk::vec3<uint32_t>* triangles, uint32_t nr_of_triangles, const jtk::vec3<float>* vertices, uint32_t nr_of_vertices)
+  void _automatically_detect_correspondences(std::map<uint32_t, std::pair<float, float>>& correspondences, const jtk::adjacency_list& adj_list, const jtk::vec3<uint32_t>* triangles, const jtk::vec3<float>* vertices, uint32_t nr_of_vertices)
     {
     uint32_t first_vertex, second_vertex;
     for (uint32_t v = 0; v < nr_of_vertices; ++v)
@@ -31,7 +31,7 @@ namespace
       {
       auto vertex = qu.front();
       qu.pop();
-      double current_distance = distances[vertex];
+      float current_distance = distances[vertex];
       auto one_ring = jtk::one_ring_vertices_from_vertex(vertex, adj_list, triangles);
       for (auto v : one_ring)
         {
@@ -50,7 +50,7 @@ namespace
 
     float max_distance = 0.f;
 
-    for (size_t i = 0; i < distances.size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t)distances.size(); ++i)
       {
       if (distances[i] > max_distance)
         {
@@ -70,7 +70,7 @@ std::vector<std::pair<float, float>> lscm(const jtk::vec3<uint32_t>* triangles, 
   jtk::adjacency_list adj_list(nr_of_vertices, triangles, nr_of_triangles);
 
   std::map<uint32_t, std::pair<float, float>> correspondences;
-  _automatically_detect_correspondences(correspondences, adj_list, triangles, nr_of_triangles, vertices, nr_of_vertices);
+  _automatically_detect_correspondences(correspondences, adj_list, triangles, vertices, nr_of_vertices);
 
   std::vector<uint32_t> indices(nr_of_vertices, 0xffffffff);
 
@@ -164,18 +164,18 @@ std::vector<std::pair<float, float>> lscm(const jtk::vec3<uint32_t>* triangles, 
   std::cout << "iterations: " << iterations << std::endl;
   std::cout << "residu: " << residu << std::endl;
 
-  for (uint32_t index = 0; index < nr_of_vertices; ++index)
+  for (uint32_t ind = 0; ind < nr_of_vertices; ++ind)
     {
-    if (indices[index] != -1)
+    if (indices[ind] != -1)
       {
       std::pair<float, float> uv_coord;
-      uv_coord.first = (float)solution(indices[index]);
-      uv_coord.second = (float)solution(indices[index] + m);
+      uv_coord.first = (float)solution(indices[ind]);
+      uv_coord.second = (float)solution(indices[ind] + m);
       res.push_back(uv_coord);
       }
     else
       {
-      res.push_back(correspondences[index]);
+      res.push_back(correspondences[ind]);
       }
     }
 
@@ -218,7 +218,6 @@ namespace
 
   float _compute_uv_area(float angle, const std::vector<std::pair<float, float>>& uv)
     {   
-    float area = 0.f;
     float sn = std::sin(angle);
     float cs = std::cos(angle);
     float minu = std::numeric_limits<float>::infinity();
@@ -239,7 +238,7 @@ namespace
 
   }
 
-void optimize_aabb(std::vector<std::pair<float, float>>& uv, const jtk::vec3<uint32_t>* triangles, uint32_t nr_of_triangles, const jtk::vec3<float>* vertices, uint32_t nr_of_vertices)
+void optimize_aabb(std::vector<std::pair<float, float>>& uv, const jtk::vec3<uint32_t>* triangles, uint32_t nr_of_triangles, uint32_t nr_of_vertices)
   {
   //rotating calipers
   jtk::adjacency_list adj_list(nr_of_vertices, triangles, nr_of_triangles);
