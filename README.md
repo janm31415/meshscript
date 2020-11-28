@@ -1007,6 +1007,23 @@ Below follows a dump of all the meshscript methods so far.
     	the face starting in corner (x,y) and with sizes (w,h).
     
     NAME
+    	fill-hole
+    DESCRIPTION
+    	(fill-hole id hole) fills the list of vertex indices
+    	`hole` for the object with tag `id` and returns the
+    	result as a new mesh.
+    
+    NAME
+    	fill-hole-minimal
+    DESCRIPTION
+    	(fill-hole-minimal id hole rings iterations) fills the
+    	list of vertex indices `hole` for the object with tag
+    	`id` as a minimal surface, and returns the result as
+    	a new mesh. The algorithm will create `rings` number
+    	of rings of triangles and this mesh is faired `iterations`
+    	times.
+    
+    NAME
     	force-redraw
     DESCRIPTION
     	(force-redraw) redraws the canvas. This is useful if
@@ -1017,6 +1034,12 @@ Below follows a dump of all the meshscript methods so far.
     	hide!
     DESCRIPTION
     	(hide! id) makes the object with tag `id` invisible.
+    
+    NAME
+    	holes
+    DESCRIPTION
+    	(holes id) returns a list of lists containing the vertex
+    	indices that form a hole for the object with tag `id`.
     
     NAME
     	icosahedron
@@ -1051,6 +1074,13 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(jet lst) takes a list `lst` of values between 0 and
     	1 and returns a list of lists with (r g b) values.
+    
+    NAME
+    	lscm
+    DESCRIPTION
+    	(lscm id) takes a mesh with tag `id` as input, and returns
+    	a new mesh with uv texture map, computed with the least
+    	squares conformal mapping method.
     
     NAME
     	load-mesh
@@ -1103,6 +1133,18 @@ Below follows a dump of all the meshscript methods so far.
     	floating point values, and `triangles` should be a
     	list of lists of the form ((a b c) (d e f) ...) with
     	a,b... fixnums referring to the vertex indices.
+    
+    NAME
+    	make-minimal
+    DESCRIPTION
+    	(make-minimal vertices rings iterations) creates a mesh
+    	with minimual surface area surrounded by the given
+    	`vertices`, and returns the id of the created object.
+    	`vertices` should be a list of lists of the form ((x
+    	y z) (x y z) ...) with x,y,z floating point values.
+    	. The algorithm will initially create `rings` number
+    	of rings of triangles and this mesh is faired `iterations`
+    	times.
     
     NAME
     	make-pointcloud
@@ -1654,8 +1696,7 @@ Below follows a dump of all the meshscript methods so far.
     DESCRIPTION
     	(exit) can be used in the input script to end meshscript,
     	so the REPL is skipped.
-    
-    
+     
 Credits
 --------
 - Constructive solid geometry: https://github.com/gilbo/cork
