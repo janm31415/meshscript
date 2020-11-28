@@ -21,6 +21,7 @@ Content
      - [Racing car with spoiler](#racing-car-with-spoiler)
      - [Brandy glass](#brandy-glass)
      - [Torus](#torus)
+     - [Make mesh from boundary](#make-mesh-from-boundary)
 * [Glossary](#glossary)
 * [Credits](#credits)
 
@@ -881,7 +882,69 @@ I've taken this example from this [OpenSCAD tutorial](https://en.wikibooks.org/w
     
     (view-show!)
 
+    
+### Make mesh from boundary
 
+![](images/helix_fill.png)  
+
+    
+    (define (subdivide-point-list lst) ; linear subdivision for a list of 3d points ((x1 y1 z1) (x2 y2 z2) ...)
+      (define odd '())
+      (define le (length lst))
+      (define combine (lambda (f) (lambda (x y) (if (null? x) (quote ()) (f (list (car x) (car y)) ((combine f) (cdr x) (cdr y)))))))
+      (let loop ((times 0))
+        (if (eq? times le)
+            odd
+            (begin
+              (let ((p0 (list-ref lst times)) (p1 (list-ref lst (modulo (+ times 1) le))))
+                (let ((x0 (list-ref p0 0)) (y0 (list-ref p0 1)) (z0 (list-ref p0 2))
+                      (x1 (list-ref p1 0)) (y1 (list-ref p1 1)) (z1 (list-ref p1 2)))
+                  (let ((new-point (list (/ (+ x0 x1) 2.0) (/ (+ y0 y1) 2.0) (/ (+ z0 z1) 2.0))))
+                    (set! odd (append odd (list new-point)))
+                  )
+                )
+              )
+              (loop (+ times 1))
+            )
+        )
+      )
+      ((combine append) lst odd)  
+    )
+    
+    
+    (define helix1 '())
+    
+    (let loop ((times 0)) ; we make the inner loop for our helix
+      (if (eq? times 100)
+          helix
+          (begin
+            (set! helix1 (append helix1 (list (list (cos (/ times 10)) (sin (/ times 10)) (* times 0.02)))))
+            (loop (+ times 1))
+          )
+      )
+    )
+    
+    (define helix2 '())
+    
+    (let loop ((times 100)) ; we make the outer loop for our helix
+      (if (eq? times 0)
+          helix
+          (begin
+            (set! helix2 (append helix2 (list (list (* 3 (cos (/ times 10))) (* 3 (sin (/ times 10))) (* times 0.02)))))
+            (loop (- times 1))
+          )
+      )
+    )
+    
+    (define helix-list (append helix1 helix2)) ; combine the inner and outer loop of the helix
+    (set! helix-list (subdivide-point-list helix-list)) ; linear subdivision
+    (set! helix-list (subdivide-point-list helix-list)) ; linear subdivision
+    
+    
+    (define id (make-minimal helix-list 8 1000)) ; make a mesh: we create 8 rings of triangles that are faired 1000 times.
+    
+    (view-show!); show the view
+    
 Glossary
 --------
 
