@@ -656,30 +656,56 @@ int64_t make_mesh(uint64_t scm_vertices_64, uint64_t scm_triangles_64)
     {
     std::vector<vec3<float>> vertices;
 
-    {
-    auto vert = scm_vertices.get_list();
-    vertices.reserve(vert.size());
-    for (auto& v : vert)
+    if (scm_vertices.is_vector())
       {
-      auto vertex = v.get_list();
-      if (vertex.size() != 3)
-        throw std::runtime_error("error: make-mesh: invalid vertex size (should have 3 float values)");
-      vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number(), (float)vertex[2].get_number());
+      auto vert = scm_vertices.get_vector();
+      vertices.reserve(vert.size());
+      for (auto& v : vert)
+        {
+        auto vertex = v.get_list();
+        if (vertex.size() != 3)
+          throw std::runtime_error("error: make-mesh: invalid vertex size (should have 3 float values)");
+        vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number(), (float)vertex[2].get_number());
+        }
       }
-    }
+    else
+      {
+      auto vert = scm_vertices.get_list();
+      vertices.reserve(vert.size());
+      for (auto& v : vert)
+        {
+        auto vertex = v.get_list();
+        if (vertex.size() != 3)
+          throw std::runtime_error("error: make-mesh: invalid vertex size (should have 3 float values)");
+        vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number(), (float)vertex[2].get_number());
+        }
+      }
 
     std::vector<vec3<uint32_t>> triangles;
-    {
-    auto tria = scm_triangles.get_list();
-    triangles.reserve(tria.size());
-    for (auto& t : tria)
+    if (scm_triangles.is_vector())
       {
-      auto triangle = t.get_list();
-      if (triangle.size() != 3)
-        throw std::runtime_error("error: make-mesh: invalid triangle size (should have 3 int values)");
-      triangles.emplace_back((uint32_t)triangle[0].get_fixnum(), (uint32_t)triangle[1].get_fixnum(), (uint32_t)triangle[2].get_fixnum());
+      auto tria = scm_triangles.get_vector();
+      triangles.reserve(tria.size());
+      for (auto& t : tria)
+        {
+        auto triangle = t.get_list();
+        if (triangle.size() != 3)
+          throw std::runtime_error("error: make-mesh: invalid triangle size (should have 3 int values)");
+        triangles.emplace_back((uint32_t)triangle[0].get_fixnum(), (uint32_t)triangle[1].get_fixnum(), (uint32_t)triangle[2].get_fixnum());
+        }
       }
-    }
+    else
+      {
+      auto tria = scm_triangles.get_list();
+      triangles.reserve(tria.size());
+      for (auto& t : tria)
+        {
+        auto triangle = t.get_list();
+        if (triangle.size() != 3)
+          throw std::runtime_error("error: make-mesh: invalid triangle size (should have 3 int values)");
+        triangles.emplace_back((uint32_t)triangle[0].get_fixnum(), (uint32_t)triangle[1].get_fixnum(), (uint32_t)triangle[2].get_fixnum());
+        }
+      }
     int64_t id = g_view->load_mesh(vertices, triangles);
     return id;
     }
@@ -733,7 +759,7 @@ int64_t scm_fill_hole(int64_t id, uint64_t hole64)
   return -1;
   }
 
-int64_t scm_fill_hole_minimal(int64_t id, uint64_t hole64)
+int64_t scm_fill_hole_minimal(int64_t id, uint64_t hole64, int64_t number_of_rings, int64_t number_of_iterations)
   {
   using namespace skiwi;
   skiwi::scm_type hole(hole64);
@@ -745,7 +771,7 @@ int64_t scm_fill_hole_minimal(int64_t id, uint64_t hole64)
       {
       ho.push_back((uint32_t)hol.get_fixnum());
       }
-    return g_view->fill_hole_minimal((uint32_t)id, ho);
+    return g_view->fill_hole_minimal((uint32_t)id, ho, (uint32_t)number_of_rings, (uint32_t)number_of_iterations);
     }
   catch (std::runtime_error e)
     {
@@ -1703,7 +1729,7 @@ void* register_functions(void*)
 
   register_external_primitive("fill-hole", (void*)&scm_fill_hole, skiwi_int64, skiwi_int64, skiwi_scm, "(fill-hole id hole) fills the list of vertex indices `hole` for the object with tag `id` and returns the result as a new mesh.");
 
-  register_external_primitive("fill-hole-minimal", (void*)&scm_fill_hole_minimal, skiwi_int64, skiwi_int64, skiwi_scm, "(fill-hole-minimal id hole) fills the list of vertex indices `hole` for the object with tag `id` as a minimal surface, and returns the result as a new mesh.");
+  register_external_primitive("fill-hole-minimal", (void*)&scm_fill_hole_minimal, skiwi_int64, skiwi_int64, skiwi_scm, skiwi_int64, skiwi_int64, "(fill-hole-minimal id hole rings iterations) fills the list of vertex indices `hole` for the object with tag `id` as a minimal surface, and returns the result as a new mesh.");
 
   register_external_primitive("force-redraw", (void*)&scm_force_redraw, skiwi_void, "(force-redraw) redraws the canvas. This is useful if you want to use view-position in your script, as view-position uses the data of the last render of the view.");
 

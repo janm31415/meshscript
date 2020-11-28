@@ -1376,7 +1376,7 @@ int64_t view::fill_hole(uint32_t id, const std::vector<uint32_t>& hole)
   return -1;
   }
 
-int64_t view::fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole)
+int64_t view::fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole, uint32_t number_of_rings, uint32_t number_of_iterations)
   {
   std::scoped_lock lock(_mut);
   std::vector<vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
@@ -1395,7 +1395,8 @@ int64_t view::fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole)
     else
       new_object->cs = jtk::get_identity();
     fill_hole_minimal_surface_parameters pars;
-
+    pars.number_of_rings = number_of_rings;
+    pars.iterations = number_of_iterations;
     fill_hole_minimal_surface(new_object->triangles, new_object->vertices, hole, pars);
     
     if (new_object->visible)

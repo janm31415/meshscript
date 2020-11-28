@@ -16,6 +16,7 @@ fill_hole_minimal_surface_parameters::fill_hole_minimal_surface_parameters()
   {
   number_of_rings = 12;
   iterations = 100;
+  edge_swap_strategy = fill_hole_minimal_surface_parameters::e_edge_swap_strategy::minimal_area;
   }
 
 namespace
@@ -102,24 +103,41 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
     for (uint32_t v = center_id; v < (uint32_t)vertices.size(); ++v)
       { 
       auto onering = jtk::one_ring_vertices_from_vertex(v, adj_list, triangles.data());
+
+
       float total_area = 0.f;
       jtk::vec3<float> umbrella(0, 0, 0);
-      for (auto v2 : onering)
+      if (iter > params.iterations / 2)
         {
-        auto tria = jtk::triangle_indices_from_edge(v, v2, adj_list);
-        assert(tria.size() == 2);
-        
-        float tria1_area = jtk::length(jtk::cross(get_vertex(triangles[tria[0]][1]) - get_vertex(triangles[tria[0]][0]), get_vertex(triangles[tria[0]][2]) - get_vertex(triangles[tria[0]][0])));
-        float tria2_area = jtk::length(jtk::cross(get_vertex(triangles[tria[1]][1]) - get_vertex(triangles[tria[1]][0]), get_vertex(triangles[tria[1]][2]) - get_vertex(triangles[tria[1]][0])));
+        for (auto v2 : onering)
+          {          
+          umbrella = umbrella + get_vertex(v2);
 
-        float weight = tria1_area + tria2_area;
-        //weight = 1.f;
-        umbrella = umbrella + weight * get_vertex(v2);
+          total_area += 1.f;
+          }
+        }
+      else
+        {
+        for (auto v2 : onering)
+          {
+          auto tria = jtk::triangle_indices_from_edge(v, v2, adj_list);
+          assert(tria.size() == 2);
 
-        total_area += weight;
+          float tria1_area = jtk::length(jtk::cross(get_vertex(triangles[tria[0]][1]) - get_vertex(triangles[tria[0]][0]), get_vertex(triangles[tria[0]][2]) - get_vertex(triangles[tria[0]][0])));
+          float tria2_area = jtk::length(jtk::cross(get_vertex(triangles[tria[1]][1]) - get_vertex(triangles[tria[1]][0]), get_vertex(triangles[tria[1]][2]) - get_vertex(triangles[tria[1]][0])));
+
+          float weight = tria1_area + tria2_area;
+          umbrella = umbrella + weight * get_vertex(v2);
+
+          total_area += weight;
+          }
         }
       vertices[v] = umbrella / total_area;
+
+
       }
+
+
 
     //std::cout << "Starting edge swap\n";
     size_t edge_swaps = 0;
@@ -148,31 +166,55 @@ void fill_hole_minimal_surface(std::vector<jtk::vec3<uint32_t>>& triangles, std:
               ++t1v;
             int t2v = 0;
             while (t2[t2v] == v || t2[t2v] == v2)
-              ++t2v;
+              ++t2v;            
 
-            jtk::vec3<float> tria1_normal = jtk::cross(vertices[v] - vertices[t1[t1v]], vertices[v2] - vertices[t1[t1v]]);
-            jtk::vec3<float> tria2_normal = jtk::cross(vertices[v] - vertices[t2[t2v]], vertices[v2] - vertices[t2[t2v]]);
-            
-            float tria1_area = jtk::length(tria1_normal);
-            float tria2_area = jtk::length(tria2_normal);
-            
-            jtk::vec3<float> tria1_normal_swapped = jtk::cross(vertices[t1[t1v]] - vertices[v], vertices[t2[t2v]] - vertices[v]);
-            jtk::vec3<float> tria2_normal_swapped = jtk::cross(vertices[t1[t1v]] - vertices[v2], vertices[t2[t2v]] - vertices[v2]);
+            bool should_swap = false;
 
-            float tria1_area_swapped = jtk::length(tria1_normal_swapped);
-            float tria2_area_swapped = jtk::length(tria2_normal_swapped);
+            if (params.edge_swap_strategy == fill_hole_minimal_surface_parameters::e_edge_swap_strategy::minimal_area)
+              {
 
-    
+              jtk::vec3<float> tria1_normal = jtk::cross(vertices[v] - vertices[t1[t1v]], vertices[v2] - vertices[t1[t1v]]);
+              jtk::vec3<float> tria2_normal = jtk::cross(vertices[v] - vertices[t2[t2v]], vertices[v2] - vertices[t2[t2v]]);
 
-            //jtk::vec3<float> center1, center2;
-            //float radius1, radius2;
-            //circumsphere(center1, radius1, vertices[v], vertices[t1[t1v]], vertices[t2[t2v]]);
-            //circumsphere(center2, radius2, vertices[v2], vertices[t2[t2v]], vertices[t1[t1v]]);
-            //bool bad_result_1 = jtk::distance_sqr(vertices[v], center1) < radius1 * radius1;
-            //bool bad_result_2 = jtk::distance_sqr(vertices[v2], center2) < radius2 * radius2;
-           
+              float tria1_area = jtk::length(tria1_normal);
+              float tria2_area = jtk::length(tria2_normal);
 
-            if (((tria1_area_swapped + tria2_area_swapped) < (tria1_area + tria2_area)))
+              jtk::vec3<float> tria1_normal_swapped = jtk::cross(vertices[t1[t1v]] - vertices[v], vertices[t2[t2v]] - vertices[v]);
+              jtk::vec3<float> tria2_normal_swapped = jtk::cross(vertices[t1[t1v]] - vertices[v2], vertices[t2[t2v]] - vertices[v2]);
+
+              float tria1_area_swapped = jtk::length(tria1_normal_swapped);
+              float tria2_area_swapped = jtk::length(tria2_normal_swapped);
+
+              should_swap = (((tria1_area_swapped + tria2_area_swapped) < (tria1_area + tria2_area)));
+              }
+            else
+              {
+
+              jtk::vec3<float> center1, center2;
+              float radius1, radius2;
+              circumsphere(center1, radius1, vertices[v], vertices[t1[t1v]], vertices[v2]);
+              circumsphere(center2, radius2, vertices[v2], vertices[t2[t2v]], vertices[v]);
+              bool bad_result_1 = jtk::distance_sqr(vertices[t2[t2v]], center1) < radius1 * radius1;
+              bool bad_result_2 = jtk::distance_sqr(vertices[t1[t1v]], center2) < radius2 * radius2;
+              if (radius1 != radius1)
+                bad_result_1 = true;
+              if (radius2 != radius2)
+                bad_result_2 = true;
+
+              bool flip_ok = true;
+              if (t1[t1v] == t2[t2v])
+                flip_ok = false;
+              auto one_ring = jtk::one_ring_vertices_from_vertex(t1[t1v], adj_list, triangles.data());
+              for (auto vertex : one_ring)
+                {
+                if (vertex == t2[t2v])
+                  flip_ok = false;
+                }
+
+              should_swap = ((bad_result_1 || bad_result_2) && flip_ok);
+              }
+                                  
+            if (should_swap)
               {
               bool success = jtk::edge_swap(v, v2, triangles, adj_list);             
               edge_swapped |= success;

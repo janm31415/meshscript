@@ -196,7 +196,7 @@ class view
 
     int64_t fill_hole(uint32_t id, const std::vector<uint32_t>& hole);
 
-    int64_t fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole);
+    int64_t fill_hole_minimal(uint32_t id, const std::vector<uint32_t>& hole, uint32_t number_of_rings, uint32_t number_of_iterations);
 
     void info(uint32_t id);
 
