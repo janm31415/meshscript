@@ -90,6 +90,106 @@ int64_t load_image(const char* filename)
   return id;
   }
 
+uint64_t scm_cs_read(const char* filename)
+  {
+  using namespace skiwi;
+  std::ifstream f(filename);
+  jtk::mat16 m = jtk::identity(4, 4);
+  if (f.is_open())
+    {
+    for (int r = 0; r < 4; ++r)
+      {
+      for (int c = 0; c < 4; ++c)
+        {
+        if (!f.eof())
+          f >> m(r, c);
+        }
+      }
+    f.close();
+    }
+  std::vector<scm_type> lst;
+  for (int r = 0; r < 4; ++r)
+    {
+    std::vector<scm_type> row;
+    for (int c = 0; c < 4; ++c)
+      {
+      row.push_back(make_flonum(m(r, c)));
+      }
+    lst.push_back(make_list(row));
+    }
+  return make_list(lst);
+  }
+
+void scm_cs_write(uint64_t scheme_variable_64, const char* filename)
+  {
+  skiwi::scm_type scheme_variable(scheme_variable_64);
+  jtk::mat16 m = jtk::identity(4, 4);
+  if (scheme_variable.is_vector())
+    {
+    auto v = scheme_variable.get_vector();
+    if (v.size() != 16)
+      {
+      std::cout << "error: cs-write: first input parameter should be a vector of size 16\n";
+      std::cout << "                 current size of vector is " << v.size() << "\n";
+      return;
+      }    
+    try
+      {
+      for (int i = 0; i < 16; ++i)
+        {
+        m(i%4, i/4) = (float)v[i].get_number();
+        }
+      }
+    catch (std::runtime_error e)
+      {
+      std::cout << e.what() << "\n";
+      }
+    }
+  else if (scheme_variable.is_pair())
+    {
+    try
+      {
+      std::vector<skiwi::scm_type> rows(4);
+      rows[0] = scheme_variable.get_pair().first;
+      rows[1] = scheme_variable.get_pair().second.get_pair().first;
+      rows[2] = scheme_variable.get_pair().second.get_pair().second.get_pair().first;
+      rows[3] = scheme_variable.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+      for (int i = 0; i < 4; ++i)
+        {
+        const auto& r = rows[i];
+        auto v0 = r.get_pair().first;
+        auto v1 = r.get_pair().second.get_pair().first;
+        auto v2 = r.get_pair().second.get_pair().second.get_pair().first;
+        auto v3 = r.get_pair().second.get_pair().second.get_pair().second.get_pair().first;
+        m(i, 0) = (float)v0.get_number();
+        m(i, 1) = (float)v1.get_number();
+        m(i, 2) = (float)v2.get_number();
+        m(i, 3) = (float)v3.get_number();
+        }
+      }
+    catch (std::runtime_error e)
+      {
+      std::cout << e.what() << "\n";
+      }
+    }
+  else
+    {
+    std::cout << "error: cs-write: invalid input type\n";
+    }
+  std::ofstream f(filename);
+  if (f.is_open())
+    {
+    for (int r = 0; r < 4; ++r)
+      {
+      for (int c = 0; c < 4; ++c)
+        {
+        f << m(r, c) << (c == 3 ? "\n" : " ");
+        }
+      }
+    f.close();
+    }
+  }
+
 /*
 Input can be a vector of size 16 in column major format,
 or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
@@ -1703,10 +1803,12 @@ void* register_functions(void*)
   using namespace skiwi;
   register_external_primitive("cs", (void*)&scm_get_coordinate_system, skiwi_scm, skiwi_int64, "(cs id) returns the coordinate system for the object with tag `id`.");
   register_external_primitive("cs-apply!", (void*)&scm_cs_apply, skiwi_void, skiwi_int64, "(cs-apply! id) transforms the vertices of object with tag `id` by its coordinate system, and sets its coordinate system to the world.");
+  register_external_primitive("cs-read", (void*)&scm_cs_read, skiwi_scm, skiwi_char_pointer, "(cs-read \"filename.txt\") reads the coordinate system from file and returns it.");
   register_external_primitive("cs-rotate!", (void*)&scm_rotate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-rotate! id x y z) rotates the object with tag `id` by `x` degrees over the x-axis, by `y` degrees over the y-axis, and by `z` degrees over the z-axis.");
   register_external_primitive("cs-set!", (void*)&scm_set_coordinate_system, skiwi_void, skiwi_int64, skiwi_scm, "(cs-set! id cs) sets a new coordinate system for the object with tag `id`. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
   register_external_primitive("cs-translate!", (void*)&scm_translate, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cs-translate! id x y z) translates the object with tag `id` by vector (x y z).");
   register_external_primitive("cs-premultiply!", (void*)&scm_cs_premultiply, skiwi_void, skiwi_int64, skiwi_scm, "(cs-premultiply! id cs) premultiplies the coordinate system of the object with tag `id` by the input coordinate system. The coordinate system `cs` can be given as a vector of size 16 in column major format or as a list of lists in row major format.");
+  register_external_primitive("cs-write", (void*)&scm_cs_write, skiwi_void, skiwi_scm, skiwi_char_pointer, "(cs-write cs \"filename.txt\") writes the coordinate system `cs` to file.");
 
   register_external_primitive("cube", (void*)&scm_cube, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cube w h d) makes a cube with dimensions `w` x `h` x `d`.");
   register_external_primitive("cylinder", (void*)&scm_cylinder, skiwi_int64, skiwi_scm, skiwi_scm, "(cylinder r h n) makes a cylinder with radius `r` and height `h`. The cylinder's side is discretized by 'n' ribs.");
