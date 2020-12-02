@@ -77,6 +77,8 @@ class view
     jtk::float4x4 get_coordinate_system();
 
     jtk::float4x4 icp(uint32_t id1, uint32_t id2, double inlier_distance);
+    
+    void get_image(std::vector<uint32_t>& out, uint32_t& w, uint32_t& h, uint32_t id);
 
     std::vector<float> distance_map(uint32_t id1, uint32_t id2, bool sign);
 

@@ -71,6 +71,7 @@ shape_predictor.h
 sp.h
 trackball.h
 view.h
+window.h
 )
 	
 set(SRCS
@@ -152,7 +153,29 @@ target_link_libraries(meshscript
     libskiwi	
     trico
     hdf5-shared
-    )	
+    )
+    
+
+if (UNIX)
+
+set(XLIBINCLUDE "")
+set(XLIBLIBRARY "X11.so")
+
+if (APPLE)
+set(XLIBINCLUDE "/usr/X11/include/")
+set(XLIBLIBRARY "/usr/X11/lib/libX11.dylib")
+endif (APPLE)
+
+target_include_directories(meshscript
+   PRIVATE
+   ${XLIBINCLUDE}
+   )
+   
+target_link_libraries(meshscript
+    PRIVATE
+    ${XLIBLIBRARY}
+    )
+endif (UNIX)
 
 if (${JTK_THREADING} STREQUAL "tbb")
   target_include_directories(meshscript

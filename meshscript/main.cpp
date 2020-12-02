@@ -31,11 +31,14 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
+#include "window.h"
+
 using namespace jtk;
 
 constexpr double pi = 3.141592653589793238462643383279;
 
 view* g_view = nullptr;
+std::vector<WindowHandle> window_handles;
 
 bool quit = false;
 
@@ -1797,6 +1800,39 @@ void scm_cs_apply(int64_t id)
   {
   return g_view->cs_apply((uint32_t)id);
   }
+  
+void scm_plot(uint64_t data64)
+  {
+  skiwi::scm_type data(data64);
+  if (data.is_fixnum())
+    {
+    int64_t id = data.get_fixnum();
+    std::vector<uint32_t> image_data;
+    uint32_t w, h;
+    g_view->get_image(image_data, w, h, (uint32_t)id);
+    // convert abgr to argb
+    for (uint32_t& clr : image_data)
+      {
+      uint32_t r = clr & 255;
+      uint32_t g = (clr >> 8) & 255;
+      uint32_t b = (clr >> 16) & 255;
+      clr = 0xff000000 | (r << 16) | (g << 8) | b;
+      }
+    if (!image_data.empty())
+      {
+      size_t idx = window_handles.size();
+      std::stringstream str;
+      str << "Plot " << idx;
+      WindowHandle wh = create_window(str.str().c_str(), w, h);
+      paint(wh, (const uint8_t*)image_data.data(), w, h, 4);
+      window_handles.push_back(wh);
+      }
+    }
+  else
+    {
+    std::cout << "error: plot: this type of data cannot be plotted\n";
+    }
+  }
 
 void* register_functions(void*)
   {
@@ -1889,6 +1925,8 @@ void* register_functions(void*)
   register_external_primitive("npoint", (void*)&npoint_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, skiwi::skiwi_scm, "(npoint from to) computes the npoint-registration of the set of 3d points in `from` to the set of 3d points in `to`. The result is a 4x4 transformation matrix. Here `from` and `to` are lists of lists of the form ((x y z) (x y z) ...) and `from` and `to` should have the same amount of 3d points.");
 
   register_external_primitive("parametric", (void*)&scm_parametric, skiwi_int64, skiwi_scm, skiwi_scm, "(parametric fun domain) returns the id of a new mesh. The mesh is created from a lambda function `fun`, where `fun` accepts two floating input values (u v) and returns a list (x y z). The input variable `domain` is a list of the form (min_u max_u step_u min_v max_v step_v) describing the uv parameter domain.");
+  
+  register_external_primitive("plot", (void*)&scm_plot, skiwi_void, skiwi_scm, "(plot data) makes a 2d plot of `data`. Here `data` can be the id of an image.");
 
   register_external_primitive("pointcloud-normals-estimate!", (void*)&scm_pointcloud_normals_estimate, skiwi_void, skiwi::skiwi_int64, skiwi::skiwi_int64, "(pointcloud-normals-estimate! id k) creates vertex normals for the pointcloud with tag `id` by taking the `k` nearest neighbours of each vertex, fit a least squares plane through these points, and use the normal of this plane as estimate.");
 
@@ -2053,6 +2091,11 @@ int main(int argc, char** argv)
   v.loop();
   close_scheme_loop(sld);
   }
+  
+  for (auto& wh : window_handles)
+    {
+    close_window(wh);
+    }
 
   SDL_Quit();
   return 0;

@@ -1237,6 +1237,27 @@ void view::pointcloud_estimate_normals(uint32_t id, uint32_t k)
     _refresh = true;
     }
   }
+  
+void view::get_image(std::vector<uint32_t>& out, uint32_t& w, uint32_t& h, uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  out.clear();
+  w = 0;
+  h = 0;
+  im* i = _db.get_image(id);
+  if (i)
+    {
+    w = i->texture.width();
+    h = i->texture.height();
+    out.reserve(w*h);
+    for (uint32_t y = 0; y < h; ++y)
+      {
+      uint32_t* p_im = i->texture.row(y);
+      for (uint32_t x = 0; x < w; ++x, ++p_im)
+        out.push_back(*p_im);
+      }
+    }
+  }
 
 bool view::write(uint32_t id, const char* filename)
   {
