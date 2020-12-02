@@ -1268,9 +1268,10 @@ int64_t view::image_pyr_down(uint32_t id)
     im* new_object;
     uint32_t id_out;
     _db.create_image(new_object, id_out);
-    new_object->texture = pyramid_down(i->texture);
+    new_object->texture = jtk::pyramid_down(i->texture);
     return id_out;
     }
+  return -1;
   }
     
 int64_t view::image_pyr_up(uint32_t id)
@@ -1282,7 +1283,7 @@ int64_t view::image_pyr_up(uint32_t id)
     im* new_object;
     uint32_t id_out;
     _db.create_image(new_object, id_out);
-    new_object->texture = pyramid_up(i->texture);
+    new_object->texture = jtk::pyramid_up(i->texture);
     return id_out;
     }
   return -1;
@@ -1297,7 +1298,7 @@ int64_t view::image_gauss(uint32_t id)
     im* new_object;
     uint32_t id_out;
     _db.create_image(new_object, id_out);
-    new_object->texture = gauss(i->texture);
+    new_object->texture = jtk::gauss(i->texture);
     return id_out;
     }
   return -1;

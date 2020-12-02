@@ -71,7 +71,6 @@ shape_predictor.h
 sp.h
 trackball.h
 view.h
-window.h
 )
 	
 set(SRCS

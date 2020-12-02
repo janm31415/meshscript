@@ -24,14 +24,13 @@
 #include <jtk/concurrency.h>
 #include <jtk/fitting.h>
 #include <jtk/geometry.h>
+#include <jtk/window.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
-
-#include "window.h"
 
 using namespace jtk;
 
