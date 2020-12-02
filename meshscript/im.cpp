@@ -59,3 +59,13 @@ void info(const im& i)
   std::cout << "Height: " << i.texture.height() << std::endl;
   std::cout << "---------------------------------------" << std::endl;
   }
+
+jtk::image<uint32_t> pyramid_down(const jtk::image<uint32_t>& im)
+  {
+  return im;
+  }
+
+jtk::image<uint32_t> pyramid_up(const jtk::image<uint32_t>& im)
+  {
+  return im;
+  }
