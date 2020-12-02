@@ -7,6 +7,7 @@
 #include "scene.h"
 #include "mouse.h"
 #include "matcap.h"
+#include <jtk/concurrency.h>
 
 class canvas
   {
@@ -28,6 +29,7 @@ class canvas
     canvas(uint32_t w, uint32_t h);
     ~canvas();
 
+    void resize(uint32_t w, uint32_t h);
     void get_pixel(pixel& p, const mouse_data& data, float mouse_offset_x, float mouse_offset_y);
 
     void get_pixel(pixel& p, float pos_x, float pos_y, float mouse_offset_x, float mouse_offset_y);
@@ -95,6 +97,6 @@ class canvas
     jtk::image<float> _u, _v;
     canvas_settings _settings;
 
-    
+    jtk::thread_pool _tp;
     
   };

@@ -106,7 +106,7 @@ view::view() : _w(1600), _h(900), _window(nullptr)
   _m.prev_mouse_y = 0.f;
   _m.wheel_rotation = 0.f;
 
-  _canvas = canvas(800, 600);
+  _canvas.resize(800, 600);
   _canvas_pos_x = ((int32_t)_w - (int32_t)_canvas.width()) / 2;
   if (_canvas_pos_x & 3)
     _canvas_pos_x += 4 - (_canvas_pos_x & 3);
@@ -2316,7 +2316,7 @@ void view::resize_canvas(uint32_t canvas_w, uint32_t canvas_h)
     canvas_w = _w;
   if (canvas_h > _h)
     canvas_h = _h;
-  _canvas = canvas(canvas_w, canvas_h);
+  _canvas.resize(canvas_w, canvas_h);
   _canvas_pos_x = ((int32_t)_w - (int32_t)_canvas.width()) / 2;
   if (_canvas_pos_x & 3)
     _canvas_pos_x += 4 - (_canvas_pos_x & 3);

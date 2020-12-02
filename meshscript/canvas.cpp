@@ -9,6 +9,8 @@ extern "C"
   {
 #include "trackball.h"
   }
+  
+#define USE_THREAD_POOL
 
 using namespace jtk;
 
@@ -85,10 +87,30 @@ namespace
 
 canvas::canvas()
   {
+  _tp.init();
   }
 
-canvas::canvas(uint32_t w, uint32_t h) : im(w, h), background(w, h), _canvas(w, h), _u(w, h), _v(w, h), buffer(w, h)
+canvas::canvas(uint32_t w, uint32_t h)
   {
+  _tp.init();
+  resize(w, h);
+  }
+
+canvas::~canvas()
+  {
+#if defined(USE_THREAD_POOL)
+  _tp.stop();
+#endif
+  }
+
+void canvas::resize(uint32_t w, uint32_t h)
+  {
+  im = jtk::image<uint32_t>(w,h);
+  background = jtk::image<uint32_t>(w,h);
+  _canvas = jtk::image<pixel>(w, h);
+  _u = jtk::image<float>(w, h);
+  _v = jtk::image<float>(w, h);
+  buffer = jtk::image<jtk::float4>(w, h);
   for (auto& p : _canvas)
     {
     p.db_id = 0;
@@ -98,11 +120,6 @@ canvas::canvas(uint32_t w, uint32_t h) : im(w, h), background(w, h), _canvas(w, 
   projection_matrix = make_projection_matrix(_camera, w, h);
   projection_matrix_inv = invert_projection_matrix(projection_matrix);
   fill_background(background);
-  }
-
-canvas::~canvas()
-  {
-
   }
 
 void canvas::set_background_color(uint8_t r, uint8_t g, uint8_t b)
@@ -735,8 +752,11 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
 
   qbvh_two_level_with_transformations bvh(bvhs.data(), object_cs.data(), (uint32_t)bvhs.size());
 
-
+#if defined(USE_THREAD_POOL)
+  pooled_parallel_for(uint32_t(y0), uint32_t(y1 + 1), [&](uint32_t y)
+#else
   parallel_for(uint32_t(y0), uint32_t(y1 + 1), [&](uint32_t y)
+#endif
     {
     pixel* p_canvas_line = out.row(y) + x0;
     for (int x = x0; x <= x1; ++x)
@@ -833,8 +853,11 @@ void canvas::update_canvas(jtk::image<pixel>& out, int x0, int y0, int x1, int y
         }
       ++p_canvas_line;
       }
+#if defined(USE_THREAD_POOL)
+    }, _tp);
+#else
     });
-
+#endif
   }
 
 void canvas::render_scene(jtk::image<pixel>& out, const scene* s)
