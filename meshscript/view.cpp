@@ -1288,6 +1288,21 @@ int64_t view::image_pyr_up(uint32_t id)
   return -1;
   }
 
+int64_t view::image_gauss(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  im* i = _db.get_image(id);
+  if (i)
+    {
+    im* new_object;
+    uint32_t id_out;
+    _db.create_image(new_object, id_out);
+    new_object->texture = gauss(i->texture);
+    return id_out;
+    }
+  return -1;
+  }
+
 bool view::write(uint32_t id, const char* filename)
   {
   std::scoped_lock lock(_mut);

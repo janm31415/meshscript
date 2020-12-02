@@ -82,7 +82,9 @@ class view
     
     int64_t image_pyr_down(uint32_t id);
     
-    int64_t image_pyr_up(uint32_t id);    
+    int64_t image_pyr_up(uint32_t id);  
+
+    int64_t image_gauss(uint32_t id);
 
     std::vector<float> distance_map(uint32_t id1, uint32_t id2, bool sign);
 

@@ -1810,6 +1810,11 @@ int64_t scm_image_pyr_up(int64_t id)
   {
   return g_view->image_pyr_up((uint32_t)id);
   }
+
+int64_t scm_image_gauss(int64_t id)
+  {
+  return g_view->image_gauss((uint32_t)id);
+  }
   
 void scm_plot(uint64_t data64)
   {
@@ -1889,9 +1894,9 @@ void* register_functions(void*)
 
   register_external_primitive("icp", (void*)&scm_icp, skiwi_scm, skiwi_int64, skiwi_int64, skiwi_scm, "(icp id1 id2 inlier-distance) returns the result of the iterative closest point algorithm between objects with tag `id1` and `id2`. This result is always a 4x4 transformation matrix. The iterative closest point algorithm will only use correspondences between `id1` and `id2` if their distance is smaller than `inlier-distance`.");
   
+  register_external_primitive("image-gauss", (void*)&scm_image_gauss, skiwi_int64, skiwi_int64, "(image-gauss id) applies a gauss filter to the image given by tag `id`.");
   register_external_primitive("image-pyr-down", (void*)&scm_image_pyr_down, skiwi_int64, skiwi_int64, "(image-pyr-down id) downsamples the image given by tag `id`.");
-  
-    register_external_primitive("image-pyr-up", (void*)&scm_image_pyr_up, skiwi_int64, skiwi_int64, "(image-pyr-up id) upsamples the image given by tag `id`.");
+  register_external_primitive("image-pyr-up", (void*)&scm_image_pyr_up, skiwi_int64, skiwi_int64, "(image-pyr-up id) upsamples the image given by tag `id`.");
     
   register_external_primitive("info", (void*)&scm_info, skiwi_void, skiwi_int64, "(info id) prints info on the object with tag `id`.");
 
