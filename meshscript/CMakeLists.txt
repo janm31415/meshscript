@@ -1,24 +1,18 @@
 if (WIN32)
-  set(SDL_INCLUDE_DIR "C:/Program Files/SDL2/include/SDL2/")
-  set(SDL_LIBRARIES "C:/Program Files/SDL2/lib/SDL2.lib" "C:/Program Files/SDL2/lib/SDL2main.lib")
-  set(TBB_INCLUDE_DIR "C:/Program Files/TBB/include")
-  set(TBB_LIBRARIES "C:/Program Files/TBB/lib/intel64/vc14/tbb.lib" "C:/Program Files/TBB/lib/intel64/vc14/tbb_debug.lib")
+  set(TBB_INCLUDE_DIR "C:/Program Files/TBB/include" CACHE PATH "the include path for TBB")
+  set(TBB_LIBRARIES "C:/Program Files/TBB/lib/intel64/vc14/tbb.lib" "C:/Program Files/TBB/lib/intel64/vc14/tbb_debug.lib" CACHE FILEPATH "the tbb lib files")
   set(OPENGL_LIBRARIES opengl32.lib)
 endif (WIN32)
 
 if (UNIX)
-  set(SDL_INCLUDE_DIR "/usr/include/SDL2/")
-  set(SDL_LIBRARIES "/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so" "/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0")
-  set(TBB_INCLUDE_DIR "/usr/local/include" "/usr/include")
-  set(TBB_LIBRARIES "/usr/lib/x86_64-linux-gnu/libtbb.so" "/usr/lib/x86_64-linux-gnu/libtbb.so.2")
+  set(TBB_INCLUDE_DIR "/usr/local/include" "/usr/include" CACHE PATH "the include path for TBB")
+  set(TBB_LIBRARIES "/usr/lib/x86_64-linux-gnu/libtbb.so" "/usr/lib/x86_64-linux-gnu/libtbb.so.2" CACHE FILEPATH "the tbb .so files")
   set(OPENGL_LIBRARIES "/usr/lib/x86_64-linux-gnu/libOpenGL.so.0.0.0")
 endif (UNIX)
 
 if (APPLE)
-  set(SDL_INCLUDE_DIR "/Library/Frameworks/SDL2.framework/Headers/")
-  set(SDL_LIBRARIES "/Library/Frameworks/SDL2.framework/SDL2")
-  set(TBB_INCLUDE_DIR "/usr/local/include" "/usr/include")
-  set(TBB_LIBRARIES "/usr/local/lib/libtbb.dylib")
+  set(TBB_INCLUDE_DIR "/usr/local/include" "/usr/include" CACHE PATH "the include path for TBB")
+  set(TBB_LIBRARIES "/usr/local/lib/libtbb.dylib" CACHE FILEPATH "the tbb .dylib file")
   set(OPENGL_LIBRARIES "/System/Library/Frameworks/OpenGL.framework/OpenGL")
 endif (APPLE)
 
@@ -137,14 +131,13 @@ target_include_directories(meshscript
     ${CMAKE_CURRENT_SOURCE_DIR}/../skiwi/
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/
     ${CMAKE_CURRENT_SOURCE_DIR}/../ply/
-    ${SDL_INCLUDE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/../hdf5
+    ${CMAKE_CURRENT_BINARY_DIR}/../sdl2
     )	
 	
 target_link_libraries(meshscript
     PRIVATE
-    ${OPENGL_LIBRARIES}
-    ${SDL_LIBRARIES}
+    ${OPENGL_LIBRARIES}    
     asm
     dlib
     libcork
@@ -152,6 +145,8 @@ target_link_libraries(meshscript
     libskiwi	
     trico
     hdf5-shared
+    SDL2
+    SDL2main
     )
     
 

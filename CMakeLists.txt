@@ -33,6 +33,7 @@ add_subdirectory(meshscript)
 add_subdirectory(skiwi)
 add_subdirectory(trico/lz4)
 add_subdirectory(trico/trico)
+add_subdirectory(SDL2)
 
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -60,3 +61,8 @@ set_target_properties (hdf5-static PROPERTIES FOLDER hdf5)
 set_target_properties (gen_hdf5-shared PROPERTIES FOLDER hdf5)
 set_target_properties (gen_hdf5-static PROPERTIES FOLDER hdf5)
 set_target_properties (H5make_libsettings PROPERTIES FOLDER hdf5)
+
+set_target_properties (SDL2 PROPERTIES FOLDER SDL2)
+set_target_properties (SDL2main PROPERTIES FOLDER SDL2)
+set_target_properties (uninstall PROPERTIES FOLDER SDL2)
+
