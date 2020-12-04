@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jtk/vec.h>
+#include <stdint.h>
 #include <vector>
 
 struct fill_hole_minimal_surface_parameters
