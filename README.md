@@ -37,46 +37,10 @@ First of all, meshscript uses submodules, so don't forget to also call
 
      git submodule update --init
 
-Meshscript has two dependencies that are not delivered with this source code:
-  - [Intel's TBB library](https://software.intel.com/content/www/us/en/develop/tools/threading-building-blocks.html)
-  - [SDL2](https://www.libsdl.org/download-2.0.php)
-  
-While TBB is optional (see later), SDL2 is required.
+Next, run CMake to generate a solution file on Windows, a make file on Linux, or an XCode project on MacOs.
+You can build meshscript without building other external projects (as all necessary dependencies are delivered with the code). 
 
-##### SDL2
-To install SDL2 on Windows, download its sources from its website, and build with CMake. Next install SDL2 to folder C:\Program Files\SDL2. Another folder is fine, but then you'll need to adapt this source codes CMakeLists.txt file as it assumes the location C:\Program Files\SDL2 for SDL2. 
-
-On Ubuntu run
-
-    sudo apt-get install libsdl2-dev
-
-to install SDL2.
-
-On MacOS download the SDL2 framework from the [SDL2](https://www.libsdl.org/) website and install in /Library/Frameworks/
-
-##### TBB
-
-TBB is only needed when the CMake variable JTK_THREADING is set to tbb. If you don't want to use tbb, you can set JTK_THREADING to std or ppl (ppl will not work on Ubuntu or MacOS).
-However, if you want to use TBB, you'll need to install it first.
-
-On Windows you can download TBB's binaries from its website, and install them, preferably, in 
-folder C:\Program Files\TBB. Another folder is also possible, but then you'll need to
-adapt the CMakeLists.txt file and make it point to the correct location.
-
-On Ubuntu you can simply run 
-
-    sudo apt install libtbb-dev 
-
-to install TBB.
-
-On MacOS you can run
-
-    brew install tbb
-    
-If this gives an error in the sense of `Cannot write to /usr/local/Cellar` then you can solve this probably by updating your write privileges in this folder with the command `sudo chmod a+w /usr/local/Cellar`, and then try `brew` again.
-
-##### Meshscript
-Use CMake to create a Visual Studio solution file on Windows, makefile on Ubuntu, or XCode project on MacOS.
+There is however the option to use multithreading via [Intel's TBB library](https://software.intel.com/content/www/us/en/develop/tools/threading-building-blocks.html). This is an option in CMake: set the `JTK_THREADING` variable to `tbb`. You will have to make sure that you have the correct dll files and lib files to link with TBB. You can set the necessary variables `TBB_INCLUDE_DIR` and `TBB_LIBRARIES` via CMake.
 
 Basics
 ------
