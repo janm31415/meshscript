@@ -132,7 +132,7 @@ target_include_directories(meshscript
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/
     ${CMAKE_CURRENT_SOURCE_DIR}/../ply/
     ${CMAKE_CURRENT_BINARY_DIR}/../hdf5
-    ${CMAKE_CURRENT_BINARY_DIR}/../sdl2
+    ${CMAKE_CURRENT_BINARY_DIR}/../sdl2/include
     )	
 	
 target_link_libraries(meshscript
