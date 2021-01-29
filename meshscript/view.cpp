@@ -295,7 +295,7 @@ void view::butterfly(uint32_t id)
   std::vector<jtk::vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
   if (p_vertices && p_triangles)
     {
-    ::butterfly(*p_vertices, *p_triangles);
+    jtk::butterfly(*p_vertices, *p_triangles);
     remove_object(id, _scene);
     if (is_visible(_db, id))
       add_object(id, _scene, _db);
