@@ -287,6 +287,21 @@ int64_t view::revolve(const std::vector<jtk::vec2<float>>& vertices, uint32_t n,
   _refresh = true;
   return id;
   }
+  
+void view::butterfly(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  std::vector<jtk::vec3<float>>* p_vertices = get_vertices(_db, id);
+  std::vector<jtk::vec3<uint32_t>>* p_triangles = get_triangles(_db, id);
+  if (p_vertices && p_triangles)
+    {
+    ::butterfly(*p_vertices, *p_triangles);
+    remove_object(id, _scene);
+    if (is_visible(_db, id))
+      add_object(id, _scene, _db);
+    _refresh = true;
+    }
+  }
 
 void view::subdivide(uint32_t id, uint32_t nr)
   {

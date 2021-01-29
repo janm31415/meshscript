@@ -650,6 +650,18 @@ int64_t scm_subdivide_persistent(int64_t id, int64_t nr)
   scm_subdivide(new_id, nr);
   return new_id;
   }
+  
+void scm_butterfly(int64_t id)
+  {
+  g_view->butterfly((uint32_t)id);
+  }
+
+int64_t scm_butterfly_persistent(int64_t id)
+  {
+  int64_t new_id = scm_duplicate(id);
+  scm_butterfly(new_id);
+  return new_id;
+  }
 
 void scm_smooth(int64_t id, int64_t iterations, uint64_t lambda64, uint64_t mu64)
   {
@@ -1851,6 +1863,10 @@ void scm_plot(uint64_t data64)
 void* register_functions(void*)
   {
   using namespace skiwi;
+  
+  register_external_primitive("butterfly", (void*)&scm_butterfly_persistent, skiwi_int64, skiwi_int64,  "(butterfly id) applies the butterfly subdivision scheme to the mesh with tag `id`. The resulting mesh's id is returned. The butterfly method will only change the position of the vertices. It does not apply the actual subdivision. Therefore the input mesh is assumed to have been subdivided at least once with the subdivide or subdivide! method.");
+  register_external_primitive("butterfly!", (void*)&scm_butterfly, skiwi_void, skiwi_int64, "(butterfly! id) applies the butterfly subdivision scheme to the mesh with tag `id`. The butterfly method will only change the position of the vertices. It does not apply the actual subdivision. Therefore the input mesh is assumed to have been subdivided at least once with the subdivide or subdivide! method.");
+  
   register_external_primitive("cs", (void*)&scm_get_coordinate_system, skiwi_scm, skiwi_int64, "(cs id) returns the coordinate system for the object with tag `id`.");
   register_external_primitive("cs-apply!", (void*)&scm_cs_apply, skiwi_void, skiwi_int64, "(cs-apply! id) transforms the vertices of object with tag `id` by its coordinate system, and sets its coordinate system to the world.");
   register_external_primitive("cs-read", (void*)&scm_cs_read, skiwi_scm, skiwi_char_pointer, "(cs-read \"filename.txt\") reads the coordinate system from file and returns it.");

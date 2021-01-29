@@ -52,6 +52,8 @@ class view
 
     void scale(uint32_t id, float sx, float sy, float sz);
 
+    void butterfly(uint32_t id);
+
     void subdivide(uint32_t id, uint32_t nr);
 
     void smooth(uint32_t id, uint32_t iterations, float lambda, float mu);

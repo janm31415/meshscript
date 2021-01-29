@@ -19,6 +19,7 @@ extern "C"
 #include <stb_image.h>
 
 #include <iostream>
+#include <list>
 
 using namespace jtk;
 
@@ -519,3 +520,279 @@ void extrude_points(mesh& m, const std::vector<jtk::vec2<float>>& pts, float h)
   m.visible = true;
   }
 
+inline std::vector<std::vector<uint32_t>> ordered_one_ring_vertices_from_vertex(uint32_t vertex_index, const adjacency_list& adj_list, const vec3<uint32_t>* triangles, bool oriented = true)
+    {
+    auto it = adj_list.begin(vertex_index);
+    const auto it_end = adj_list.end(vertex_index);
+    if (it == it_end)
+      return std::vector<std::vector<uint32_t>>();
+      
+    std::list<uint32_t> trias;
+    for (auto it2 = it; it2 != it_end; ++it2)
+      {
+      trias.push_back(*it2);
+      }
+    
+    std::vector<std::vector<uint32_t>> batches;
+    
+    while (!trias.empty())
+      {
+      std::vector<uint32_t> current_loop;
+      const auto tria = triangles[trias.front()];
+      trias.pop_front();
+      uint32_t v = 0;
+      if (tria[v] != vertex_index)
+        {
+        ++v;
+        if (tria[v] != vertex_index)
+          ++v;
+        }
+      current_loop.push_back(tria[(v + 1) % 3]);
+      current_loop.push_back(tria[(v + 2) % 3]);
+      bool done = false;
+      while (!done)
+        {
+        done = true;
+        for (auto it3 = trias.begin(); it3 != trias.end(); ++it3)
+          {
+          const auto local_tria = triangles[*it3];
+          v = 0;
+          if (local_tria[v] != vertex_index)
+            {
+            ++v;
+            if (local_tria[v] != vertex_index)
+              ++v;
+            }
+          if (local_tria[(v + 1) % 3] == current_loop.back())
+            {
+            done = false;
+            current_loop.push_back(local_tria[(v + 2) % 3]);
+            trias.erase(it3);
+            break;
+            }
+          else if (local_tria[(v + 2) % 3] == current_loop.front())
+            {
+            done = false;
+            current_loop.insert(current_loop.begin(), local_tria[(v + 1) % 3]);
+            trias.erase(it3);
+            break;
+            }
+          else if (!oriented && (local_tria[(v + 2) % 3] == current_loop.back()))
+            {
+            done = false;
+            current_loop.push_back(local_tria[(v + 1) % 3]);
+            trias.erase(it3);
+            break;
+            }
+          else if (!oriented && (local_tria[(v + 1) % 3] == current_loop.front()))
+            {
+            done = false;
+            current_loop.insert(current_loop.begin(), local_tria[(v + 2) % 3]);
+            trias.erase(it3);
+            break;
+            }
+            
+          }
+        }
+      if (current_loop.back() == current_loop.front())
+        current_loop.pop_back();
+      batches.push_back(current_loop);
+      }
+    return batches;
+    }
+    
+void butterfly(std::vector<jtk::vec3<float>>& vertices, std::vector<jtk::vec3<uint32_t>>& triangles)
+  {
+  using namespace jtk;
+  
+  const uint32_t nr_of_vertices = vertices.size();
+  const uint32_t nr_of_triangles = triangles.size();
+
+  assert(nr_of_triangles % 4 == 0);
+
+  uint32_t original_nr_of_vertices = triangles.front()[0];
+  const uint32_t original_nr_of_triangles = nr_of_triangles / 4;
+  for (uint32_t t = 0; t < original_nr_of_triangles; ++t)
+    {
+    original_nr_of_vertices = std::min<uint32_t>(original_nr_of_vertices, triangles[t][0]);
+    original_nr_of_vertices = std::min<uint32_t>(original_nr_of_vertices, triangles[t][1]);
+    original_nr_of_vertices = std::min<uint32_t>(original_nr_of_vertices, triangles[t][2]);
+    }
+    
+  std::vector<jtk::vec3<uint32_t>> old_triangles;
+  old_triangles.reserve(original_nr_of_triangles);
+  for (uint32_t t = 0; t < original_nr_of_triangles; ++t)
+    {
+    const uint32_t t0 = original_nr_of_triangles + t * 3;
+    const uint32_t t1 = original_nr_of_triangles + t * 3 + 1;
+    const uint32_t t2 = original_nr_of_triangles + t * 3 + 2;
+    old_triangles.emplace_back(triangles[t0][0], triangles[t1][1], triangles[t2][2]);
+    }
+    
+  adjacency_list new_adj_list(nr_of_vertices, triangles.data(), nr_of_triangles);
+  adjacency_list old_adj_list(original_nr_of_vertices, old_triangles.data(), original_nr_of_triangles);
+  for (uint32_t v = original_nr_of_vertices; v < (uint32_t)vertices.size(); ++v)
+    {
+    auto neighbours = one_ring_vertices_from_vertex(v, new_adj_list, triangles.data());
+    uint32_t e[2];
+    int e_index = 0;
+    for (const auto& n : neighbours)
+      {
+      if (n < original_nr_of_vertices)
+        e[e_index++] = n;
+      }
+      
+    if (is_boundary_edge(e[0], e[1], old_adj_list))
+      {
+      uint32_t e2[2];
+      for (int k = 0; k < 2; ++k)
+        {
+        auto neighbours2 = one_ring_vertices_from_vertex(e[k], old_adj_list, old_triangles.data());
+        for (const auto& n : neighbours2)
+          {
+          if (n != e[(k+1)%2] && is_boundary_edge(e[k], n, old_adj_list))
+            {
+            e2[k] = n;
+            break;
+            }
+          }
+        }
+      auto new_vertex_position = (vertices[e2[0]] + vertices[e2[1]])/-16.f + 9.f*(vertices[e[0]] + vertices[e[1]])/16.f;
+      vertices[v] = new_vertex_position;
+      }
+    else
+      {
+      //auto valence0 = one_ring_vertices_from_vertex(e[0], old_adj_list, old_triangles.data()).size();
+      //auto valence1 = one_ring_vertices_from_vertex(e[1], old_adj_list, old_triangles.data()).size();
+      auto n0 = ordered_one_ring_vertices_from_vertex(e[0], old_adj_list, old_triangles.data()).front();
+      auto n1 = ordered_one_ring_vertices_from_vertex(e[1], old_adj_list, old_triangles.data()).front();
+      
+      size_t e1_position = std::distance(n0.begin(), std::find(n0.begin(), n0.end(), e[1]));
+      size_t e0_position = std::distance(n1.begin(), std::find(n1.begin(), n1.end(), e[0]));
+      
+      assert(e1_position < n0.size());
+      assert(e0_position < n1.size());
+      
+      if (n0.size() == 6 && n1.size() == 6) // regular butterfly
+        {
+        uint32_t b0_up = n0[(e1_position+1)%n0.size()];
+        uint32_t b0_down = n0[(e1_position+n0.size()-1)%n0.size()];
+        uint32_t c0_up = n0[(e1_position+2)%n0.size()];
+        uint32_t c0_down = n0[(e1_position+n0.size()-2)%n0.size()];
+        
+        uint32_t b1_down = n1[(e0_position+1)%n1.size()];
+        uint32_t b1_up = n1[(e0_position+n1.size()-1)%n1.size()];
+        uint32_t c1_down = n1[(e0_position+2)%n1.size()];
+        uint32_t c1_up = n1[(e0_position+n0.size()-2)%n1.size()];
+        
+        assert(b0_up == b1_up);
+        assert(b0_down == b1_down);
+        
+        auto new_vertex_position = (vertices[e[0]] + vertices[e[1]])*0.5f + (vertices[b0_up] + vertices[b0_down])/8.f - (vertices[c0_up] + vertices[c0_down] + vertices[c1_up] + vertices[c1_down])/16.f;
+        vertices[v] = new_vertex_position;
+        }
+      else if (n0.size() == 6 || n1.size() == 6)
+        {
+        if (n0.size() == 6)
+          {
+          std::swap(n0, n1);
+          std::swap(e0_position, e1_position);
+          }
+        std::vector<float> weights;
+        weights.reserve(n0.size());
+        if (n0.size() == 3)
+          {
+          weights.push_back(5.f/12.f);
+          weights.push_back(-1.f/12.f);
+          weights.push_back(-1.f/12.f);
+          }
+        else if (n0.size() == 4)
+          {
+          weights.push_back(3.f/8.f);
+          weights.push_back(0.f);
+          weights.push_back(-1.f/8.f);
+          weights.push_back(0.f);
+          }
+        else
+          {
+          for (int j = 0; j < (int)n0.size(); ++j)
+            {
+            weights.push_back((0.25+std::cos(6.28318530718f*(float)j/(float)n0.size()) + 0.5*std::cos(12.5663706144f*(float)j/(float)n0.size()) )/(float)n0.size());
+            }
+          }
+          
+        float q = 1.f - std::accumulate(weights.begin(), weights.end(), 0.f);
+        jtk::vec3<float> new_vertex_position = q*vertices[n1[e0_position]];
+        for (int j = 0; j < (int)n0.size(); ++j)
+          {
+          new_vertex_position = new_vertex_position + vertices[n0[(j+e1_position)%n0.size()]]*weights[j];
+          }
+        vertices[v] = new_vertex_position;
+        }
+      else
+        {
+        std::vector<float> weights0;
+        weights0.reserve(n0.size());
+        if (n0.size() == 3)
+          {
+          weights0.push_back(5.f/12.f);
+          weights0.push_back(-1.f/12.f);
+          weights0.push_back(-1.f/12.f);
+          }
+        else if (n0.size() == 4)
+          {
+          weights0.push_back(3.f/8.f);
+          weights0.push_back(0.f);
+          weights0.push_back(-1.f/8.f);
+          weights0.push_back(0.f);
+          }
+        else
+          {
+          for (int j = 0; j < (int)n0.size(); ++j)
+            {
+            weights0.push_back((0.25+std::cos(6.28318530718f*(float)j/(float)n0.size()) + 0.5*std::cos(12.5663706144f*(float)j/(float)n0.size()) )/(float)n0.size());
+            }
+          }
+          
+        float q0 = 1.f - std::accumulate(weights0.begin(), weights0.end(), 0.f);
+        jtk::vec3<float> new_vertex_position_0 = q0*vertices[n1[e0_position]];
+        for (int j = 0; j < (int)n0.size(); ++j)
+          {
+          new_vertex_position_0 = new_vertex_position_0 + vertices[n0[(j+e1_position)%n0.size()]]*weights0[j];
+          }
+          
+        std::vector<float> weights1;
+        weights1.reserve(n1.size());
+        if (n1.size() == 3)
+          {
+          weights1.push_back(5.f/12.f);
+          weights1.push_back(-1.f/12.f);
+          weights1.push_back(-1.f/12.f);
+          }
+        else if (n1.size() == 4)
+          {
+          weights1.push_back(3.f/8.f);
+          weights1.push_back(0.f);
+          weights1.push_back(-1.f/8.f);
+          weights1.push_back(0.f);
+          }
+        else
+          {
+          for (int j = 0; j < (int)n1.size(); ++j)
+            {
+            weights1.push_back((0.25+std::cos(6.28318530718f*(float)j/(float)n1.size()) + 0.5*std::cos(12.5663706144f*(float)j/(float)n1.size()) )/(float)n1.size());
+            }
+          }
+          
+        float q1 = 1.f - std::accumulate(weights1.begin(), weights1.end(), 0.f);
+        jtk::vec3<float> new_vertex_position_1 = q1*vertices[n0[e1_position]];
+        for (int j = 0; j < (int)n1.size(); ++j)
+          {
+          new_vertex_position_1 = new_vertex_position_1 + vertices[n1[(j+e0_position)%n1.size()]]*weights1[j];
+          }
+          
+        vertices[v] = (new_vertex_position_0 + new_vertex_position_1)*0.5f;
+        }
+      }
+    }
+  }
