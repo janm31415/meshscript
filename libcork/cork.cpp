@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 
+#include <array>
 #include <atomic>
 #include <algorithm>
 #include <mutex>

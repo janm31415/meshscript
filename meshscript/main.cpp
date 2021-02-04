@@ -23,6 +23,7 @@
 
 #include <jtk/concurrency.h>
 #include <jtk/fitting.h>
+#define JTK_GEOMETRY_IMPLEMENTATION
 #include <jtk/geometry.h>
 #include <jtk/window.h>
 
