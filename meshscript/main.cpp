@@ -40,6 +40,9 @@
 #define JTK_QBVH_IMPLEMENTATION
 #include "jtk/qbvh.h"
 
+#define JTK_IMAGE_IMPLEMENTATION
+#include "jtk/image.h"
+
 using namespace jtk;
 
 constexpr double pi = 3.141592653589793238462643383279;
