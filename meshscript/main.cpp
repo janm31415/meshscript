@@ -27,8 +27,11 @@
 #include "jtk/file_utils.h"
 
 #include "jtk/fitting.h"
+
 #define JTK_GEOMETRY_IMPLEMENTATION
 #include "jtk/geometry.h"
+
+#define JTK_WINDOW_IMPLEMENTATION
 #include "jtk/window.h"
 
 #define STB_IMAGE_IMPLEMENTATION
