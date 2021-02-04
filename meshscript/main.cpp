@@ -21,17 +21,24 @@
 #include <sstream>
 #include <iostream>
 
-#include <jtk/concurrency.h>
-#include <jtk/fitting.h>
+#include "jtk/concurrency.h"
+
+#define JTK_FILE_UTILS_IMPLEMENTATION
+#include "jtk/file_utils.h"
+
+#include "jtk/fitting.h"
 #define JTK_GEOMETRY_IMPLEMENTATION
-#include <jtk/geometry.h>
-#include <jtk/window.h>
+#include "jtk/geometry.h"
+#include "jtk/window.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include "stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
+#include "stb_image_write.h"
+
+#define JTK_QBVH_IMPLEMENTATION
+#include "jtk/qbvh.h"
 
 using namespace jtk;
 
