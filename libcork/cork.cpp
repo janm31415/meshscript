@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <jtk/concurrency.h>
+#define JTK_GEOMETRY_IMPLEMENTATION
 #include <jtk/geometry.h>
 #include <jtk/timer.h>
 
