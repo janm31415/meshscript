@@ -52,6 +52,7 @@ set_target_properties (dlib PROPERTIES FOLDER dlib)
 
 set_target_properties (jtk PROPERTIES FOLDER jtk)
 set_target_properties (jtk.tests PROPERTIES FOLDER jtk)
+set_target_properties (jtk.static.tests PROPERTIES FOLDER jtk)
 
 set_target_properties (trico PROPERTIES FOLDER trico)
 set_target_properties (lz4 PROPERTIES FOLDER trico)
