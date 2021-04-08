@@ -309,7 +309,7 @@ void poisson_reconstruction_screened(std::vector<jtk::vec3<float>>& vertices, st
 
   typedef PlyVertex< float > Vertex;
 
-  CoredFileMeshData< Vertex > mesh;
+  CoredVectorMeshData< Vertex > mesh;
 
   {
   //profiler.start();
@@ -555,7 +555,7 @@ void poisson_reconstruction_screened(std::vector<jtk::vec3<float>>& vertices, st
 
   typedef PlyColorVertex< float > Vertex;
 
-  CoredFileMeshData< Vertex > mesh;
+  CoredVectorMeshData< Vertex > mesh;
 
   {
   //profiler.start();
