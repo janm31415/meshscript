@@ -2088,7 +2088,6 @@ void create_scheme_with_loop(scheme_loop_data* sld, int argc, char** argv)
 
   skiwi::skiwi_parameters pars;
   pars.heap_size = 64 * 1024 * 1024;
-  pars.local_stack = pars.heap_size/2;
   skiwi::set_prompt("ms> ");
   skiwi::set_welcome_message("\nWelcome to meshscript\nType ,? for help.\n");
   skiwi::set_help_text(get_help_text());
