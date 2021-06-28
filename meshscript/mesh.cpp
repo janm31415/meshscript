@@ -72,7 +72,10 @@ bool read_from_file(mesh& m, const std::string& filename)
   if (ext == "stl")
     {
     if (!read_stl(m.vertices, m.triangles, filename.c_str()))
-      return false;
+      {
+      if (!read_stl_ascii(m.vertices, m.triangles, filename.c_str()))
+        return false;
+      }
     }
   else if (ext == "ply")
     {
