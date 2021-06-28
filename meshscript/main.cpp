@@ -31,6 +31,9 @@
 #define JTK_GEOMETRY_IMPLEMENTATION
 #include "jtk/geometry.h"
 
+#define JTK_PLY_IMPLEMENTATION
+#include "jtk/ply.h"
+
 #define JTK_WINDOW_IMPLEMENTATION
 #include "jtk/window.h"
 

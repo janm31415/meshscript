@@ -21,14 +21,6 @@ set(STB
 ../stb/stb_image_write.h
 )
 
-set(PLY
-#../ply/ply.h
-#../ply/plyfile.c
-../ply/rply.c
-../ply/rply.h
-../ply/rplyfile.h
-)
-
 set(ICP
 ../icp/icp.h
 ../icp/icp.cpp
@@ -115,12 +107,11 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 include ("../jtk/jtk/jtk.cmake")
 
-add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB} ${PLY} ${ICP})
+add_executable(meshscript ${HDRS} ${SRCS} ${RESOURCES} ${STB} ${ICP})
 
 source_group("Header Files" FILES ${HDRS})
 source_group("Source Files" FILES ${SRCS})
 source_group("stb" FILES ${STB})
-source_group("ply" FILES ${PLY})
 source_group("icp" FILES ${ICP})
 
 target_include_directories(meshscript
@@ -130,7 +121,6 @@ target_include_directories(meshscript
     ${CMAKE_CURRENT_SOURCE_DIR}/../jtk/
     ${CMAKE_CURRENT_SOURCE_DIR}/../skiwi/
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/
-    ${CMAKE_CURRENT_SOURCE_DIR}/../ply/
     ${CMAKE_CURRENT_BINARY_DIR}/../hdf5
     ${CMAKE_CURRENT_BINARY_DIR}/../sdl2/include
     )	
