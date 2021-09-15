@@ -42,6 +42,8 @@ You can build meshscript without building other external projects (as all necess
 
 The default multithreading approach uses `std::thread`. There is however the option to use multithreading via [Intel's TBB library](https://software.intel.com/content/www/us/en/develop/tools/threading-building-blocks.html). This is an option in CMake: set the `JTK_THREADING` variable to `tbb`. You will have to make sure that you have the correct dll files and lib files to link with TBB. You can set the necessary variables `TBB_INCLUDE_DIR` and `TBB_LIBRARIES` via CMake.
 
+If you build for a Mac M1 with ARM processor, then set the CMake variables JTK_TARGET and SKIWI_TARGET to arm. Furthermore if you get an error related to XCode's "new build system", then follow the solution on [StackOverflow](https://stackoverflow.com/questions/65473503/when-trying-to-generate-an-xcode-project-from-a-cmake-folder-i-get-an-error-rel).
+
 Basics
 ------
 
