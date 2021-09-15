@@ -22,6 +22,7 @@ add_definitions(-D_UNICODE)
 add_definitions(-DUNICODE)
 add_definitions(-D_SCL_SECURE_NO_WARNINGS)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+include ("../jtk/jtk/jtk.cmake")
 
 add_library(libcork SHARED ${HDRS} ${SRCS})
 
