@@ -28,6 +28,9 @@
 
 #include "jtk/fitting.h"
 
+#define JTK_DEFORMATION_IMPLEMENTATION
+#include "jtk/deformation.h"
+
 #define JTK_GEOMETRY_IMPLEMENTATION
 #include "jtk/geometry.h"
 
@@ -770,6 +773,75 @@ int64_t make_minimal(uint64_t scm_vertices_64, int64_t number_of_rings, int64_t 
       }
     return g_view->make_minimal(vertices, (uint32_t)number_of_rings, (uint32_t)number_of_iterations);
     }
+    }
+  catch (std::runtime_error e)
+    {
+    std::cout << e.what() << "\n";
+    }
+  return -1;
+  }
+
+int64_t make_deform_tool(uint64_t scm_vertices_64, uint64_t scm_triangles_64)
+  {
+  skiwi::scm_type scm_vertices(scm_vertices_64);
+  skiwi::scm_type scm_triangles(scm_triangles_64);
+
+  try
+    {
+    std::vector<vec3<float>> vertices;
+
+    if (scm_vertices.is_vector())
+      {
+      auto vert = scm_vertices.get_vector();
+      vertices.reserve(vert.size());
+      for (auto& v : vert)
+        {
+        auto vertex = v.get_list();
+        if (vertex.size() != 3)
+          throw std::runtime_error("error: make-deform-tool: invalid vertex size (should have 3 float values)");
+        vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number(), (float)vertex[2].get_number());
+        }
+      }
+    else
+      {
+      auto vert = scm_vertices.get_list();
+      vertices.reserve(vert.size());
+      for (auto& v : vert)
+        {
+        auto vertex = v.get_list();
+        if (vertex.size() != 3)
+          throw std::runtime_error("error: make-deform-tool: invalid vertex size (should have 3 float values)");
+        vertices.emplace_back((float)vertex[0].get_number(), (float)vertex[1].get_number(), (float)vertex[2].get_number());
+        }
+      }
+
+    std::vector<vec3<uint32_t>> triangles;
+    if (scm_triangles.is_vector())
+      {
+      auto tria = scm_triangles.get_vector();
+      triangles.reserve(tria.size());
+      for (auto& t : tria)
+        {
+        auto triangle = t.get_list();
+        if (triangle.size() != 3)
+          throw std::runtime_error("error: make-deform-tool: invalid triangle size (should have 3 int values)");
+        triangles.emplace_back((uint32_t)triangle[0].get_fixnum(), (uint32_t)triangle[1].get_fixnum(), (uint32_t)triangle[2].get_fixnum());
+        }
+      }
+    else
+      {
+      auto tria = scm_triangles.get_list();
+      triangles.reserve(tria.size());
+      for (auto& t : tria)
+        {
+        auto triangle = t.get_list();
+        if (triangle.size() != 3)
+          throw std::runtime_error("error: make-deform-tool: invalid triangle size (should have 3 int values)");
+        triangles.emplace_back((uint32_t)triangle[0].get_fixnum(), (uint32_t)triangle[1].get_fixnum(), (uint32_t)triangle[2].get_fixnum());
+        }
+      }
+    int64_t id = g_view->load_deform_tool(vertices, triangles);
+    return id;
     }
   catch (std::runtime_error e)
     {
@@ -1877,6 +1949,61 @@ void scm_plot(uint64_t data64)
     }
   }
 
+void scm_deform_tool_decay_set(int64_t id, uint64_t decay_factor)
+  {
+  skiwi::scm_type df(decay_factor);
+  double decay = df.get_number();
+  g_view->deform_tool_decay_set((uint32_t)id, decay);
+  }
+
+void scm_deform_tool_discretization_set(int64_t id, int64_t discr)
+  {
+  g_view->deform_tool_discretization_set((uint32_t)id, (uint32_t)discr);
+  }
+
+void scm_deform_tool_signed_set(int64_t id, bool s)
+  {  
+  g_view->deform_tool_signed_set((uint32_t)id, s);
+  }
+
+void scm_deform_tool_build_pushpull(int64_t id)
+  {
+  g_view->deform_tool_build_pushpull((uint32_t)id);
+  }
+
+void scm_deform_tool_pushpull_translation_set(int64_t id, uint64_t x, uint64_t y, uint64_t z)
+  {
+  skiwi::scm_type tx(x);
+  skiwi::scm_type ty(y);
+  skiwi::scm_type tz(z);
+  double tr_x = tx.get_number();
+  double tr_y = ty.get_number();
+  double tr_z = tz.get_number();
+  g_view->deform_tool_pushpull_translation_set((uint32_t)id, tr_x, tr_y, tr_z);
+  }
+
+
+void scm_deform_tool_build_warper(int64_t id)
+  {
+  g_view->deform_tool_build_warper((uint32_t)id);
+  }
+
+void scm_deform_tool_warper_translation_set(int64_t id, uint64_t x, uint64_t y, uint64_t z)
+  {
+  skiwi::scm_type tx(x);
+  skiwi::scm_type ty(y);
+  skiwi::scm_type tz(z);
+  double tr_x = tx.get_number();
+  double tr_y = ty.get_number();
+  double tr_z = tz.get_number();
+  g_view->deform_tool_warper_translation_set((uint32_t)id, tr_x, tr_y, tr_z);
+  }
+
+void scm_deform(int64_t id, int64_t tool_id)
+  {
+  g_view->deform((uint32_t)id, (uint32_t)tool_id);
+  }
+
 void* register_functions(void*)
   {
   using namespace skiwi;
@@ -1895,6 +2022,15 @@ void* register_functions(void*)
 
   register_external_primitive("cube", (void*)&scm_cube, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(cube w h d) makes a cube with dimensions `w` x `h` x `d`.");
   register_external_primitive("cylinder", (void*)&scm_cylinder, skiwi_int64, skiwi_scm, skiwi_scm, "(cylinder r h n) makes a cylinder with radius `r` and height `h`. The cylinder's side is discretized by 'n' ribs.");
+
+  register_external_primitive("deform-tool-decay-set!", (void*)&scm_deform_tool_decay_set, skiwi_void, skiwi_int64, skiwi_scm, "(deform-tool-decay-set! id decay-factor)");
+  register_external_primitive("deform-tool-discretization-set!", (void*)&scm_deform_tool_discretization_set, skiwi_void, skiwi_int64, skiwi_int64, "(deform-tool-discretization-set! id discretization)");
+  register_external_primitive("deform-tool-signed-set!", (void*)&scm_deform_tool_signed_set, skiwi_void, skiwi_int64, skiwi_bool, "(deform-tool-signed-set! id #t/#f)");
+  register_external_primitive("deform-tool-build-pushpull!", (void*)&scm_deform_tool_build_pushpull, skiwi_void, skiwi_int64, "(deform-tool-build-pushpull! id)");
+  register_external_primitive("deform-tool-build-warper!", (void*)&scm_deform_tool_build_warper, skiwi_void, skiwi_int64, "(deform-tool-build-warper! id)");
+  register_external_primitive("deform-tool-pushpull-translation-set!", (void*)&scm_deform_tool_pushpull_translation_set, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(deform-tool-pushpull-translation-set! id x y z)");
+  register_external_primitive("deform-tool-warper-translation-set!", (void*)&scm_deform_tool_warper_translation_set, skiwi_void, skiwi_int64, skiwi_scm, skiwi_scm, skiwi_scm, "(deform-tool-warper-translation-set! id x y z)");
+  register_external_primitive("deform!", (void*)&scm_deform, skiwi_void, skiwi_int64, skiwi_int64, "(deform! id tool-id)");
 
   register_external_primitive("diagnose", (void*)&scm_diagnose, skiwi_void, skiwi_int64, "(diagnose id) diagnoses the self intersections of the mesh with tag `id`.");
 
@@ -1944,6 +2080,7 @@ void* register_functions(void*)
   register_external_primitive("load-shape-predictor", (void*)&scm_load_shape_predictor, skiwi_int64, skiwi_char_pointer, "(load-shape-predictor \"filename\") initializes the shape predictor with the data given by \"filename\" and returns the id. This is the dlib shape predictor (http://dlib.net). The 68 points facial landmarks predictor data can be downloaded from https://github.com/davisking/dlib-models");
   register_external_primitive("load-image", (void*)&load_image, skiwi_int64, skiwi_char_pointer, "(load-image \"image.png\") loads the PNG file as image and returns an id. Other well known image formats can also be loaded.");
 
+  register_external_primitive("make-deform-tool", (void*)&make_deform_tool, skiwi_int64, skiwi_scm, skiwi_scm, "(make-deform-tool vertices triangles) creates the deformation tool with given `vertices` and `triangles`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and `triangles` should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
   register_external_primitive("make-mesh", (void*)&make_mesh, skiwi_int64, skiwi_scm, skiwi_scm, "(make-mesh vertices triangles) creates the mesh with given `vertices` and `triangles`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values, and `triangles` should be a list of lists of the form ((a b c) (d e f) ...) with a,b... fixnums referring to the vertex indices.");
   register_external_primitive("make-minimal", (void*)&make_minimal, skiwi_int64, skiwi_scm, skiwi_int64, skiwi_int64, "(make-minimal vertices rings iterations) creates a mesh with minimual surface area surrounded by the given `vertices`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values. . The algorithm will initially create `rings` number of rings of triangles and this mesh is faired `iterations` times.");
   register_external_primitive("make-pointcloud", (void*)&make_pointcloud, skiwi_int64, skiwi_scm, "(make-pointcloud vertices) creates the pointcloud with given `vertices`, and returns the id of the created object. `vertices` should be a list of lists of the form ((x y z) (x y z) ...) with x,y,z floating point values.");

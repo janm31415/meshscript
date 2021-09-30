@@ -36,6 +36,8 @@ class view
 
     int64_t load_mesh(const std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles);
 
+    int64_t load_deform_tool(const std::vector<jtk::vec3<float>>& vertices, const std::vector<jtk::vec3<uint32_t>>& triangles);
+
     int64_t load_pointcloud(const std::vector<jtk::vec3<float>>& vertices);
 
     int64_t mesh_to_pointcloud(uint32_t id);
@@ -211,6 +213,22 @@ class view
     void info(uint32_t id);
 
     void cs_apply(uint32_t id);
+
+    void deform_tool_decay_set(uint32_t id, double decay);
+
+    void deform_tool_discretization_set(uint32_t id, uint32_t discr);
+
+    void deform_tool_signed_set(uint32_t id, bool s);
+
+    void deform_tool_build_pushpull(uint32_t id);
+
+    void deform_tool_build_warper(uint32_t id);
+
+    void deform(uint32_t id, uint32_t tool_id);
+
+    void deform_tool_pushpull_translation_set(uint32_t id, double x, double y, double z);
+
+    void deform_tool_warper_translation_set(uint32_t id, double x, double y, double z);
     
     void force_redraw();
 

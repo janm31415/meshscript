@@ -34,6 +34,7 @@ set(HDRS
 camera.h
 canvas.h
 db.h
+deform_tool.h
 distance_map.h
 ear_detector.h
 face_detector.h
@@ -64,6 +65,7 @@ meshscript.rc
 camera.cpp
 canvas.cpp
 db.cpp
+deform_tool.cpp
 distance_map.cpp
 ear_detector.cpp
 face_detector.cpp

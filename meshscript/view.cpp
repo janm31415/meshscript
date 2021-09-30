@@ -4,6 +4,7 @@
 #include "pc.h"
 #include "sp.h"
 #include "im.h"
+#include "deform_tool.h"
 #include "ear_detector.h"
 #include "face_detector.h"
 #include "fill_holes.h"
@@ -560,6 +561,121 @@ int64_t view::load_image_from_file(const char* filename)
   return (int64_t)id;
   }
 
+void view::deform_tool_decay_set(uint32_t id, double decay)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    dt->decay_factor = (float)decay;
+  }
+
+void view::deform_tool_discretization_set(uint32_t id, uint32_t discr)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    dt->discretization = discr;
+  }
+
+void view::deform_tool_signed_set(uint32_t id, bool s)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    dt->signed_distance = s;
+  }
+
+void view::deform_tool_build_pushpull(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    {
+    dt->tool = std::unique_ptr<jtk::pushpull_tool>(new jtk::pushpull_tool(dt->vertices, dt->triangles, dt->decay_factor, dt->signed_distance));
+    }
+  }
+
+void view::deform_tool_build_warper(uint32_t id)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    {
+    dt->tool = std::unique_ptr<jtk::warping_tool>(new jtk::warping_tool(dt->vertices, dt->triangles, dt->discretization, dt->decay_factor, dt->signed_distance));
+    }
+  }
+
+void view::deform_tool_pushpull_translation_set(uint32_t id, double x, double y, double z)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    {
+    if (std::holds_alternative<std::unique_ptr<jtk::pushpull_tool>>(dt->tool))
+      {
+      std::get<std::unique_ptr<jtk::pushpull_tool>>(dt->tool)->set_translation(jtk::vec3<float>((float)x, (float)y, (float)z));
+      }
+    }
+  }
+
+void view::deform_tool_warper_translation_set(uint32_t id, double x, double y, double z)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    {
+    if (std::holds_alternative<std::unique_ptr<jtk::warping_tool>>(dt->tool))
+      {
+      std::get<std::unique_ptr<jtk::warping_tool>>(dt->tool)->set_translation(jtk::vec3<float>((float)x, (float)y, (float)z));
+      }
+    }
+  }
+
+void view::deform(uint32_t id, uint32_t tool_id)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* dt = _db.get_deform_tool(tool_id);
+  std::vector<vec3<float>>* v = get_vertices(_db, id);
+  jtk::float4x4* p_cs = get_cs(_db, id);
+  jtk::float4x4 cs = jtk::get_identity();
+  if (p_cs)
+    cs = *p_cs;
+  if (dt && v)
+    {
+    if (std::holds_alternative<std::unique_ptr<jtk::pushpull_tool>>(dt->tool))
+      {
+      std::get<std::unique_ptr<jtk::pushpull_tool>>(dt->tool)->set_coordinate_system(dt->cs);
+      jtk::deform(*v, cs, *std::get<std::unique_ptr<jtk::pushpull_tool>>(dt->tool));
+      }
+    else if (std::holds_alternative<std::unique_ptr<jtk::warping_tool>>(dt->tool))
+      {
+      std::get<std::unique_ptr<jtk::warping_tool>>(dt->tool)->set_coordinate_system(dt->cs);      
+      jtk::deform(*v, cs, *std::get<std::unique_ptr<jtk::warping_tool>>(dt->tool));
+      }
+    remove_object(id, _scene);
+    if (is_visible(_db, id))
+      add_object(id, _scene, _db);
+    }
+  }
+
+int64_t view::load_deform_tool(const std::vector<vec3<float>>& vertices, const std::vector<vec3<uint32_t>>& triangles)
+  {
+  std::scoped_lock lock(_mut);
+  deform_tool* db_dt;
+  uint32_t id;
+  _db.create_deform_tool(db_dt, id);
+  db_dt->vertices = vertices;
+  db_dt->triangles = triangles;
+  db_dt->cs = get_identity();
+  _matcap.map_db_id_to_matcap_id(id, _get_semirandom_matcap_id(id));
+  db_dt->visible = true;
+  add_object(id, _scene, _db);
+  prepare_scene(_scene);
+  ::unzoom(_scene);
+  _refresh = true;
+  return (int64_t)id;
+  }
+
 int64_t view::load_mesh(const std::vector<vec3<float>>& vertices, const std::vector<vec3<uint32_t>>& triangles)
   {
   std::scoped_lock lock(_mut);
@@ -621,7 +737,15 @@ void view::set_coordinate_system(uint32_t id, const float4x4& cs)
     if (mo->visible)
       add_object(id, _scene, _db);
     }
-  if (m || p || mo)
+  deform_tool* dt = _db.get_deform_tool((uint32_t)id);
+  if (dt)
+    {
+    dt->cs = cs;
+    remove_object(id, _scene);
+    if (dt->visible)
+      add_object(id, _scene, _db);
+    }
+  if (m || p || mo || dt)
     {
     prepare_scene(_scene);
     _refresh = true;
@@ -828,7 +952,15 @@ void view::premultiply_coordinate_system(uint32_t id, const jtk::float4x4& cs)
     if (mo->visible)
       add_object(id, _scene, _db);
     }
-  if (m || p || mo)
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    {
+    dt->cs = jtk::matrix_matrix_multiply(cs, dt->cs);
+    remove_object(id, _scene);
+    if (dt->visible)
+      add_object(id, _scene, _db);
+    }
+  if (m || p || mo || dt)
     {
     prepare_scene(_scene);
     _refresh = true;
@@ -927,12 +1059,15 @@ void view::hide(int64_t id)
   mesh* m = _db.get_mesh((uint32_t)id);
   pc* p = _db.get_pc((uint32_t)id);
   mm* mo = _db.get_mm((uint32_t)id);
+  deform_tool* dt = _db.get_deform_tool((uint32_t)id);
   if (m)
     m->visible = false;
   else if (p)
     p->visible = false;
   else if (mo)
     mo->visible = false;
+  else if (dt)
+    dt->visible = false;
   else
     return;
   remove_object((uint32_t)id, _scene);
@@ -975,15 +1110,18 @@ void view::show(int64_t id)
   mesh* m = _db.get_mesh((uint32_t)id);
   pc* p = _db.get_pc((uint32_t)id);
   mm* mo = _db.get_mm((uint32_t)id);
+  deform_tool* dt = _db.get_deform_tool((uint32_t)id);
   if (m)
     m->visible = true;
   else if (p)
     p->visible = true;
   else if (mo)
     mo->visible = true;
+  else if (dt)
+    dt->visible = true;
   else
     return;
-  if (m || p || mo)
+  if (m || p || mo || dt)
     {
     remove_object((uint32_t)id, _scene);
     add_object((uint32_t)id, _scene, _db);
@@ -2105,6 +2243,9 @@ void view::info(uint32_t id)
   im* image = _db.get_image(id);
   if (image)
     ::info(*image);
+  deform_tool* dt = _db.get_deform_tool(id);
+  if (dt)
+    ::info(*dt);
   }
 
 void view::cs_apply(uint32_t id)

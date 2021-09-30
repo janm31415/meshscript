@@ -5,6 +5,7 @@
 #include "sp.h"
 #include "shape_predictor.h"
 #include "im.h"
+#include "deform_tool.h"
 
 #include <cassert>
 
@@ -32,6 +33,8 @@ void db::swap(db& other)
   std::swap(sps_deleted, other.sps_deleted);
   std::swap(images, other.images);
   std::swap(images_deleted, other.images_deleted);
+  std::swap(deform_tools, other.deform_tools);
+  std::swap(deform_tools_deleted, other.deform_tools_deleted);
   }
 
 void db::create_mesh(mesh*& new_mesh, uint32_t& id)
@@ -166,6 +169,32 @@ bool db::is_image(uint32_t id) const
   return get_db_key(id) == IM_KEY;
   }
 
+void db::create_deform_tool(deform_tool*& new_dt, uint32_t& id)
+  {
+  deform_tool* m = new deform_tool();
+  id = make_db_id(DT_KEY, (uint32_t)deform_tools.size());
+  new_dt = m;
+  deform_tools.push_back(std::make_pair(id, m));
+  deform_tools_deleted.push_back(std::make_pair(id, nullptr));
+  }
+
+deform_tool* db::get_deform_tool(uint32_t id) const
+  {
+  auto key = get_db_key(id);
+  auto vector_index = get_db_vector_index(id);
+  if (key != DT_KEY)
+    return nullptr;
+  if (vector_index >= deform_tools.size())
+    return nullptr;
+  assert(deform_tools[vector_index].first == id);
+  return deform_tools[vector_index].second;
+  }
+
+bool db::is_deform_tool(uint32_t id) const
+  {
+  return get_db_key(id) == DT_KEY;
+  }
+
 void db::delete_object(uint32_t id)
   {
   auto key = get_db_key(id);
@@ -205,6 +234,13 @@ void db::delete_object(uint32_t id)
         {
         images_deleted[vector_index].second = images[vector_index].second;
         images[vector_index].second = nullptr;
+        }
+      break;
+    case DT_KEY:
+      if (deform_tools[vector_index].second)
+        {
+        deform_tools_deleted[vector_index].second = deform_tools[vector_index].second;
+        deform_tools[vector_index].second = nullptr;
         }
       break;
     }
@@ -251,6 +287,13 @@ void db::restore_object(uint32_t id)
         images_deleted[vector_index].second = nullptr;
         }
       break;
+    case DT_KEY:
+      if (!deform_tools[vector_index].second)
+        {
+        deform_tools[vector_index].second = deform_tools_deleted[vector_index].second;
+        deform_tools_deleted[vector_index].second = nullptr;
+        }
+      break;
     }
   }
 
@@ -280,6 +323,8 @@ void db::clear()
   delete_objects(sps_deleted);
   delete_objects(images);
   delete_objects(images_deleted);
+  delete_objects(deform_tools);
+  delete_objects(deform_tools_deleted);
   }
 
 std::vector<vec3<float>>* get_vertices(const db& _db, uint32_t id)
@@ -296,6 +341,9 @@ std::vector<vec3<float>>* get_vertices(const db& _db, uint32_t id)
     case MM_KEY:
       return &_db.get_mm(id)->vertices;
       break;
+    case DT_KEY:
+      return &_db.get_deform_tool(id)->vertices;
+      break;
     }
   return nullptr;
   }
@@ -310,6 +358,9 @@ std::vector<vec3<uint32_t>>* get_triangles(const db& _db, uint32_t id)
       break;
     case MM_KEY:
       return &_db.get_mm(id)->shape.triangles;
+      break;
+    case DT_KEY:
+      return &_db.get_deform_tool(id)->triangles;
       break;
     }
   return nullptr;
@@ -329,6 +380,9 @@ float4x4* get_cs(const db& _db, uint32_t id)
     case MM_KEY:
       return &_db.get_mm(id)->cs;
       break;
+    case DT_KEY:
+      return &_db.get_deform_tool(id)->cs;
+      break;
     }
   return nullptr;
   }
@@ -346,6 +400,9 @@ bool is_visible(const db& _db, uint32_t id)
       break;
     case MM_KEY:
       return _db.get_mm(id)->visible;
+      break;
+    case DT_KEY:
+      return _db.get_deform_tool(id)->visible;
       break;
     }
   return false;
