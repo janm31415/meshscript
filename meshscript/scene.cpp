@@ -85,13 +85,17 @@ void prepare_scene(scene& s)
   {
   if (!s.objects.empty())
     {
-    s.min_bb = transform(s.objects.front().cs, s.objects.front().min_bb);
-    s.max_bb = transform(s.objects.front().cs, s.objects.front().max_bb);
+    auto min_bb = transform(s.objects.front().cs, s.objects.front().min_bb);
+    auto max_bb = transform(s.objects.front().cs, s.objects.front().max_bb);
+    s.min_bb = min(min_bb, max_bb);
+    s.max_bb = max(min_bb, max_bb);
     }
   else if (!s.pointclouds.empty())
     {
-    s.min_bb = transform(s.pointclouds.front().cs, s.pointclouds.front().min_bb);
-    s.max_bb = transform(s.pointclouds.front().cs, s.pointclouds.front().max_bb);
+    auto min_bb = transform(s.pointclouds.front().cs, s.pointclouds.front().min_bb);
+    auto max_bb = transform(s.pointclouds.front().cs, s.pointclouds.front().max_bb);
+    s.min_bb = min(min_bb, max_bb);
+    s.max_bb = max(min_bb, max_bb);
     }
   else
     {
@@ -102,15 +106,15 @@ void prepare_scene(scene& s)
     {
     auto local_min_bb = transform(obj.cs, obj.min_bb);
     auto local_max_bb = transform(obj.cs, obj.max_bb);
-    s.min_bb = min(s.min_bb, local_min_bb);
-    s.max_bb = max(s.max_bb, local_max_bb);
+    s.min_bb = min(s.min_bb, min(local_min_bb, local_max_bb));
+    s.max_bb = max(s.max_bb, max(local_min_bb, local_max_bb));
     }
   for (const auto& obj : s.pointclouds)
     {
     auto local_min_bb = transform(obj.cs, obj.min_bb);
     auto local_max_bb = transform(obj.cs, obj.max_bb);
-    s.min_bb = min(s.min_bb, local_min_bb);
-    s.max_bb = max(s.max_bb, local_max_bb);
+    s.min_bb = min(s.min_bb, min(local_min_bb, local_max_bb));
+    s.max_bb = max(s.max_bb, max(local_min_bb, local_max_bb));
     }
 
   s.diagonal = s.max_bb[0] - s.min_bb[0];
