@@ -147,6 +147,8 @@ class view
     void set_wireframe(bool b);
 
     void set_one_bit(bool b);
+    
+    void set_print_vertex_ids(bool b);
 
     void set_image_size(int w, int h);
 

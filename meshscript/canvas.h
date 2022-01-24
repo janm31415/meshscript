@@ -22,6 +22,7 @@ class canvas
       bool shading;
       bool textured;
       bool vertexcolors;
+      bool print_vertex_ids;
       };
 
     canvas();
@@ -71,6 +72,10 @@ class canvas
     const jtk::image<uint32_t>& get_image() const { return im; }
 
     jtk::image<uint32_t>& get_image() { return im; }
+    
+    void print_text(const std::string& message, int x, int y, uint32_t color);
+    
+    void print_vertex_ids(const jtk::image<pixel>& canvas, const db& dbase);
 
   private:
     float compute_convex_cos_angle(float x1, float y1, float u1, float v1, float depth1, float x2, float y2, float u2, float v2, float depth2);
@@ -83,6 +88,7 @@ class canvas
 
     uint32_t _get_color(const pixel* p, const matcap& _matcap, float u, float v) const;
 
+    void load_font_atlas();
 
   private:
     jtk::render_data _rd;
@@ -99,4 +105,5 @@ class canvas
 
     jtk::thread_pool _tp;
     
+    jtk::image<uint32_t> font_atlas;
   };

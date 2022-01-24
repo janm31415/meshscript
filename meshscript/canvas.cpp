@@ -1,7 +1,9 @@
 #include "canvas.h"
 
-#include <jtk/concurrency.h>
-#include <jtk/qbvh.h>
+#include "jtk/concurrency.h"
+#include "jtk/qbvh.h"
+#include "jtk/file_utils.h"
+#include "stb_image.h"
 
 #include "matcap.h"
 
@@ -83,15 +85,45 @@ namespace
 
       }
     }
+    
+  void _print_text(uint32_t* pixels, const std::string& message, int x, int y, int w, int h, int stride, uint32_t color, const jtk::image<uint32_t>& atlas)
+    {
+    for (size_t i = 0; i < message.length(); ++i)
+      {
+      char ch = message[i];
+      auto col = ch % 16;
+      auto row = ch / 16 - 2;
+      uint32_t u0 = uint32_t(col)*32;
+      uint32_t v0 = uint32_t(row)*32;
+      uint32_t u1 = uint32_t(col + 1)*32;
+      uint32_t v1 = uint32_t(row + 1)*32;
+
+      uint32_t width = u1 - u0;
+      uint32_t height = v1 - v0;
+
+      for (int i = 0; i < width; ++i)
+        {
+        for (int j = 0; j < height; ++j)
+          {
+          auto clr_rgb = atlas(u0 + i, v0 + j);
+          if (clr_rgb & 0x00ffffff)
+            jtk::image_details::put_pixel_checked(pixels, x + i, y + j, w, h, stride, color);
+          }
+        }
+      x += 11;
+      }
+    }
   }
 
 canvas::canvas()
   {
+  load_font_atlas();
   _tp.init();
   }
 
 canvas::canvas(uint32_t w, uint32_t h)
   {
+  load_font_atlas();
   _tp.init();
   resize(w, h);
   }
@@ -101,6 +133,55 @@ canvas::~canvas()
 #if defined(USE_THREAD_POOL)
   _tp.stop();
 #endif
+  }
+  
+void canvas::load_font_atlas()
+  {
+  std::string font_file = jtk::get_folder(jtk::get_executable_path()) + std::string("resources/Font.bmp");
+  int w, h, nr_of_channels;
+  unsigned char* im = stbi_load(font_file.c_str(), &w, &h, &nr_of_channels, 0);
+  if (im)
+    {
+    font_atlas = jtk::image<uint32_t>(w, h);
+    for (uint32_t y = 0; y < (uint32_t)h; ++y)
+      {
+      uint32_t* p_out = font_atlas.data() + y * w;
+      const unsigned char* p_im = im + y * w * nr_of_channels;
+      for (uint32_t x = 0; x < (uint32_t)w; ++x, ++p_out, p_im += nr_of_channels)
+        {
+        uint32_t color = 0;
+        switch (nr_of_channels)
+          {
+          case 1:
+          {
+          uint32_t g = *p_im;
+          color = 0xff000000 | (g << 16) | (g << 8) | g;
+          break;
+          }
+          case 3:
+          {
+          uint32_t r = p_im[0];
+          uint32_t g = p_im[1];
+          uint32_t b = p_im[2];
+          color = 0xff000000 | (b << 16) | (g << 8) | r;
+          break;
+          }
+          case 4:
+          {
+          color = *((const uint32_t*)p_im);
+          break;
+          }
+          }
+        *p_out = color;
+        }
+      }
+    stbi_image_free(im);
+    }
+  }
+
+void canvas::print_text(const std::string& message, int x, int y, uint32_t color)
+  {
+  _print_text(im.data(), message, x, y, im.width(), im.height(), im.stride(), color, font_atlas);
   }
 
 void canvas::resize(uint32_t w, uint32_t h)
@@ -436,6 +517,106 @@ uint32_t canvas::_get_color(const pixel* p, const matcapmap& _matcap) const
   return _get_color(p, _matcap.get_matcap(p->db_id), p->u, p->v);
   }
 
+namespace
+  {
+  struct vertex_id_data
+    {
+    uint32_t vertex_id;
+    uint32_t db_id;
+    uint32_t x, y;
+    float dist;
+    };
+  }
+
+void canvas::print_vertex_ids(const jtk::image<pixel>& canvas, const db& dbase)
+  {
+  if (!_settings.print_vertex_ids)
+    return;
+  const uint32_t w = im.width();
+  const uint32_t h = im.height();
+  
+  std::vector<vertex_id_data> vertex_data;
+
+  for (uint32_t y = 1; y < h-1; ++y)
+    {
+    const pixel* p_up_canvas = canvas.row(y-1);
+    uint32_t* p_im_line = im.row(y) + 1;
+    const pixel* p_left_canvas = canvas.row(y);
+    const pixel* p_canvas = p_left_canvas + 1;
+    const pixel* p_right_canvas = p_canvas + 1;
+    const pixel* p_down_canvas = canvas.row(y+1);
+    
+    for (uint32_t x = 1; x < w - 1; ++x)
+      {
+      if (p_canvas->object_id != (uint32_t)(-1))
+        {
+        std::array<uint32_t, 4> values;
+        values[0] = p_left_canvas->object_id;
+        values[1] = p_right_canvas->object_id;
+        values[2] = p_up_canvas->object_id;
+        values[3] = p_down_canvas->object_id;
+        std::sort(values.begin(), values.end());
+        int count = 0;
+        for (int i = 0; i < 4; ++i)
+          {
+          if (values[i] != p_canvas->object_id)
+            {
+            if (i == 0 || values[i] != values[i-1])
+              ++count;
+            }
+          }
+        if (count > 1)
+          { // candidate vertex
+          auto vertices = get_vertices(dbase, p_canvas->db_id);
+          auto triangles = get_triangles(dbase, p_canvas->db_id);
+          if (vertices != nullptr && triangles != nullptr)
+            {
+            float distance;
+            uint32_t v_id = get_closest_vertex(distance, *p_canvas, vertices, triangles);
+            vertex_id_data d;
+            d.db_id = p_canvas->db_id;
+            d.vertex_id = v_id;
+            d.x = x;
+            d.y = y;
+            d.dist = distance;
+            vertex_data.push_back(d);
+            }
+          }
+        }
+      ++p_im_line;
+      ++p_canvas;
+      ++p_up_canvas;
+      ++p_down_canvas;
+      ++p_left_canvas;
+      ++p_right_canvas;
+      }
+    }
+  std::sort(vertex_data.begin(), vertex_data.end(), [](const vertex_id_data& left, const vertex_id_data& right)
+    {
+    if (left.db_id == right.db_id)
+      {
+        if (left.vertex_id == right.vertex_id)
+          {
+            return left.dist < right.dist;
+          }
+        else
+          return left.vertex_id < right.vertex_id;
+      }
+    else
+      return left.db_id < right.db_id;
+    });
+  vertex_data.erase(std::unique(vertex_data.begin(), vertex_data.end(), [](const vertex_id_data& left, const vertex_id_data& right)
+    {
+    return left.db_id == right.db_id && left.vertex_id == right.vertex_id;
+    }), vertex_data.end());
+  for (const auto& d : vertex_data)
+    {
+    im(d.x, d.y) = 0xffffffff;
+    std::stringstream str;
+    str << d.vertex_id;
+    print_text(str.str(), d.x, d.y, 0xffffffff);
+    }
+  }
 
 void canvas::_render_wireframe(const jtk::image<pixel>& canvas, const matcapmap& _matcap)
   {

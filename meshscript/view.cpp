@@ -120,6 +120,7 @@ view::view() : _w(1600), _h(900), _window(nullptr)
   _settings.shading = true;
   _settings.textured = true;
   _settings.vertexcolors = true;
+  _settings.print_vertex_ids = false;
 
   _suspend = false;
   _resume = false;
@@ -769,6 +770,7 @@ void view::render_scene()
   _pixels = _canvas.get_pixels();
   _canvas.canvas_to_image(_pixels, _matcap);
   _canvas.render_pointclouds_on_image(&_scene, _pixels);
+  _canvas.print_vertex_ids(_pixels, _db);
   _refresh = false;
 
   if (_show_face_detector && p_face_detector.get())
@@ -853,7 +855,7 @@ jtk::float4x4 view::get_coordinate_system()
   {
   std::scoped_lock lock(_mut);
   return _scene.coordinate_system;
-  }
+}
 
 jtk::float4x4 view::icp(uint32_t id1, uint32_t id2, double inlier_distance)
   {
@@ -1128,6 +1130,13 @@ void view::show(int64_t id)
     prepare_scene(_scene);
     _refresh = true;
     }
+  }
+  
+void view::set_print_vertex_ids(bool b)
+  {
+  std::scoped_lock lock(_mut);
+  _settings.print_vertex_ids = b;
+  _refresh = true;
   }
 
 void view::set_shading(bool b)
@@ -2381,6 +2390,11 @@ void view::poll_for_events()
         resize_canvas(1600, 900);
         break;
         }
+        case SDLK_5:
+        {
+        resize_canvas(_w, _h);
+        break;
+        }
         case SDLK_s:
         {
         _settings.shadow = !_settings.shadow;
@@ -2408,6 +2422,12 @@ void view::poll_for_events()
         case SDLK_b:
         {
         _settings.one_bit = !_settings.one_bit;
+        _refresh = true;
+        break;
+        }
+        case SDLK_p:
+        {
+        _settings.print_vertex_ids = !_settings.print_vertex_ids;
         _refresh = true;
         break;
         }

@@ -1250,6 +1250,11 @@ void scm_set_shading(bool b)
   {
   g_view->set_shading(b);
   }
+  
+void scm_set_print_vertex_ids(bool b)
+  {
+  g_view->set_print_vertex_ids(b);
+  }
 
 void scm_set_edges(bool b)
   {
@@ -2178,6 +2183,7 @@ void* register_functions(void*)
   register_external_primitive("view-index", (void*)&scm_get_index, skiwi_scm, skiwi_scm, skiwi_scm, "(view-index x y) returns the vertex index of the vertex in the last render of the 3d view at coordinate (x,y).");
   register_external_primitive("view-id", (void*)&scm_get_id, skiwi_scm, skiwi_scm, skiwi_scm, "(view-id x y) returns the id of the object in the last render of the 3d view at coordinate (x,y).");
 
+  register_external_primitive("view-print-set!", (void*)&scm_set_print_vertex_ids, skiwi_void, skiwi_bool, "(view-print-set! #t/#f) turns on/off index printing of vertices.");
   register_external_primitive("view-shading-set!", (void*)&scm_set_shading, skiwi_void, skiwi_bool, "(view-shading-set! #t/#f) turns on/off lighting.");
   register_external_primitive("view-shadow-set!", (void*)&scm_set_shadow, skiwi_void, skiwi_bool, "(view-shadow-set! #t/#f) turns on/off rendering of shadow.");
 

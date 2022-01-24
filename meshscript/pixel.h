@@ -27,3 +27,4 @@ struct pixel
   };
 
 uint32_t get_closest_vertex(const pixel& p, const std::vector<jtk::vec3<float>>* vertices, const std::vector<jtk::vec3<uint32_t>>* triangles);
+uint32_t get_closest_vertex(float& distance, const pixel& p, const std::vector<jtk::vec3<float>>* vertices, const std::vector<jtk::vec3<uint32_t>>* triangles);

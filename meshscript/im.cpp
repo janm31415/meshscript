@@ -11,10 +11,42 @@
 bool read_from_file(im& i, const std::string& filename)
   {
   int w, h, nr_of_channels;
-  unsigned char* im = stbi_load(filename.c_str(), &w, &h, &nr_of_channels, 4);
+  unsigned char* im = stbi_load(filename.c_str(), &w, &h, &nr_of_channels, 0);
   if (im)
     {
-    i.texture = jtk::span_to_image(w, h, w, (const uint32_t*)im);
+    i.texture = jtk::image<uint32_t>(w, h);
+    for (uint32_t y = 0; y < (uint32_t)h; ++y)
+      {
+      uint32_t* p_out = i.texture.data() + y * w;
+      const unsigned char* p_im = im + y * w * nr_of_channels;
+      for (uint32_t x = 0; x < (uint32_t)w; ++x, ++p_out, p_im += nr_of_channels)
+        {
+        uint32_t color = 0;
+        switch (nr_of_channels)
+          {
+          case 1:
+          {
+          uint32_t g = *p_im;
+          color = 0xff000000 | (g << 16) | (g << 8) | g;
+          break;
+          }
+          case 3:
+          {
+          uint32_t r = p_im[0];
+          uint32_t g = p_im[1];
+          uint32_t b = p_im[2];
+          color = 0xff000000 | (b << 16) | (g << 8) | r;
+          break;
+          }
+          case 4:
+          {
+          color = *((const uint32_t*)p_im);
+          break;
+          }
+          }
+        *p_out = color;
+        }
+      }
     stbi_image_free(im);
     return true;
     }
