@@ -181,6 +181,8 @@ void canvas::load_font_atlas()
 
 void canvas::print_text(const std::string& message, int x, int y, uint32_t color)
   {
+  if (font_atlas.width() == 0 || font_atlas.height() == 0)
+    return;
   _print_text(im.data(), message, x, y, im.width(), im.height(), im.stride(), color, font_atlas);
   }
 
