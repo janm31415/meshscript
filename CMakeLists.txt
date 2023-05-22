@@ -66,4 +66,5 @@ set_target_properties (H5make_libsettings PROPERTIES FOLDER hdf5)
 set_target_properties (SDL2 PROPERTIES FOLDER SDL2)
 set_target_properties (SDL2main PROPERTIES FOLDER SDL2)
 set_target_properties (uninstall PROPERTIES FOLDER SDL2)
+set_target_properties (sdl_headers_copy PROPERTIES FOLDER SDL2)
 
