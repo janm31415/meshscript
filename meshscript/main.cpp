@@ -6,11 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <libskiwi/libskiwi.h>
-
-#include <libskiwi/runtime.h>
-
-#include <libskiwi/types.h>
+extern "C"
+  {
+#include "schemerlicht/schemerlicht_api.h"
+  }
 
 #include "view.h"
 #include "jet.h"
@@ -111,10 +110,10 @@ int64_t load_image(const char* filename)
   int64_t id = g_view->load_image_from_file(filename);
   return id;
   }
-
+/*
 uint64_t scm_cs_read(const char* filename)
   {
-  using namespace skiwi;
+  
   std::ifstream f(filename);
   jtk::mat16 m = jtk::identity(4, 4);
   if (f.is_open())
@@ -212,11 +211,11 @@ void scm_cs_write(uint64_t scheme_variable_64, const char* filename)
     }
   }
 
-/*
-Input can be a vector of size 16 in column major format,
-or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
-which can be read from a csv file.
-*/
+
+//Input can be a vector of size 16 in column major format,
+//or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
+//which can be read from a csv file.
+
 void scm_set_coordinate_system(int64_t id, uint64_t scheme_variable_64)
   {
   skiwi::scm_type scheme_variable(scheme_variable_64);
@@ -278,11 +277,11 @@ void scm_set_coordinate_system(int64_t id, uint64_t scheme_variable_64)
     }
   }
 
-/*
-Input can be a vector of size 16 in column major format,
-or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
-which can be read from a csv file.
-*/
+
+//Input can be a vector of size 16 in column major format,
+//or a list of lists in row major format like ((1 0 0 13) (0 1 0 12) (0 0 1 15) (0 0 0 1))
+//which can be read from a csv file.
+
 void scm_set_view_coordinate_system(uint64_t scheme_variable_64)
   {
   skiwi::scm_type scheme_variable(scheme_variable_64);
@@ -346,7 +345,7 @@ void scm_set_view_coordinate_system(uint64_t scheme_variable_64)
 
 uint64_t scm_get_coordinate_system(int64_t id)
   {
-  using namespace skiwi;
+  
   auto cs = g_view->get_coordinate_system((uint32_t)id);
   std::vector<scm_type> lst;
   for (int r = 0; r < 4; ++r)
@@ -363,7 +362,7 @@ uint64_t scm_get_coordinate_system(int64_t id)
 
 uint64_t scm_icp(int64_t id1, int64_t id2, uint64_t inlier_distance)
   {
-  using namespace skiwi;
+  
   scm_type inlier_dist(inlier_distance);
   double inlierd = inlier_dist.get_number();
   auto cs = g_view->icp((uint32_t)id1, (uint32_t)id2, inlierd);
@@ -387,7 +386,7 @@ int64_t scm_duplicate(int64_t id)
 
 uint64_t scm_distance_map(int64_t id1, int64_t id2, bool sign)
   {
-  using namespace skiwi;
+  
   auto lst = g_view->distance_map((uint32_t)id1, (uint32_t)id2, sign);
   std::vector<scm_type> outlist;
   for (const auto& v : lst)
@@ -399,7 +398,7 @@ uint64_t scm_distance_map(int64_t id1, int64_t id2, bool sign)
 
 uint64_t scm_get_view_coordinate_system()
   {
-  using namespace skiwi;
+  
   auto cs = g_view->get_coordinate_system();
   std::vector<scm_type> lst;
   for (int r = 0; r < 4; ++r)
@@ -943,7 +942,7 @@ void hide(int64_t id)
 
 int64_t scm_fill_hole(int64_t id, uint64_t hole64)
   {
-  using namespace skiwi;
+  
   skiwi::scm_type hole(hole64);
   try
     {
@@ -964,7 +963,7 @@ int64_t scm_fill_hole(int64_t id, uint64_t hole64)
 
 int64_t scm_fill_hole_minimal(int64_t id, uint64_t hole64, int64_t number_of_rings, int64_t number_of_iterations)
   {
-  using namespace skiwi;
+  
   skiwi::scm_type hole(hole64);
   try
     {
@@ -990,7 +989,7 @@ int64_t scm_lscm(int64_t id)
 
 uint64_t scm_holes(int64_t id)
   {
-  using namespace skiwi;
+  
   std::vector<std::vector<uint32_t>> holes = g_view->holes(id);
 
   std::vector<scm_type> holeslist;
@@ -1017,7 +1016,7 @@ void scm_unzoom()
 
 uint64_t scm_jet(uint64_t mask64)
   {
-  using namespace skiwi;
+  
   skiwi::scm_type mask(mask64);
   try
     {
@@ -1308,7 +1307,7 @@ void scm_set_bg_color(int64_t r, int64_t g, int64_t b)
 
 uint64_t scm_get_position(uint64_t x64, uint64_t y64)
   {
-  using namespace skiwi;
+  
   skiwi::scm_type x(x64);
   skiwi::scm_type y(y64);
   auto pos = g_view->get_world_position((int)x.get_number(), (int)y.get_number());
@@ -1321,7 +1320,7 @@ uint64_t scm_get_position(uint64_t x64, uint64_t y64)
 
 uint64_t scm_get_index(uint64_t x64, uint64_t y64)
   {
-  using namespace skiwi;
+  
   skiwi::scm_type x(x64);
   skiwi::scm_type y(y64);
   auto idx = g_view->get_index((int)x.get_number(), (int)y.get_number());
@@ -1330,7 +1329,7 @@ uint64_t scm_get_index(uint64_t x64, uint64_t y64)
 
 uint64_t scm_get_id(uint64_t x64, uint64_t y64)
   {
-  using namespace skiwi;
+  
   skiwi::scm_type x(x64);
   skiwi::scm_type y(y64);
   auto id = g_view->get_id((int)x.get_number(), (int)y.get_number());
@@ -1359,7 +1358,7 @@ double mm_sigma(int64_t id, int64_t idx)
 
 uint64_t mm_coeff(int64_t id)
   {
-  using namespace skiwi;
+  
   std::vector<float> coeff = g_view->mm_coeff((uint32_t)id);
   std::vector<scm_type> coefflist;
   for (const auto& v : coeff)
@@ -1371,7 +1370,7 @@ uint64_t mm_coeff(int64_t id)
 
 uint64_t mm_basic_shape_coeff(int64_t id, int64_t shape_id)
   {
-  using namespace skiwi;
+  
   std::vector<float> coeff = g_view->mm_basic_shape_coeff((uint32_t)id, shape_id);
   std::vector<scm_type> coefflist;
   for (const auto& v : coeff)
@@ -1419,7 +1418,7 @@ double mm_color_sigma(int64_t id, int64_t idx)
 
 uint64_t mm_color_coeff(int64_t id)
   {
-  using namespace skiwi;
+  
   std::vector<float> coeff = g_view->mm_color_coeff((uint32_t)id);
   std::vector<scm_type> coefflist;
   for (const auto& v : coeff)
@@ -1431,7 +1430,7 @@ uint64_t mm_color_coeff(int64_t id)
 
 uint64_t mm_color_basic_shape_coeff(int64_t id, int64_t shape_id)
   {
-  using namespace skiwi;
+  
   std::vector<float> coeff = g_view->mm_color_basic_shape_coeff((uint32_t)id, shape_id);
   std::vector<scm_type> coefflist;
   for (const auto& v : coeff)
@@ -1469,7 +1468,7 @@ int64_t mm_to_mesh(int64_t id)
 
 uint64_t scm_triangles(int64_t id)
   {
-  using namespace skiwi;
+  
   auto trias = g_view->triangles((uint32_t)id);
   std::vector<scm_type> trialist;
   for (const auto& tria : trias)
@@ -1485,7 +1484,7 @@ uint64_t scm_triangles(int64_t id)
 
 uint64_t scm_vertices(int64_t id)
   {
-  using namespace skiwi;
+  
   auto verts = g_view->vertices((uint32_t)id);
   std::vector<scm_type> vertlist;
   for (const auto& vert : verts)
@@ -1501,7 +1500,7 @@ uint64_t scm_vertices(int64_t id)
 
 uint64_t scm_vertexcolors(int64_t id)
   {
-  using namespace skiwi;
+  
   auto clrs = g_view->vertexcolors((uint32_t)id);
   std::vector<scm_type> vertlist;
   for (const auto& clr : clrs)
@@ -1520,7 +1519,7 @@ uint64_t scm_vertexcolors(int64_t id)
 
 uint64_t scm_vertexnormals(int64_t id)
   {
-  using namespace skiwi;
+  
   auto verts = g_view->vertexnormals((uint32_t)id);
   std::vector<scm_type> vertlist;
   for (const auto& vert : verts)
@@ -1536,7 +1535,7 @@ uint64_t scm_vertexnormals(int64_t id)
 
 uint64_t scm_trianglenormals(int64_t id)
   {
-  using namespace skiwi;
+  
   auto verts = g_view->trianglenormals((uint32_t)id);
   std::vector<scm_type> vertlist;
   for (const auto& vert : verts)
@@ -1557,7 +1556,7 @@ bool scm_write(int64_t id, const char* filename)
 
 uint64_t scm_mesh_texture_to_vertexcolors(uint64_t id)
   {
-  using namespace skiwi;
+  
   std::vector<vec3<uint8_t>> colors = g_view->mesh_texture_to_vertexcolors((uint32_t)id);
   std::vector<scm_type> vertclrlist;
   for (const auto& clr : colors)
@@ -1598,7 +1597,7 @@ void scm_set_show_face_detector(bool b)
 
 uint64_t scm_right_ear_detect()
   {
-  using namespace skiwi;
+  
   std::vector<rect> rectangles = g_view->ear_detect(true);
   std::vector<skiwi::scm_type> vec;
   vec.reserve(rectangles.size());
@@ -1616,7 +1615,7 @@ uint64_t scm_right_ear_detect()
 
 uint64_t scm_left_ear_detect()
   {
-  using namespace skiwi;
+  
   std::vector<rect> rectangles = g_view->ear_detect(false);
   std::vector<skiwi::scm_type> vec;
   vec.reserve(rectangles.size());
@@ -1634,7 +1633,7 @@ uint64_t scm_left_ear_detect()
 
 uint64_t scm_face_detect()
   {
-  using namespace skiwi;
+  
   std::vector<rect> rectangles = g_view->face_detect();
   std::vector<skiwi::scm_type> vec;
   vec.reserve(rectangles.size());
@@ -1677,7 +1676,7 @@ void scm_sp_link_remove(int64_t id)
 
 uint64_t scm_shape_predict(int64_t id, uint64_t rect64)
   {
-  using namespace skiwi;
+  
   skiwi::scm_type rectangles(rect64);
   if (rectangles.is_nil())
     return make_nil();
@@ -1797,7 +1796,7 @@ int64_t scm_icosahedron(uint64_t r64)
 
 uint64_t npoint_scm(uint64_t src64, uint64_t tgt64)
   {
-  using namespace skiwi;
+  
   skiwi::scm_type src(src64);
   skiwi::scm_type tgt(tgt64);
   try
@@ -2008,11 +2007,11 @@ void scm_deform(int64_t id, int64_t tool_id)
   {
   g_view->deform((uint32_t)id, (uint32_t)tool_id);
   }
-
+  */
 void* register_functions(void*)
   {
-  using namespace skiwi;
   
+  /*
   register_external_primitive("butterfly", (void*)&scm_butterfly_persistent, skiwi_int64, skiwi_int64,  "(butterfly id) applies the butterfly subdivision scheme to the mesh with tag `id`. The resulting mesh's id is returned. The butterfly method will only change the position of the vertices. It does not apply the actual subdivision. Therefore the input mesh is assumed to have been subdivided at least once with the subdivide or subdivide! method.");
   register_external_primitive("butterfly!", (void*)&scm_butterfly, skiwi_void, skiwi_int64, "(butterfly! id) applies the butterfly subdivision scheme to the mesh with tag `id`. The butterfly method will only change the position of the vertices. It does not apply the actual subdivision. Therefore the input mesh is assumed to have been subdivided at least once with the subdivide or subdivide! method.");
   
@@ -2195,7 +2194,7 @@ void* register_functions(void*)
   register_external_primitive("view-wireframe-set!", (void*)&scm_set_wireframe, skiwi_void, skiwi_bool, "(view-wireframe-set! #t/#f) turns on/off rendering of wireframe.");
 
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");
-
+  */
   return nullptr;
   }
 
@@ -2231,7 +2230,7 @@ void create_scheme_with_loop(scheme_loop_data* sld, int argc, char** argv)
   sld->initialised = true;
   sld->cv.notify_all();
   sld->mt.unlock();
-
+  /*
   skiwi::skiwi_parameters pars;
   pars.heap_size = 64 * 1024 * 1024;
   skiwi::set_prompt("ms> ");
@@ -2251,6 +2250,9 @@ void create_scheme_with_loop(scheme_loop_data* sld, int argc, char** argv)
   g_view->quit();
 
   skiwi::skiwi_quit();
+  */
+
+  g_view->quit();
   }
 
 std::unique_ptr<std::thread> create_threaded_scheme_loop(scheme_loop_data& sld, int argc, char** argv)

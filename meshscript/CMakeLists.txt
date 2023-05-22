@@ -121,7 +121,7 @@ target_include_directories(meshscript
     .
     ${CMAKE_CURRENT_SOURCE_DIR}/../
     ${CMAKE_CURRENT_SOURCE_DIR}/../jtk/
-    ${CMAKE_CURRENT_SOURCE_DIR}/../skiwi/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../schemerlicht/
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/
     ${CMAKE_CURRENT_BINARY_DIR}/../hdf5
     ${CMAKE_CURRENT_BINARY_DIR}/../sdl2/include
@@ -134,7 +134,7 @@ target_link_libraries(meshscript
     dlib
     libcork
     libpoisson
-    libskiwi	
+    schemerlicht	
     trico
     hdf5-shared
     SDL2
@@ -176,11 +176,6 @@ endif (${JTK_THREADING} STREQUAL "tbb")
 
 if (WIN32)
 add_custom_command(TARGET meshscript POST_BUILD 
-   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../skiwi/bin" ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-endif (WIN32)
-
-if (WIN32)
-add_custom_command(TARGET meshscript POST_BUILD 
    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../schemerlicht/bin" ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif (WIN32)
 
@@ -189,6 +184,6 @@ add_custom_command(TARGET meshscript POST_BUILD
    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/resources" "$<TARGET_FILE_DIR:meshscript>/resources")
    
 add_custom_command(TARGET meshscript POST_BUILD 
-   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/../skiwi/libskiwi/scm" "$<TARGET_FILE_DIR:meshscript>/scm")   
+   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/../schemerlicht/scm" "$<TARGET_FILE_DIR:meshscript>/scm")   
    
    
