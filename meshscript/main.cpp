@@ -2008,7 +2008,7 @@ void scm_deform(int64_t id, int64_t tool_id)
   g_view->deform((uint32_t)id, (uint32_t)tool_id);
   }
   */
-void* register_functions(void*)
+void register_functions(schemerlicht_context* ctxt)
   {
   
   /*
@@ -2195,7 +2195,8 @@ void* register_functions(void*)
 
   register_external_primitive("exit", (void*)&scm_exit, skiwi_void, "(exit) can be used in the input script to end meshscript, so the REPL is skipped.");
   */
-  return nullptr;
+
+  schemerlicht_register_external_primitive(ctxt, "exit", (void*)&scm_exit, schemerlicht_foreign_void, 0);
   }
 
 struct scheme_loop_data
@@ -2223,6 +2224,57 @@ Enter scheme commands or one of the following:
 )";
   return help;
   }
+
+std::string get_cleaned_command(std::string txt)
+  {
+  auto it = txt.find_first_not_of(' ');
+  std::string cleaned = txt.substr(it);
+  it = cleaned.find_first_of(' ');
+  if (it == std::string::npos)
+    return cleaned;
+  return cleaned.substr(0, it);
+  }
+
+void print_result(schemerlicht_context* ctxt, schemerlicht_object* result)
+  {
+  schemerlicht_print_any_error(ctxt);
+  if (result)
+    {
+    schemerlicht_string s;
+    schemerlicht_string_init(ctxt, &s, "");
+    schemerlicht_show_object(ctxt, result, &s);
+    printf("%s\n", s.string_ptr);
+    schemerlicht_string_destroy(ctxt, &s);
+    }
+  }
+
+static void print_stack(schemerlicht_context* ctxt, int stack_end)
+  {
+  schemerlicht_string stackstring;
+  schemerlicht_string_init(ctxt, &stackstring, "");
+  schemerlicht_show_stack(ctxt, &stackstring, 0, stack_end);
+  printf("%s\n", stackstring.string_ptr);
+  schemerlicht_string_destroy(ctxt, &stackstring);
+  }
+
+static void print_env(schemerlicht_context* ctxt)
+  {
+  schemerlicht_string envstring;
+  schemerlicht_string_init(ctxt, &envstring, "");
+  schemerlicht_show_environment(ctxt, &envstring);
+  printf("%s\n", envstring.string_ptr);
+  schemerlicht_string_destroy(ctxt, &envstring);
+  }
+
+static void print_mem(schemerlicht_context* ctxt)
+  {
+  schemerlicht_string memstring;
+  schemerlicht_string_init(ctxt, &memstring, "");
+  schemerlicht_show_memory(ctxt, &memstring);
+  printf("%s\n", memstring.string_ptr);
+  schemerlicht_string_destroy(ctxt, &memstring);
+  }
+
 
 void create_scheme_with_loop(scheme_loop_data* sld, int argc, char** argv)
   {
@@ -2252,7 +2304,61 @@ void create_scheme_with_loop(scheme_loop_data* sld, int argc, char** argv)
   skiwi::skiwi_quit();
   */
 
+  schemerlicht_context* ctxt = schemerlicht_open(1024);
+  schemerlicht_build_base(ctxt);
+  register_functions(ctxt);
+
+  for (int idx = 1; idx < argc; ++idx)
+    {
+    char* filename = argv[idx];
+    schemerlicht_object* res = schemerlicht_execute_file(ctxt, filename);
+    print_result(ctxt, res);
+    }
+
+  std::cout << "\nWelcome to meshscript\nType ,? for help.\n";
+
+  quit = false;
+  std::string input;
+  while (!quit)
+    {
+    std::cout << "ms> ";
+    std::getline(std::cin, input);
+    std::string cmd = get_cleaned_command(input);
+    if (cmd == std::string(",exit"))
+      quit = true;
+    else if (cmd == std::string(",?"))
+      {
+      std::cout << get_help_text();
+      }
+    else if (cmd == std::string(",env"))
+      {
+      print_env(ctxt);
+      }
+    else if (cmd == std::string(",mem"))
+      {
+      print_mem(ctxt);
+      }
+    else if (cmd == std::string(",stack"))
+      {
+      int stack_end = 9;
+      std::stringstream str;
+      str << input;
+      std::string tmp;
+      int length = 0;
+      str >> tmp >> length;
+      if (length > 0)
+        stack_end = length;
+      print_stack(ctxt, stack_end);
+      }
+    else if (!input.empty())
+      {
+      schemerlicht_object* res = schemerlicht_execute(ctxt, input.c_str());
+      print_result(ctxt, res);
+      }
+    }
+
   g_view->quit();
+  schemerlicht_close(ctxt);
   }
 
 std::unique_ptr<std::thread> create_threaded_scheme_loop(scheme_loop_data& sld, int argc, char** argv)
