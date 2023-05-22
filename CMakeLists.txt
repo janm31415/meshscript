@@ -31,6 +31,7 @@ add_subdirectory(libcork)
 add_subdirectory(libpoisson)
 add_subdirectory(meshscript)
 add_subdirectory(skiwi)
+add_subdirectory(schemerlicht)
 add_subdirectory(trico/lz4)
 add_subdirectory(trico/trico)
 add_subdirectory(SDL2)
@@ -40,6 +41,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set_target_properties (libcork PROPERTIES FOLDER cork)
 set_target_properties (libpoisson PROPERTIES FOLDER poisson)
+
+set_target_properties (schemerlicht PROPERTIES FOLDER schemerlicht)
+set_target_properties (schemerlicht.tests PROPERTIES FOLDER schemerlicht)
+set_target_properties (sl PROPERTIES FOLDER schemerlicht)
+set_target_properties (primdispatch PROPERTIES FOLDER schemerlicht/tools)
+set_target_properties (primextract PROPERTIES FOLDER schemerlicht/tools)
+set_target_properties (gameoflife PROPERTIES FOLDER schemerlicht/examples)
+
 
 set_target_properties (asm PROPERTIES FOLDER skiwi)
 set_target_properties (asm.tests PROPERTIES FOLDER skiwi)
@@ -67,4 +76,5 @@ set_target_properties (SDL2 PROPERTIES FOLDER SDL2)
 set_target_properties (SDL2main PROPERTIES FOLDER SDL2)
 set_target_properties (uninstall PROPERTIES FOLDER SDL2)
 set_target_properties (sdl_headers_copy PROPERTIES FOLDER SDL2)
+set_target_properties (SDL2_test PROPERTIES FOLDER SDL2)
 
